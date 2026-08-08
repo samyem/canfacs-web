@@ -1,0 +1,187 @@
+export interface TeamMember {
+	name: string;
+	role: string;
+	profession?: string;
+	bio?: string;
+	photo?: string;
+	region?: string;
+}
+
+export interface NewsItem {
+	id: string;
+	title: string;
+	date: string;
+	summary: string;
+	link?: string;
+}
+
+export interface EventItem {
+	id: string;
+	title: string;
+	date: string;
+	location: string;
+	description: string;
+}
+
+export const SITE_INFO = {
+	name: 'CANFACS',
+	fullName: 'Canada-Nepal Friendship and Cultural Society',
+	registeredDate: 'November 30, 2016',
+	act: 'Canada Non-Profit Societies Framework',
+	diplomaticRelYear: '1965',
+	cooperationYear: '1968',
+	tagline: 'Bridging Nations, Celebrating Cultures & Strengthening Communities Across Canada',
+	missionSummary:
+		'A nationwide non-profit organization fostering rich cultural exchange, bilateral partnership, educational initiatives, and community harmony between Canada and Nepal across all provinces and territories.'
+};
+
+export const EXECUTIVE_BOARD: TeamMember[] = [
+	{
+		name: 'Mr. Navin Dhakal',
+		role: 'President',
+		profession: 'IB Chemistry Teacher',
+		region: 'BC',
+		photo: '/team/navin-dhakal.jpg',
+		bio: 'Experienced educator and community advocate bringing scientific rigor, academic leadership, and dedicated public service to CANFACS.'
+	},
+	{
+		name: 'Ms. Bina Shrestha',
+		role: 'Vice President',
+		profession: 'History / ECE Teacher',
+		region: 'BC',
+		photo: '/team/bina-shrestha.jpg',
+		bio: 'Passionate educator with extensive background in history and early childhood education, preserving cultural heritage and empowering young learners.'
+	},
+	{
+		name: 'Mr. Prem Devkota',
+		role: 'Vice President',
+		profession: 'Engineer (BC Hydro)',
+		region: 'BC',
+		photo: '/team/prem-devkota.jpg',
+		bio: 'Professional engineer at BC Hydro leading energy infrastructure initiatives and supporting bilateral technical & educational exchanges.'
+	},
+	{
+		name: 'Mr. Rudra Adhikari',
+		role: 'Secretary-General',
+		profession: 'Financial Analyst',
+		region: 'NB',
+		photo: '/team/rudra-adhikari.jpg',
+		bio: 'Senior financial analyst providing strategic corporate governance, organizational compliance, and financial stewardship across Atlantic Canada.'
+	},
+	{
+		name: 'Mr. Samyem Tuladhar',
+		role: 'Director of Communications',
+		profession: 'Software Architect',
+		region: 'ON',
+		photo: '/team/samyem-tuladhar.jpg',
+		bio: 'Technology leader and software architect driving digital transformation, web platforms, and public outreach across Ontario and nationwide.'
+	},
+	{
+		name: 'Mr. Kiroj Shrestha',
+		role: 'Director',
+		profession: 'Design Engineer (Toronto Transit)',
+		region: 'ON',
+		photo: '/team/kiroj-shrestha.jpg',
+		bio: 'Transportation design engineer with Toronto Transit, dedicated to civic infrastructure, youth engagement, and community building.'
+	},
+	{
+		name: 'Mr. Debraj Dhakal',
+		role: 'Treasurer',
+		profession: 'Chartered Accountant',
+		region: 'BC',
+		photo: '/team/debraj-dhakal.jpg',
+		bio: 'Certified accounting professional managing CANFACS financial planning, annual auditing, non-profit tax filings, and fiscal integrity.'
+	},
+	{
+		name: 'Mr. Purushottam Thapa',
+		role: 'Director',
+		profession: 'Financial Advisor',
+		region: 'BC',
+		photo: '/team/purushottam-thapa.jpg',
+		bio: 'Financial advisory specialist helping families and newcomers navigate financial planning, investments, and community integration.'
+	},
+	{
+		name: 'Mr. Prakash V Joshi',
+		role: 'Director',
+		profession: 'Material Engineering Technologist',
+		region: 'BC',
+		photo: '/team/prakash-v-joshi.jpg',
+		bio: 'Engineering technologist focusing on material testing, quality control, and strengthening professional networks for immigrant engineers.'
+	},
+	{
+		name: 'Dr. Meghraj Gnawali',
+		role: 'Director',
+		profession: 'Pediatrician',
+		region: 'BC',
+		photo: '/team/meghraj-gnawali.jpg',
+		bio: 'Renowned medical doctor and pediatrician advocating for child health initiatives, medical relief, and community wellness programs.'
+	}
+];
+
+export const ADVISORY_BOARD: TeamMember[] = [
+	{ name: 'Er. Mankajee Shrestha ‘Jena’, P. Eng.', role: 'Founding President & Senior Advisor' },
+	{ name: 'Dr. Ram Krishna Mahat', role: 'Advisory Board Member' },
+	{ name: 'Prof. Dr. Govinda Dahal', role: 'Advisory Board Member' },
+	{ name: 'Dr. Tula Datta Paudel', role: 'Advisory Board Member' },
+	{ name: 'Dr. Bishwa Adhikari', role: 'Advisory Board Member' },
+	{ name: 'Mr. Gopal Bhandari', role: 'Advisory Board Member' }
+];
+
+export const PURPOSES = [
+	{
+		title: 'Government & NGO Partnerships',
+		desc: 'Encourage partnerships and collaborations with Government agencies and non-government organizations in Canada and Nepal to fulfill the Society’s goals.'
+	},
+	{
+		title: 'Bilateral Understanding & Goodwill',
+		desc: 'Promote, facilitate, and enhance goodwill, mutual understanding, and friendship between the peoples and governments of Canada and Nepal.'
+	},
+	{
+		title: 'Friendship & Cultural Promotion',
+		desc: 'Promote friendship, exchange cultural experiences, and support educational programs between Canada and Nepal.'
+	},
+	{
+		title: 'Community Integration & Harmony',
+		desc: 'Aid and support Nepali immigrants and visitors in integrating into Canadian society while encouraging multicultural harmony across Canada.'
+	},
+	{
+		title: 'Philanthropic & Humanitarian Support',
+		desc: 'Organize humanitarian assistance, medical relief, and educational scholarships for underprivileged communities.'
+	}
+];
+
+export const EVENTS: EventItem[] = [
+	{
+		id: 'everest-day-2025',
+		title: 'International Mount Everest Day Celebration',
+		date: 'May 29, 2025',
+		location: 'Greater Vancouver & Online',
+		description: 'Commemorating the historical first ascent of Mt. Everest by Sir Edmund Hillary and Tenzing Norgay Sherpa, honoring mountaineering achievements and Nepalese heritage.'
+	},
+	{
+		id: 'bhetghat-2025',
+		title: 'Annual Bhetghat & Cultural Festival',
+		date: 'Autumn 2025',
+		location: 'Surrey, BC',
+		description: 'A vibrant community gathering featuring traditional Nepali cuisine, folk music, authentic dance performances, and community networking.'
+	}
+];
+
+export const NEWSLETTERS = [
+	{
+		title: 'CANFACS Souvenir 2025',
+		year: '2025',
+		status: 'Upcoming Release',
+		editorial: 'Editor-in-Chief: Gospodin, MK | Tech Consultant: Samyem R. Tuladhar'
+	},
+	{
+		title: 'Newsline 2022',
+		year: '2022',
+		highlight: 'Surrey Community Leader Award for Founding President Mr. Mankajee Shrestha'
+	},
+	{
+		title: 'Newsletter 2020',
+		year: '2020',
+		highlight: 'Multicultural Art Interaction Festival, Mha Puja greetings & bilateral essays'
+	}
+];
