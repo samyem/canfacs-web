@@ -37,12 +37,12 @@ export const SITE_INFO = {
 
 export const EXECUTIVE_BOARD: TeamMember[] = [
 	{
-		name: 'Mr. Navin Dhakal',
+		name: 'Dr. Meghraj Gnawali',
 		role: 'President',
-		profession: 'IB Chemistry Teacher',
+		profession: 'Pediatrician',
 		region: 'BC',
-		photo: '/team/navin-dhakal.jpg',
-		bio: 'Experienced educator and community advocate bringing scientific rigor, academic leadership, and dedicated public service to CANFACS.'
+		photo: '/team/meghraj-gnawali.jpg',
+		bio: 'Renowned medical doctor and pediatrician serving as President of CANFACS, advocating for child health initiatives, medical relief, cultural heritage, and community wellness nationwide.'
 	},
 	{
 		name: 'Ms. Bina Shrestha',
@@ -77,6 +77,14 @@ export const EXECUTIVE_BOARD: TeamMember[] = [
 		bio: 'Technology leader and software architect driving digital transformation, web platforms, and public outreach across Ontario and nationwide.'
 	},
 	{
+		name: 'Mr. Navin Dhakal',
+		role: 'Director',
+		profession: 'IB Chemistry Teacher',
+		region: 'BC',
+		photo: '/team/navin-dhakal.jpg',
+		bio: 'Experienced educator and former President bringing scientific rigor, academic leadership, and dedicated public service to CANFACS.'
+	},
+	{
 		name: 'Mr. Kiroj Shrestha',
 		role: 'Director',
 		profession: 'Design Engineer (Toronto Transit)',
@@ -109,12 +117,18 @@ export const EXECUTIVE_BOARD: TeamMember[] = [
 		bio: 'Engineering technologist focusing on material testing, quality control, and strengthening professional networks for immigrant engineers.'
 	},
 	{
-		name: 'Dr. Meghraj Gnawali',
+		name: 'Mr. Hemanta Joshi',
 		role: 'Director',
-		profession: 'Pediatrician',
-		region: 'BC',
-		photo: '/team/meghraj-gnawali.jpg',
-		bio: 'Renowned medical doctor and pediatrician advocating for child health initiatives, medical relief, and community wellness programs.'
+		profession: 'Community Advocate',
+		region: 'AB',
+		bio: 'Dedicated community leader based in Edmonton, Alberta, advocating for newcomer support, Prairie integration, and bilateral partnerships.'
+	},
+	{
+		name: 'Mr. Bal Sharma',
+		role: 'Director',
+		profession: 'Community Leader',
+		region: 'Canada',
+		bio: 'Active community representative and Board Member contributing to cultural promotion, member engagement, and nationwide outreach.'
 	}
 ];
 
