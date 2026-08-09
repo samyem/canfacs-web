@@ -3,16 +3,15 @@
 	import favicon from '$lib/assets/favicon.png';
 	import { SITE_INFO } from '$lib/data/siteData';
 
-	let { children } = $props();
+	let { data, children } = $props();
 	let isMobileMenuOpen = $state(false);
 
-	const navItems = [
+	const publicNavItems = [
 		{ label: 'Home', href: '/' },
 		{ label: 'Our Story', href: '/our-story' },
 		{ label: 'Mission & Vision', href: '/mission-and-vision' },
 		{ label: 'Team', href: '/team' },
-		{ label: 'Events & Highlights', href: '/events' },
-		{ label: 'Bhetghat', href: '/bhetghat' },
+		{ label: 'Events', href: '/events' },
 		{ label: 'Newsletters', href: '/newsletters' }
 	];
 </script>
@@ -47,20 +46,62 @@
 
 			<!-- Desktop Nav -->
 			<nav class="hidden lg:flex items-center space-x-1">
-				{#each navItems as item}
+				{#each publicNavItems as item}
 					<a
 						href={item.href}
-						class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all duration-200"
+						class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all duration-200"
 					>
 						{item.label}
 					</a>
 				{/each}
-				<a
-					href="/join-canfacs"
-					class="ml-4 px-5 py-2.5 rounded-lg text-sm font-semibold bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-lg shadow-red-600/30 hover:shadow-red-600/50 transition-all duration-200 transform hover:-translate-y-0.5"
-				>
-					Join Us
-				</a>
+
+				{#if data.user}
+					<a
+						href="/feed"
+						class="px-3 py-2 rounded-lg text-sm font-semibold text-red-400 hover:text-red-300 hover:bg-slate-800/60 transition-all"
+					>
+						🌐 Community Feed
+					</a>
+					<a
+						href="/members"
+						class="px-3 py-2 rounded-lg text-sm font-semibold text-blue-400 hover:text-blue-300 hover:bg-slate-800/60 transition-all"
+					>
+						👥 Directory
+					</a>
+					{#if data.user.role === 'admin'}
+						<a
+							href="/admin/members"
+							class="px-3 py-2 rounded-lg text-sm font-semibold text-amber-400 hover:text-amber-300 hover:bg-slate-800/60 transition-all"
+						>
+							⚡ Admin Panel
+						</a>
+					{/if}
+
+					<div class="ml-3 pl-3 border-l border-slate-800 flex items-center gap-3">
+						<span class="text-xs font-semibold text-slate-300 bg-slate-900 px-3 py-1.5 rounded-full border border-slate-800">
+							👤 {data.user.fullName}
+						</span>
+						<a
+							href="/logout"
+							class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-red-600/80 hover:text-white transition-all"
+						>
+							Logout
+						</a>
+					</div>
+				{:else}
+					<a
+						href="/login"
+						class="ml-2 px-3.5 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all"
+					>
+						Log In
+					</a>
+					<a
+						href="/join-canfacs"
+						class="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-lg shadow-red-600/30 transition-all transform hover:-translate-y-0.5"
+					>
+						Join CANFACS
+					</a>
+				{/if}
 			</nav>
 
 			<!-- Mobile Menu Button -->
@@ -82,7 +123,7 @@
 		<!-- Mobile Navigation Drawer -->
 		{#if isMobileMenuOpen}
 			<div class="lg:hidden glass-panel border-b border-slate-800 px-4 pt-3 pb-6 space-y-2">
-				{#each navItems as item}
+				{#each publicNavItems as item}
 					<a
 						href={item.href}
 						onclick={() => (isMobileMenuOpen = false)}
@@ -91,13 +132,57 @@
 						{item.label}
 					</a>
 				{/each}
-				<a
-					href="/join-canfacs"
-					onclick={() => (isMobileMenuOpen = false)}
-					class="block w-full text-center mt-4 px-4 py-3 rounded-lg text-base font-semibold bg-red-600 text-white hover:bg-red-500"
-				>
-					Join CANFACS
-				</a>
+
+				{#if data.user}
+					<a
+						href="/feed"
+						onclick={() => (isMobileMenuOpen = false)}
+						class="block px-4 py-2.5 rounded-lg text-base font-semibold text-red-400 hover:bg-slate-800"
+					>
+						🌐 Community Feed
+					</a>
+					<a
+						href="/members"
+						onclick={() => (isMobileMenuOpen = false)}
+						class="block px-4 py-2.5 rounded-lg text-base font-semibold text-blue-400 hover:bg-slate-800"
+					>
+						👥 Member Directory
+					</a>
+					{#if data.user.role === 'admin'}
+						<a
+							href="/admin/members"
+							onclick={() => (isMobileMenuOpen = false)}
+							class="block px-4 py-2.5 rounded-lg text-base font-semibold text-amber-400 hover:bg-slate-800"
+						>
+							⚡ Admin Panel
+						</a>
+					{/if}
+					<div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+						<span class="text-sm font-semibold text-slate-300">👤 {data.user.fullName}</span>
+						<a
+							href="/logout"
+							onclick={() => (isMobileMenuOpen = false)}
+							class="px-4 py-2 rounded-lg text-xs font-semibold bg-red-600/80 text-white"
+						>
+							Logout
+						</a>
+					</div>
+				{:else}
+					<a
+						href="/login"
+						onclick={() => (isMobileMenuOpen = false)}
+						class="block w-full text-center mt-2 px-4 py-2.5 rounded-lg text-base font-medium text-slate-200 bg-slate-800"
+					>
+						Log In
+					</a>
+					<a
+						href="/join-canfacs"
+						onclick={() => (isMobileMenuOpen = false)}
+						class="block w-full text-center mt-2 px-4 py-3 rounded-lg text-base font-semibold bg-red-600 text-white hover:bg-red-500"
+					>
+						Join CANFACS
+					</a>
+				{/if}
 			</div>
 		{/if}
 	</header>

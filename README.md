@@ -1,42 +1,77 @@
-# sv
+# 🍁 CANFACS Web Platform
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+**Canada-Nepal Friendship and Cultural Society (CANFACS)**  
+A modern, nationwide web portal and community platform connecting members across Canada, celebrating bilateral culture, managing executive & advisory boards, and providing a member portal with D1/R2 cloud infrastructure.
 
-## Creating a project
+---
 
-If you're seeing this, you've probably already done this step. Congrats!
+## 🚀 Features
 
-```sh
-# create a new project
-npx sv create my-app
+- **Executive & Advisory Board Directory**: Detailed leadership and advisor profiles with high-resolution portraits and credentials.
+- **Membership Registration (`/join-canfacs`)**: Public application form saving candidate applications into Cloudflare D1 database in a `pending` state.
+- **Admin Management Panel (`/admin/members`)**:
+  - Secure admin control panel to review, approve, or deny membership applications.
+  - Automatic temporary password generation upon approval with 1-click clipboard copy.
+- **Protected Member Portal (`/members`)**: Searchable member directory filtered by province, profession, or bio (requires member login).
+- **Social Community Feed (`/feed`)**:
+  - Facebook/LinkedIn-style member feed.
+  - Image attachments uploaded to Cloudflare R2 object storage (`IMAGES_BUCKET`).
+  - Interactive **Likes**, **Threaded Comments** (with image support), and **Reshares**.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: [SvelteKit](https://svelte.dev) 5 (TypeScript)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com) v4 & Vanilla CSS Glassmorphism
+- **Hosting & Serverless**: [Cloudflare Pages & Workers](https://pages.cloudflare.com) (`@sveltejs/adapter-cloudflare`)
+- **Database**: [Cloudflare D1](https://developers.cloudflare.com/d1/) (Serverless SQLite)
+- **Object Storage**: [Cloudflare R2](https://developers.cloudflare.com/r2/) (`IMAGES_BUCKET`)
+
+---
+
+## 📦 Getting Started
+
+### 1. Install Dependencies
+```bash
+npm install
 ```
 
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-npx sv@0.17.0 create --template minimal --types ts --add sveltekit-adapter="adapter:cloudflare+cfTarget:workers" prettier eslint vitest="usages:unit" tailwindcss="plugins:forms" --install npm ./
+### 2. Initialize Database Schema (Local Dev)
+```bash
+npm run db:setup:local
 ```
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
+### 3. Start Development Server
+```bash
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+Visit `http://localhost:5173` in your browser.
 
-To create a production version of your app:
+---
 
-```sh
-npm run build
-```
+## 🔑 Initial Admin Credentials
 
-You can preview the production build with `npm run preview`.
+To access `/admin/members` in development or production:
+- **Email**: `info@canfacs.org`
+- **Password**: `CANFACS2026!2437`
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+---
+
+## 🗄️ Database & Deployment Scripts
+
+| Command | Description |
+| :--- | :--- |
+| `npm run dev` | Starts local SvelteKit development server |
+| `npm run check` | Runs TypeScript & Svelte diagnostics (`wrangler types --check` + `svelte-check`) |
+| `npm run db:setup:local` | Applies `schema.sql` to local Cloudflare D1 database |
+| `npm run db:setup:remote` | Applies `schema.sql` to production Cloudflare D1 database |
+| `npm run gen` | Regenerates Wrangler TypeScript types (`wrangler types`) |
+| `npm run build` | Builds production bundle for Cloudflare Pages deployment |
+
+---
+
+## 📄 License & Attribution
+
+© 2016 - 2026 Canada-Nepal Friendship and Cultural Society. All rights reserved.
