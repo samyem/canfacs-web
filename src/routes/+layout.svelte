@@ -219,6 +219,7 @@
 					<li><a href="/team" class="hover:text-red-400 transition-colors">Executive Team</a></li>
 					<li><a href="/events" class="hover:text-red-400 transition-colors">Events & Everest Day</a></li>
 					<li><a href="/join-canfacs" class="hover:text-red-400 transition-colors">Membership Form</a></li>
+					<li><a href="/login" class="hover:text-red-400 font-semibold transition-colors">🔑 Member Login</a></li>
 				</ul>
 			</div>
 
