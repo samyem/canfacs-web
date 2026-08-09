@@ -5,6 +5,8 @@ export interface TeamMember {
 	bio?: string;
 	photo?: string;
 	region?: string;
+	subname?: string;
+	credentials?: string;
 }
 
 export interface NewsItem {
@@ -133,7 +135,45 @@ export const EXECUTIVE_BOARD: TeamMember[] = [
 ];
 
 export const ADVISORY_BOARD: TeamMember[] = [
-	{ name: 'Er. Mankajee Shrestha ‘Jena’, P. Eng.', role: 'Founding President & Senior Advisor' },
+	{
+		name: 'Mr. Mackenzie Ami Gospodin',
+		subname: '(Er. Mankajee Shrestha)',
+		credentials: 'P.Eng., M.Eng. ABA, SEMACP',
+		role: 'Founder President of CANFACS',
+		photo: '/team/mackenzie-gospodin.jpg'
+	},
+	{
+		name: 'Dr. Drona Prakash Rasali',
+		credentials: 'BVSc, PGT, MS, PhD, FACE, DSFV',
+		role: 'Founder Vice President of CANFACS',
+		photo: '/team/drona-rasali.jpg'
+	},
+	{
+		name: 'Claude A. Charette',
+		profession: 'Fonctionnaire chez Govt.',
+		role: 'Past President of CANFACS',
+		photo: '/team/claude-charette.jpg'
+	},
+	{
+		name: 'Hon. Randeep Sarai',
+		profession: 'Member of Parliament (MP)',
+		region: 'Surrey Centre, BC',
+		role: 'Advisory Board Member',
+		photo: '/team/randeep-sarai.jpg'
+	},
+	{
+		name: 'Hon. Chris Considine',
+		credentials: '(K.C.) Lawyer',
+		role: 'Honorable Consul General of Nepal',
+		photo: '/team/chris-considine.jpg'
+	},
+	{
+		name: 'Dr. William Osei',
+		profession: 'Osei Global Health Incorporated',
+		credentials: 'MD, MPH FACE',
+		role: 'Advisory Board Member',
+		photo: '/team/william-osei.jpg'
+	},
 	{ name: 'Dr. Ram Krishna Mahat', role: 'Advisory Board Member' },
 	{ name: 'Prof. Dr. Govinda Dahal', role: 'Advisory Board Member' },
 	{ name: 'Dr. Tula Datta Paudel', role: 'Advisory Board Member' },
