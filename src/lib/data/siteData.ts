@@ -79,14 +79,6 @@ export const EXECUTIVE_BOARD: TeamMember[] = [
 		bio: 'Technology leader and software architect driving digital transformation, web platforms, and public outreach across Ontario and nationwide.'
 	},
 	{
-		name: 'Mr. Navin Dhakal',
-		role: 'Director',
-		profession: 'IB Chemistry Teacher',
-		region: 'BC',
-		photo: '/team/navin-dhakal.jpg',
-		bio: 'Experienced educator and former President bringing scientific rigor, academic leadership, and dedicated public service to CANFACS.'
-	},
-	{
 		name: 'Mr. Kiroj Shrestha',
 		role: 'Director',
 		profession: 'Design Engineer (Toronto Transit)',
@@ -173,6 +165,14 @@ export const ADVISORY_BOARD: TeamMember[] = [
 		credentials: 'MD, MPH FACE',
 		role: 'Advisory Board Member',
 		photo: '/team/william-osei.jpg'
+	},
+	{
+		name: 'Mr. Navin Dhakal',
+		role: 'Advisory Board Member',
+		profession: 'IB Chemistry Teacher',
+		region: 'BC',
+		photo: '/team/navin-dhakal.jpg',
+		bio: 'Experienced educator and former President bringing scientific rigor, academic leadership, and dedicated public service to CANFACS.'
 	},
 	{ name: 'Dr. Ram Krishna Mahat', role: 'Advisory Board Member' },
 	{ name: 'Prof. Dr. Govinda Dahal', role: 'Advisory Board Member' },
