@@ -141,6 +141,14 @@ export const ADVISORY_BOARD: TeamMember[] = [
 		photo: '/team/drona-rasali.jpg'
 	},
 	{
+		name: 'Mr. Navin Dhakal',
+		role: 'Founding Secretary General of CANFACS',
+		profession: 'IB Chemistry Teacher',
+		region: 'BC',
+		photo: '/team/navin-dhakal.jpg',
+		bio: 'Experienced educator bringing scientific rigor, academic leadership, and dedicated public service to CANFACS.'
+	},
+	{
 		name: 'Claude A. Charette',
 		profession: 'Fonctionnaire chez Govt.',
 		role: 'Past President of CANFACS',
@@ -165,20 +173,7 @@ export const ADVISORY_BOARD: TeamMember[] = [
 		credentials: 'MD, MPH FACE',
 		role: 'Advisory Board Member',
 		photo: '/team/william-osei.jpg'
-	},
-	{
-		name: 'Mr. Navin Dhakal',
-		role: 'Advisory Board Member',
-		profession: 'IB Chemistry Teacher',
-		region: 'BC',
-		photo: '/team/navin-dhakal.jpg',
-		bio: 'Experienced educator and former President bringing scientific rigor, academic leadership, and dedicated public service to CANFACS.'
-	},
-	{ name: 'Dr. Ram Krishna Mahat', role: 'Advisory Board Member' },
-	{ name: 'Prof. Dr. Govinda Dahal', role: 'Advisory Board Member' },
-	{ name: 'Dr. Tula Datta Paudel', role: 'Advisory Board Member' },
-	{ name: 'Dr. Bishwa Adhikari', role: 'Advisory Board Member' },
-	{ name: 'Mr. Gopal Bhandari', role: 'Advisory Board Member' }
+	}
 ];
 
 export const PURPOSES = [
