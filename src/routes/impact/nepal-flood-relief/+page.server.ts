@@ -25,7 +25,13 @@ export const load: PageServerLoad = async ({ platform }) => {
 	}
 
 	const donations = rawDonations
-		.filter((d) => d.id !== 'don-bod-05')
+		.filter((d) => {
+			if (d.id === 'don-bod-05') return false;
+			const isSamyem = d.donor_name.toLowerCase().includes('samyem') || d.email?.toLowerCase().includes('samyem');
+			const isSquare = d.id.startsWith('sq_') || (d.message && d.message.toLowerCase().includes('square'));
+			if (isSamyem && !isSquare) return false;
+			return true;
+		})
 		.map((d) => ({
 			...d,
 			message: cleanDonorMessage(d.message)

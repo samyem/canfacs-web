@@ -504,9 +504,6 @@ async function ensureDonationsTable(db: any) {
 			`)
 			.run();
 
-		// Ensure historical non-Square seed entry don-bod-05 is removed from production D1
-		await db.prepare(`DELETE FROM donations WHERE id = 'don-bod-05'`).run();
-
 		// Check if table is empty, if so seed initial donations
 		const countRes = await db
 			.prepare(`SELECT COUNT(*) as count FROM donations WHERE campaign_id = 'nepal-flood-2024'`)
@@ -542,7 +539,7 @@ export async function getDonations(db: any, campaignId = 'nepal-flood-2024'): Pr
 	if (db) {
 		await ensureDonationsTable(db);
 		const res = await db
-			.prepare(`SELECT * FROM donations WHERE campaign_id = ? AND id != 'don-bod-05' ORDER BY created_at DESC`)
+			.prepare(`SELECT * FROM donations WHERE campaign_id = ? ORDER BY created_at DESC`)
 			.bind(campaignId)
 			.all();
 		return (res.results || []).map((r: any) => ({
@@ -552,7 +549,7 @@ export async function getDonations(db: any, campaignId = 'nepal-flood-2024'): Pr
 	}
 
 	return memoryDonations
-		.filter((d) => d.campaign_id === campaignId && d.id !== 'don-bod-05')
+		.filter((d) => d.campaign_id === campaignId)
 		.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
