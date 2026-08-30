@@ -19,11 +19,37 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 	}
 
 	const db = getDb(platform);
-	const campaigns = await getCampaigns(db);
+	const rawCampaigns = await getCampaigns(db);
 	const selectedCampaignId = url.searchParams.get('campaign') || NEPAL_FLOOD_RELIEF_CAMPAIGN.id;
 
+	// Load donations and disbursements for the selected campaign
 	const donations = await getDonations(db, selectedCampaignId);
 	const disbursements = await getDisbursements(db, selectedCampaignId);
+
+	// Compute stats for all campaigns
+	const campaigns = await Promise.all(
+		rawCampaigns.map(async (c) => {
+			const cDonations = await getDonations(db, c.id);
+			const cDisbursements = await getDisbursements(db, c.id);
+			const cRaised = cDonations.reduce((sum, d) => sum + Number(d.amount), 0);
+			const cReceived = cDonations.filter((d) => d.status === 'received').reduce((sum, d) => sum + Number(d.amount), 0);
+			const cPledged = cDonations.filter((d) => d.status === 'pledged').reduce((sum, d) => sum + Number(d.amount), 0);
+			const cDisbursed = cDisbursements.reduce((sum, d) => sum + Number(d.amount), 0);
+			return {
+				...c,
+				stats: {
+					totalRaised: cRaised,
+					totalReceived: cReceived,
+					totalPledged: cPledged,
+					totalDisbursed: cDisbursed,
+					donorCount: cDonations.length,
+					netBalance: cReceived - cDisbursed
+				}
+			};
+		})
+	);
+
+	const selectedCampaign = campaigns.find((c) => c.id === selectedCampaignId) || campaigns[0];
 
 	const totalRaised = donations.reduce((sum, d) => sum + Number(d.amount), 0);
 	const totalReceived = donations
@@ -38,6 +64,7 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 	return {
 		campaigns,
 		selectedCampaignId,
+		selectedCampaign,
 		donations,
 		disbursements,
 		stats: {
@@ -54,6 +81,33 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 };
 
 export const actions: Actions = {
+	createCampaign: async ({ request, locals, platform }) => {
+		if (!locals.user || locals.user.role !== 'admin') {
+			return fail(403, { error: 'Unauthorized' });
+		}
+
+		const formData = await request.formData();
+		const id = formData.get('id')?.toString().trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+		const title = formData.get('title')?.toString().trim();
+		const subtitle = formData.get('subtitle')?.toString().trim() || undefined;
+		const target_goal = parseFloat(formData.get('target_goal')?.toString() || '10000');
+
+		if (!id || !title || isNaN(target_goal) || target_goal <= 0) {
+			return fail(400, { error: 'Please provide valid campaign ID, Title, and Target Goal.' });
+		}
+
+		const db = getDb(platform);
+		const { createCampaign } = await import('$lib/server/db');
+		await createCampaign(db, {
+			id,
+			title,
+			subtitle,
+			target_goal,
+			is_active: true
+		});
+
+		return { success: true, message: `Created new initiative "${title}" successfully.` };
+	},
 	addDonation: async ({ request, locals, platform }) => {
 		if (!locals.user || locals.user.role !== 'admin') {
 			return fail(403, { error: 'Unauthorized' });

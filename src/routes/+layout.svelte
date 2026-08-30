@@ -107,24 +107,12 @@
 					>
 						👥 Directory
 					</a>
-					{#if data.user.role === 'admin'}
-						<a
-							href="/admin/members"
-							class="px-3 py-2 rounded-lg text-sm font-semibold text-amber-400 hover:text-amber-300 hover:bg-slate-800/60 transition-all"
-						>
-							⚡ Members
-						</a>
-						<a
-							href="/admin/fundraising"
-							class="px-3 py-2 rounded-lg text-sm font-semibold text-rose-400 hover:text-rose-300 hover:bg-slate-800/60 transition-all"
-						>
-							💰 Fundraising
-						</a>
-					{/if}
-
 					<div class="ml-3 pl-3 border-l border-slate-800 flex items-center gap-3">
 						<span class="text-xs font-semibold text-slate-300 bg-slate-900 px-3 py-1.5 rounded-full border border-slate-800">
 							👤 {data.user.fullName}
+							{#if data.user.role === 'admin'}
+								<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase">Admin</span>
+							{/if}
 						</span>
 						<a
 							href="/logout"
@@ -238,6 +226,43 @@
 			</div>
 		{/if}
 	</header>
+
+	<!-- Admin Secondary Navigation Bar (Visible to Admins) -->
+	{#if data.user && data.user.role === 'admin'}
+		<nav aria-label="Admin Navigation" class="bg-slate-900/95 border-b border-amber-500/20 py-2 px-4 sm:px-6 lg:px-8 shadow-md backdrop-blur-sm sticky top-20 z-40">
+			<div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
+				<div class="flex items-center gap-2">
+					<span class="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 font-bold border border-amber-500/30 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+						<span>🛡️</span>
+						<span>Admin Center</span>
+					</span>
+					<span class="text-slate-500 hidden sm:inline">•</span>
+					<span class="text-slate-400 hidden sm:inline font-medium">Executive Management</span>
+				</div>
+
+				<div class="flex items-center gap-2">
+					<a
+						href="/admin/members"
+						class="px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 {data.pathname === '/admin/members'
+							? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
+							: 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'}"
+					>
+						<span>👥</span>
+						<span>Member Governance</span>
+					</a>
+					<a
+						href="/admin/fundraising"
+						class="px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 {data.pathname === '/admin/fundraising'
+							? 'bg-red-600 text-white font-bold shadow-md shadow-red-600/20'
+							: 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'}"
+					>
+						<span>💰</span>
+						<span>Fundraising & Relief</span>
+					</a>
+				</div>
+			</div>
+		</nav>
+	{/if}
 
 	<!-- Main Page Content -->
 	<main class="flex-grow">

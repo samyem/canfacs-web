@@ -3,15 +3,32 @@
 
 	let { data, form } = $props();
 
-	// State
-	let activeTab = $state<'donations' | 'disbursements' | 'overview'>('donations');
+	// Tabs & Filter State
+	let activeTab = $state<'donations' | 'disbursements' | 'initiatives'>('donations');
 	let statusFilter = $state<'all' | 'pledged' | 'received'>('all');
 	let searchQuery = $state('');
+
+	// Sorting State
+	type SortField = 'date' | 'amount' | 'name' | 'status';
+	type SortDir = 'asc' | 'desc';
+
+	let sortField = $state<SortField>('date');
+	let sortDirection = $state<SortDir>('desc');
+
+	function toggleSort(field: SortField) {
+		if (sortField === field) {
+			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+		} else {
+			sortField = field;
+			sortDirection = field === 'date' || field === 'amount' ? 'desc' : 'asc';
+		}
+	}
 
 	// Modals
 	let showAddDonationModal = $state(false);
 	let showEditDonationModal = $state(false);
 	let showAddDisbursementModal = $state(false);
+	let showCreateCampaignModal = $state(false);
 	let editingDonation = $state<any>(null);
 
 	const filteredDonations = $derived(
@@ -27,9 +44,30 @@
 		})
 	);
 
+	const sortedDonations = $derived(
+		[...filteredDonations].sort((a: any, b: any) => {
+			let diff = 0;
+			if (sortField === 'date') {
+				diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+			} else if (sortField === 'amount') {
+				diff = Number(a.amount) - Number(b.amount);
+			} else if (sortField === 'name') {
+				diff = a.donor_name.localeCompare(b.donor_name);
+			} else if (sortField === 'status') {
+				diff = a.status.localeCompare(b.status);
+			}
+			return sortDirection === 'asc' ? diff : -diff;
+		})
+	);
+
 	function openEditModal(donation: any) {
 		editingDonation = { ...donation };
 		showEditDonationModal = true;
+	}
+
+	function changeCampaign(e: Event) {
+		const select = e.currentTarget as HTMLSelectElement;
+		window.location.href = `/admin/fundraising?campaign=${select.value}`;
 	}
 </script>
 
@@ -39,7 +77,7 @@
 
 <section class="py-10 bg-slate-950 min-h-screen text-slate-100">
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-		<!-- Top Bar & Admin Nav -->
+		<!-- Top Bar & Active Initiative Selector -->
 		<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
 			<div>
 				<div class="flex items-center gap-2 mb-2">
@@ -55,20 +93,21 @@
 				</p>
 			</div>
 
-			<!-- Admin Section Switcher -->
-			<div class="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
-				<a
-					href="/admin/members"
-					class="px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+			<!-- Quick Initiative Switcher -->
+			<div class="flex items-center gap-3 bg-slate-900/90 p-2 rounded-2xl border border-slate-800 shadow">
+				<label for="campaign_selector" class="text-xs font-semibold text-slate-400 pl-2">
+					🎯 Initiative:
+				</label>
+				<select
+					id="campaign_selector"
+					class="px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs font-bold text-white focus:outline-none focus:border-red-500 cursor-pointer"
+					value={data.selectedCampaignId}
+					onchange={changeCampaign}
 				>
-					👥 Member Governance
-				</a>
-				<a
-					href="/admin/fundraising"
-					class="px-4 py-2 rounded-lg bg-red-600 text-white shadow"
-				>
-					💰 Fundraising & Relief
-				</a>
+					{#each data.campaigns as camp}
+						<option value={camp.id}>{camp.title}</option>
+					{/each}
+				</select>
 			</div>
 		</div>
 
@@ -79,7 +118,7 @@
 			</div>
 		{/if}
 
-		<!-- Key Financial Metric Cards -->
+		<!-- Key Financial Metric Cards (Current Initiative) -->
 		<div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
 			<!-- Total Campaign Volume -->
 			<div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 shadow">
@@ -134,20 +173,27 @@
 
 		<!-- Tabs Bar & Action Buttons -->
 		<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-			<div class="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+			<div class="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-semibold overflow-x-auto">
 				<button
 					type="button"
 					onclick={() => (activeTab = 'donations')}
-					class="px-4 py-2 rounded-lg transition-all {activeTab === 'donations' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'}"
+					class="px-4 py-2 rounded-lg transition-all whitespace-nowrap {activeTab === 'donations' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'}"
 				>
 					❤️ Donations & Pledges ({data.donations.length})
 				</button>
 				<button
 					type="button"
 					onclick={() => (activeTab = 'disbursements')}
-					class="px-4 py-2 rounded-lg transition-all {activeTab === 'disbursements' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'}"
+					class="px-4 py-2 rounded-lg transition-all whitespace-nowrap {activeTab === 'disbursements' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'}"
 				>
 					🏛️ Disbursements Ledger ({data.disbursements.length})
+				</button>
+				<button
+					type="button"
+					onclick={() => (activeTab = 'initiatives')}
+					class="px-4 py-2 rounded-lg transition-all whitespace-nowrap {activeTab === 'initiatives' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'}"
+				>
+					🎯 Initiatives & Programs ({data.campaigns.length})
 				</button>
 			</div>
 
@@ -168,6 +214,14 @@
 					>
 						<span>+ Record New Disbursement</span>
 					</button>
+				{:else if activeTab === 'initiatives'}
+					<button
+						type="button"
+						onclick={() => (showCreateCampaignModal = true)}
+						class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg transition-all flex items-center gap-1.5"
+					>
+						<span>+ Launch New Initiative</span>
+					</button>
 				{/if}
 			</div>
 		</div>
@@ -175,8 +229,9 @@
 		<!-- Tab 1: Donations & Pledges -->
 		{#if activeTab === 'donations'}
 			<div class="space-y-4">
-				<!-- Search and Filter Controls -->
-				<div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+				<!-- Search, Filter & Mobile Sort Controls -->
+				<div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+					<!-- Search Field -->
 					<div class="relative w-full sm:w-80">
 						<input
 							type="text"
@@ -187,54 +242,123 @@
 						<span class="absolute inset-y-0 left-0 pl-3 flex items-center text-xs text-slate-500">🔍</span>
 					</div>
 
-					<div class="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
-						<button
-							type="button"
-							onclick={() => (statusFilter = 'all')}
-							class="px-3 py-1.5 rounded-lg {statusFilter === 'all' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}"
-						>
-							All ({data.donations.length})
-						</button>
-						<button
-							type="button"
-							onclick={() => (statusFilter = 'received')}
-							class="px-3 py-1.5 rounded-lg {statusFilter === 'received' ? 'bg-emerald-950 border border-emerald-800 text-emerald-300' : 'text-slate-400 hover:text-white'}"
-						>
-							✅ Received ({data.stats.receivedCount})
-						</button>
-						<button
-							type="button"
-							onclick={() => (statusFilter = 'pledged')}
-							class="px-3 py-1.5 rounded-lg {statusFilter === 'pledged' ? 'bg-amber-950 border border-amber-800 text-amber-300' : 'text-slate-400 hover:text-white'}"
-						>
-							⏳ Pledged ({data.stats.pledgedCount})
-						</button>
+					<div class="flex flex-wrap items-center gap-2">
+						<!-- Status Filter Buttons -->
+						<div class="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+							<button
+								type="button"
+								onclick={() => (statusFilter = 'all')}
+								class="px-3 py-1.5 rounded-lg {statusFilter === 'all' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}"
+							>
+								All ({data.donations.length})
+							</button>
+							<button
+								type="button"
+								onclick={() => (statusFilter = 'received')}
+								class="px-3 py-1.5 rounded-lg {statusFilter === 'received' ? 'bg-emerald-950 border border-emerald-800 text-emerald-300' : 'text-slate-400 hover:text-white'}"
+							>
+								✅ Received ({data.stats.receivedCount})
+							</button>
+							<button
+								type="button"
+								onclick={() => (statusFilter = 'pledged')}
+								class="px-3 py-1.5 rounded-lg {statusFilter === 'pledged' ? 'bg-amber-950 border border-amber-800 text-amber-300' : 'text-slate-400 hover:text-white'}"
+							>
+								⏳ Pledged ({data.stats.pledgedCount})
+							</button>
+						</div>
+
+						<!-- Quick Sort Dropdown for Mobile / Accessibility -->
+						<div class="flex items-center gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-800 text-xs text-slate-400">
+							<span class="text-[11px] font-semibold pl-1">Sort:</span>
+							<select
+								bind:value={sortField}
+								class="bg-slate-950 border border-slate-800 text-white rounded-lg px-2 py-1 text-xs focus:outline-none"
+							>
+								<option value="date">Date</option>
+								<option value="amount">Amount</option>
+								<option value="name">Donor Name</option>
+								<option value="status">Status</option>
+							</select>
+							<button
+								type="button"
+								onclick={() => (sortDirection = sortDirection === 'asc' ? 'desc' : 'asc')}
+								class="px-2 py-1 rounded-lg bg-slate-800 text-white font-bold hover:bg-slate-700"
+								title="Toggle sort direction"
+							>
+								{sortDirection === 'asc' ? '▲ Asc' : '▼ Desc'}
+							</button>
+						</div>
 					</div>
 				</div>
 
-				<!-- Table of Donations -->
+				<!-- Table of Donations with Clickable Column Sorting -->
 				<div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow">
 					<div class="overflow-x-auto">
 						<table class="w-full text-left text-xs">
-							<thead class="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+							<thead class="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800 select-none">
 								<tr>
-									<th class="py-3.5 px-4">Donor Name</th>
-									<th class="py-3.5 px-4">Amount (CAD)</th>
-									<th class="py-3.5 px-4">Status</th>
-									<th class="py-3.5 px-4">Date</th>
+									<!-- Donor Name Sortable Column -->
+									<th class="py-3.5 px-4 cursor-pointer hover:text-white transition-colors" onclick={() => toggleSort('name')}>
+										<div class="flex items-center gap-1.5">
+											<span>Donor Name</span>
+											{#if sortField === 'name'}
+												<span class="text-red-400">{sortDirection === 'asc' ? '▲' : '▼'}</span>
+											{:else}
+												<span class="text-slate-600">↕</span>
+											{/if}
+										</div>
+									</th>
+
+									<!-- Amount Sortable Column -->
+									<th class="py-3.5 px-4 cursor-pointer hover:text-white transition-colors" onclick={() => toggleSort('amount')}>
+										<div class="flex items-center gap-1.5">
+											<span>Amount (CAD)</span>
+											{#if sortField === 'amount'}
+												<span class="text-red-400">{sortDirection === 'asc' ? '▲' : '▼'}</span>
+											{:else}
+												<span class="text-slate-600">↕</span>
+											{/if}
+										</div>
+									</th>
+
+									<!-- Status Sortable Column -->
+									<th class="py-3.5 px-4 cursor-pointer hover:text-white transition-colors" onclick={() => toggleSort('status')}>
+										<div class="flex items-center gap-1.5">
+											<span>Status</span>
+											{#if sortField === 'status'}
+												<span class="text-red-400">{sortDirection === 'asc' ? '▲' : '▼'}</span>
+											{:else}
+												<span class="text-slate-600">↕</span>
+											{/if}
+										</div>
+									</th>
+
+									<!-- Date Sortable Column -->
+									<th class="py-3.5 px-4 cursor-pointer hover:text-white transition-colors" onclick={() => toggleSort('date')}>
+										<div class="flex items-center gap-1.5">
+											<span>Date</span>
+											{#if sortField === 'date'}
+												<span class="text-red-400">{sortDirection === 'asc' ? '▲' : '▼'}</span>
+											{:else}
+												<span class="text-slate-600">↕</span>
+											{/if}
+										</div>
+									</th>
+
 									<th class="py-3.5 px-4">Message / Purpose</th>
 									<th class="py-3.5 px-4 text-right">Actions</th>
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-slate-800/60">
-								{#if filteredDonations.length === 0}
+								{#if sortedDonations.length === 0}
 									<tr>
 										<td colspan="6" class="py-8 text-center text-slate-500">
 											No donations matching current criteria.
 										</td>
 									</tr>
 								{:else}
-									{#each filteredDonations as don}
+									{#each sortedDonations as don}
 										<tr class="hover:bg-slate-800/40 transition-colors">
 											<td class="py-3.5 px-4">
 												<div class="font-bold text-white flex items-center gap-1.5">
@@ -348,7 +472,7 @@
 					<div class="divide-y divide-slate-800/60">
 						{#if data.disbursements.length === 0}
 							<div class="py-12 text-center text-slate-500 text-xs">
-								No disbursements recorded yet. Click "+ Record New Disbursement" to add one.
+								No disbursements recorded for this initiative yet. Click "+ Record New Disbursement" to add one.
 							</div>
 						{:else}
 							{#each data.disbursements as disb}
@@ -422,6 +546,85 @@
 							{/each}
 						{/if}
 					</div>
+				</div>
+			</div>
+		{/if}
+
+		<!-- Tab 3: Initiatives & Programs Directory -->
+		{#if activeTab === 'initiatives'}
+			<div class="space-y-6">
+				<div class="flex items-center justify-between">
+					<div>
+						<h3 class="font-bold text-white text-lg">All Society Fundraising Programs</h3>
+						<p class="text-xs text-slate-400">Manage fundraising programs, goals, target balances, and campaign lifecycles.</p>
+					</div>
+					<button
+						type="button"
+						onclick={() => (showCreateCampaignModal = true)}
+						class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow transition-all"
+					>
+						+ Launch New Initiative
+					</button>
+				</div>
+
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					{#each data.campaigns as camp}
+						<div class="bg-slate-900/90 border border-slate-800 p-6 rounded-3xl space-y-5 shadow-xl relative {camp.id === data.selectedCampaignId ? 'ring-2 ring-red-500/50' : ''}">
+							{#if camp.id === data.selectedCampaignId}
+								<div class="absolute top-4 right-4 px-2.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-bold">
+									Currently Viewing
+								</div>
+							{/if}
+
+							<div class="space-y-1">
+								<div class="flex items-center gap-2">
+									<span class="text-xl">🎯</span>
+									<h4 class="font-extrabold text-white text-base">{camp.title}</h4>
+								</div>
+								<div class="text-[11px] font-mono text-slate-500">ID: {camp.id}</div>
+								{#if camp.subtitle}
+									<p class="text-xs text-slate-400 pt-1 leading-relaxed">{camp.subtitle}</p>
+								{/if}
+							</div>
+
+							<!-- Financial Stats Grid -->
+							<div class="grid grid-cols-3 gap-2 bg-slate-950/70 p-3 rounded-2xl border border-slate-800 text-center">
+								<div>
+									<div class="text-[10px] uppercase font-bold text-slate-400">Target</div>
+									<div class="text-sm font-black text-white mt-0.5">${Number(camp.target_goal).toLocaleString('en-CA')}</div>
+								</div>
+								<div>
+									<div class="text-[10px] uppercase font-bold text-emerald-400">Received</div>
+									<div class="text-sm font-black text-emerald-400 mt-0.5">${Number(camp.stats.totalReceived).toLocaleString('en-CA')}</div>
+								</div>
+								<div>
+									<div class="text-[10px] uppercase font-bold text-blue-400">Disbursed</div>
+									<div class="text-sm font-black text-blue-400 mt-0.5">${Number(camp.stats.totalDisbursed).toLocaleString('en-CA')}</div>
+								</div>
+							</div>
+
+							<!-- Action Buttons -->
+							<div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+								<a
+									href="/admin/fundraising?campaign={camp.id}"
+									class="px-4 py-2 rounded-xl text-xs font-bold {camp.id === data.selectedCampaignId ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'} transition-all"
+								>
+									{camp.id === data.selectedCampaignId ? 'Managing This Initiative' : 'Switch & Manage'}
+								</a>
+
+								{#if camp.id === 'nepal-flood-2024'}
+									<a
+										href="/impact/nepal-flood-relief"
+										target="_blank"
+										class="text-xs font-semibold text-red-400 hover:underline flex items-center gap-1"
+									>
+										<span>View Public Page</span>
+										<span>&rarr;</span>
+									</a>
+								{/if}
+							</div>
+						</div>
+					{/each}
 				</div>
 			</div>
 		{/if}
@@ -760,6 +963,86 @@
 						class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow"
 					>
 						Record Disbursement
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}
+
+<!-- Create Campaign Modal -->
+{#if showCreateCampaignModal}
+	<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+		<div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5">
+			<div class="flex items-center justify-between border-b border-slate-800 pb-4">
+				<h3 class="text-lg font-bold text-white">Launch New Fundraising Initiative</h3>
+				<button type="button" onclick={() => (showCreateCampaignModal = false)} class="text-slate-400 hover:text-white text-lg">✕</button>
+			</div>
+
+			<form method="POST" action="?/createCampaign" use:enhance={() => {
+				showCreateCampaignModal = false;
+			}} class="space-y-4 text-xs">
+				<div>
+					<label for="camp_title" class="block font-bold text-slate-300 mb-1">Initiative Title *</label>
+					<input
+						id="camp_title"
+						name="title"
+						type="text"
+						required
+						placeholder="e.g. Nepal Flood Emergency Relief & Rehabilitation Fund"
+						class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-red-500"
+					/>
+				</div>
+
+				<div>
+					<label for="camp_id" class="block font-bold text-slate-300 mb-1">Unique Initiative ID (Slug) *</label>
+					<input
+						id="camp_id"
+						name="id"
+						type="text"
+						required
+						placeholder="e.g. nepal-flood-2024 or everest-day-scholarship"
+						class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-red-500 font-mono"
+					/>
+				</div>
+
+				<div>
+					<label for="camp_goal" class="block font-bold text-slate-300 mb-1">Target Goal (CAD) *</label>
+					<input
+						id="camp_goal"
+						name="target_goal"
+						type="number"
+						min="100"
+						required
+						placeholder="10000"
+						class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-red-500"
+					/>
+				</div>
+
+				<div>
+					<label for="camp_subtitle" class="block font-bold text-slate-300 mb-1">Brief Description / Mission</label>
+					<textarea
+						id="camp_subtitle"
+						name="subtitle"
+						rows="2"
+						placeholder="Supporting flood-affected communities across Nepal..."
+						class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-red-500"
+					></textarea>
+				</div>
+
+				<div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+					<button
+						type="button"
+						onclick={() => (showCreateCampaignModal = false)}
+						class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold"
+					>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow"
+					>
+						Create Initiative
 					</button>
 				</div>
 			</form>
