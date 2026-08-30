@@ -1,6 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
-import { getDb, getDonations, createDonation } from '$lib/server/db';
+import { getDb, getDonations, createDonation, getDisbursements } from '$lib/server/db';
 import { NEPAL_FLOOD_RELIEF_CAMPAIGN } from '$lib/data/siteData';
 import { getSquareConfig, getOrFetchLocationId, processSquarePayment } from '$lib/server/square';
 import { sendDonationConfirmationEmail } from '$lib/server/email';
@@ -18,6 +18,7 @@ export const load: PageServerLoad = async ({ platform }) => {
 	const db = getDb(platform);
 	const rawDonations = await getDonations(db, NEPAL_FLOOD_RELIEF_CAMPAIGN.id);
 	const square = getSquareConfig(platform);
+	const disbursements = await getDisbursements(db, NEPAL_FLOOD_RELIEF_CAMPAIGN.id);
 
 	let resolvedLocationId = square.locationId;
 	if (square.isConfigured && !resolvedLocationId) {
@@ -38,14 +39,23 @@ export const load: PageServerLoad = async ({ platform }) => {
 		}));
 
 	const totalRaised = donations.reduce((sum, d) => sum + Number(d.amount), 0);
+	const totalReceived = donations
+		.filter((d) => d.status === 'received')
+		.reduce((sum, d) => sum + Number(d.amount), 0);
+	const totalPledged = donations
+		.filter((d) => d.status === 'pledged')
+		.reduce((sum, d) => sum + Number(d.amount), 0);
 	const targetGoal = NEPAL_FLOOD_RELIEF_CAMPAIGN.targetGoalCAD;
 	const percentRaised = Math.min(100, Math.round((totalRaised / targetGoal) * 100));
 
 	return {
 		campaign: NEPAL_FLOOD_RELIEF_CAMPAIGN,
 		donations,
+		disbursements,
 		stats: {
 			totalRaised,
+			totalReceived,
+			totalPledged,
 			targetGoal,
 			percentRaised,
 			donorCount: donations.length
@@ -130,6 +140,7 @@ export const actions: Actions = {
 				amount,
 				currency: 'CAD',
 				message: message ? message.trim() : null,
+				status: payment_method === 'card' ? 'received' : 'pledged',
 				is_anonymous,
 				campaign_id: NEPAL_FLOOD_RELIEF_CAMPAIGN.id
 			});

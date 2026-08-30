@@ -56,6 +56,15 @@ CREATE TABLE IF NOT EXISTS reshares (
     FOREIGN KEY (reshared_by_id) REFERENCES members(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS campaigns (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    subtitle TEXT,
+    target_goal REAL NOT NULL DEFAULT 10000,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS donations (
     id TEXT PRIMARY KEY,
     campaign_id TEXT NOT NULL DEFAULT 'nepal-flood-2024',
@@ -64,6 +73,28 @@ CREATE TABLE IF NOT EXISTS donations (
     amount REAL NOT NULL,
     currency TEXT NOT NULL DEFAULT 'CAD',
     message TEXT,
+    status TEXT NOT NULL DEFAULT 'received', -- 'pledged', 'received'
     is_anonymous INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS disbursements (
+    id TEXT PRIMARY KEY,
+    campaign_id TEXT NOT NULL DEFAULT 'nepal-flood-2024',
+    recipient TEXT NOT NULL,
+    amount REAL NOT NULL,
+    disbursed_at TEXT NOT NULL,
+    reference_number TEXT,
+    notes TEXT,
+    document_url TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS disbursement_allocations (
+    id TEXT PRIMARY KEY,
+    disbursement_id TEXT NOT NULL,
+    donation_id TEXT NOT NULL,
+    amount REAL NOT NULL,
+    FOREIGN KEY (disbursement_id) REFERENCES disbursements(id) ON DELETE CASCADE,
+    FOREIGN KEY (donation_id) REFERENCES donations(id) ON DELETE CASCADE
 );

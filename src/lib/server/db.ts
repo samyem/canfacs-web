@@ -40,6 +40,15 @@ export interface CommentRow {
 	created_at: string;
 }
 
+export interface CampaignRow {
+	id: string;
+	title: string;
+	subtitle: string | null;
+	target_goal: number;
+	is_active: boolean;
+	created_at: string;
+}
+
 export interface DonationRow {
 	id: string;
 	campaign_id: string;
@@ -48,8 +57,29 @@ export interface DonationRow {
 	amount: number;
 	currency: string;
 	message: string | null;
+	status: 'pledged' | 'received';
 	is_anonymous: boolean;
 	created_at: string;
+}
+
+export interface DisbursementRow {
+	id: string;
+	campaign_id: string;
+	recipient: string;
+	amount: number;
+	disbursed_at: string;
+	reference_number: string | null;
+	notes: string | null;
+	document_url: string | null;
+	created_at: string;
+	allocated_donations?: { donation_id: string; donor_name: string; amount: number }[];
+}
+
+export interface DisbursementAllocationRow {
+	id: string;
+	disbursement_id: string;
+	donation_id: string;
+	amount: number;
 }
 
 // In-memory fallback store for local development when D1 binding is unattached
@@ -58,7 +88,10 @@ let memoryMembers: MemberRow[] = [];
 let memoryPosts: PostRow[] = [];
 let memoryComments: CommentRow[] = [];
 let memoryLikes: { post_id: string; member_id: string }[] = [];
+let memoryCampaigns: CampaignRow[] = [];
 let memoryDonations: DonationRow[] = [];
+let memoryDisbursements: DisbursementRow[] = [];
+let memoryAllocations: DisbursementAllocationRow[] = [];
 
 async function ensureLocalDefaultAdmin() {
 	if (localStoreInitialized) return;
@@ -107,7 +140,16 @@ async function ensureLocalDefaultAdmin() {
 		created_at: new Date().toISOString()
 	});
 
-	// Seed Board of Directors (BOD) donations ($100 CAD each)
+	memoryCampaigns.push({
+		id: 'nepal-flood-2024',
+		title: 'Nepal Flood Emergency Relief & Rehabilitation Fund',
+		subtitle: 'Supporting flood and landslide-affected families, children, and displaced communities across Nepal.',
+		target_goal: 10000,
+		is_active: true,
+		created_at: '2026-08-30T09:00:00Z'
+	});
+
+	// Seed Board of Directors (BOD) pledges
 	memoryDonations.push(
 		{
 			id: 'don-bod-01',
@@ -117,6 +159,7 @@ async function ensureLocalDefaultAdmin() {
 			amount: 500,
 			currency: 'CAD',
 			message: 'CANFACS Board contribution for immediate flood & pediatric relief.',
+			status: 'pledged',
 			is_anonymous: false,
 			created_at: '2026-08-30T10:00:00Z'
 		},
@@ -128,6 +171,7 @@ async function ensureLocalDefaultAdmin() {
 			amount: 100,
 			currency: 'CAD',
 			message: 'Supporting affected school children and families in Nepal.',
+			status: 'pledged',
 			is_anonymous: false,
 			created_at: '2026-08-30T10:30:00Z'
 		},
@@ -139,6 +183,7 @@ async function ensureLocalDefaultAdmin() {
 			amount: 100,
 			currency: 'CAD',
 			message: 'In solidarity with emergency restoration and community relief.',
+			status: 'pledged',
 			is_anonymous: false,
 			created_at: '2026-08-30T11:00:00Z'
 		},
@@ -150,6 +195,7 @@ async function ensureLocalDefaultAdmin() {
 			amount: 100,
 			currency: 'CAD',
 			message: 'Solidarity from Atlantic Canada for our communities in Nepal.',
+			status: 'pledged',
 			is_anonymous: false,
 			created_at: '2026-08-30T11:30:00Z'
 		},
@@ -161,6 +207,7 @@ async function ensureLocalDefaultAdmin() {
 			amount: 100,
 			currency: 'CAD',
 			message: 'Supporting essential emergency relief and community rebuilding.',
+			status: 'pledged',
 			is_anonymous: false,
 			created_at: '2026-08-30T12:30:00Z'
 		},
@@ -172,6 +219,7 @@ async function ensureLocalDefaultAdmin() {
 			amount: 100,
 			currency: 'CAD',
 			message: 'Every contribution counts towards urgent medical & food relief.',
+			status: 'pledged',
 			is_anonymous: false,
 			created_at: '2026-08-30T13:00:00Z'
 		},
@@ -183,6 +231,7 @@ async function ensureLocalDefaultAdmin() {
 			amount: 100,
 			currency: 'CAD',
 			message: 'CANFACS Board contribution towards disaster rehabilitation.',
+			status: 'pledged',
 			is_anonymous: false,
 			created_at: '2026-08-30T14:00:00Z'
 		},
@@ -194,6 +243,7 @@ async function ensureLocalDefaultAdmin() {
 			amount: 100,
 			currency: 'CAD',
 			message: 'With love and solidarity from Alberta for flood-hit regions.',
+			status: 'pledged',
 			is_anonymous: false,
 			created_at: '2026-08-30T14:30:00Z'
 		},
@@ -205,6 +255,7 @@ async function ensureLocalDefaultAdmin() {
 			amount: 100,
 			currency: 'CAD',
 			message: 'Standing united with our brothers and sisters in Nepal.',
+			status: 'pledged',
 			is_anonymous: false,
 			created_at: '2026-08-30T15:00:00Z'
 		},
@@ -216,6 +267,7 @@ async function ensureLocalDefaultAdmin() {
 			amount: 100,
 			currency: 'CAD',
 			message: 'In solidarity with flood-affected communities in Nepal.',
+			status: 'received',
 			is_anonymous: false,
 			created_at: '2026-08-30T18:38:00Z'
 		}
@@ -484,10 +536,25 @@ export async function createComment(
 	return newComment;
 }
 
-// DONATION QUERIES
+// DONATION & FUNDRAISING QUERIES
 async function ensureDonationsTable(db: any) {
 	if (!db) return;
 	try {
+		// 1. Campaigns Table
+		await db
+			.prepare(`
+				CREATE TABLE IF NOT EXISTS campaigns (
+					id TEXT PRIMARY KEY,
+					title TEXT NOT NULL,
+					subtitle TEXT,
+					target_goal REAL NOT NULL DEFAULT 10000,
+					is_active INTEGER NOT NULL DEFAULT 1,
+					created_at TEXT NOT NULL
+				);
+			`)
+			.run();
+
+		// 2. Donations Table
 		await db
 			.prepare(`
 				CREATE TABLE IF NOT EXISTS donations (
@@ -498,13 +565,64 @@ async function ensureDonationsTable(db: any) {
 					amount REAL NOT NULL,
 					currency TEXT NOT NULL DEFAULT 'CAD',
 					message TEXT,
+					status TEXT NOT NULL DEFAULT 'received',
 					is_anonymous INTEGER NOT NULL DEFAULT 0,
 					created_at TEXT NOT NULL
 				);
 			`)
 			.run();
 
-		// Check if table is empty, if so seed initial donations
+		// Migration: Add status column to donations if not exists
+		try {
+			await db.prepare(`ALTER TABLE donations ADD COLUMN status TEXT NOT NULL DEFAULT 'received'`).run();
+		} catch {
+			// Column already exists
+		}
+
+		// 3. Disbursements Table
+		await db
+			.prepare(`
+				CREATE TABLE IF NOT EXISTS disbursements (
+					id TEXT PRIMARY KEY,
+					campaign_id TEXT NOT NULL DEFAULT 'nepal-flood-2024',
+					recipient TEXT NOT NULL,
+					amount REAL NOT NULL,
+					disbursed_at TEXT NOT NULL,
+					reference_number TEXT,
+					notes TEXT,
+					document_url TEXT,
+					created_at TEXT NOT NULL
+				);
+			`)
+			.run();
+
+		// 4. Disbursement Allocations Table
+		await db
+			.prepare(`
+				CREATE TABLE IF NOT EXISTS disbursement_allocations (
+					id TEXT PRIMARY KEY,
+					disbursement_id TEXT NOT NULL,
+					donation_id TEXT NOT NULL,
+					amount REAL NOT NULL
+				);
+			`)
+			.run();
+
+		// Check if campaigns table is empty, if so seed initial campaign
+		const campCount = await db.prepare(`SELECT COUNT(*) as count FROM campaigns`).first();
+		if (campCount && Number(campCount.count) === 0) {
+			for (const camp of memoryCampaigns) {
+				await db
+					.prepare(`
+						INSERT OR IGNORE INTO campaigns (id, title, subtitle, target_goal, is_active, created_at)
+						VALUES (?, ?, ?, ?, ?, ?)
+					`)
+					.bind(camp.id, camp.title, camp.subtitle, camp.target_goal, camp.is_active ? 1 : 0, camp.created_at)
+					.run();
+			}
+		}
+
+		// Check if donations table is empty, if so seed initial donations
 		const countRes = await db
 			.prepare(`SELECT COUNT(*) as count FROM donations WHERE campaign_id = 'nepal-flood-2024'`)
 			.first();
@@ -512,8 +630,8 @@ async function ensureDonationsTable(db: any) {
 			for (const don of memoryDonations) {
 				await db
 					.prepare(`
-						INSERT OR IGNORE INTO donations (id, campaign_id, donor_name, email, amount, currency, message, is_anonymous, created_at)
-						VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+						INSERT OR IGNORE INTO donations (id, campaign_id, donor_name, email, amount, currency, message, status, is_anonymous, created_at)
+						VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 					`)
 					.bind(
 						don.id,
@@ -523,6 +641,7 @@ async function ensureDonationsTable(db: any) {
 						don.amount,
 						don.currency,
 						don.message,
+						don.status || 'received',
 						don.is_anonymous ? 1 : 0,
 						don.created_at
 					)
@@ -530,10 +649,66 @@ async function ensureDonationsTable(db: any) {
 			}
 		}
 	} catch (err) {
-		console.warn('Error ensuring donations table:', err);
+		console.warn('Error ensuring donations/fundraising tables:', err);
 	}
 }
 
+// CAMPAIGN QUERIES
+export async function getCampaigns(db: any): Promise<CampaignRow[]> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureDonationsTable(db);
+		const res = await db.prepare(`SELECT * FROM campaigns ORDER BY created_at DESC`).all();
+		return (res.results || []).map((r: any) => ({
+			...r,
+			is_active: Boolean(r.is_active)
+		})) as CampaignRow[];
+	}
+	return [...memoryCampaigns];
+}
+
+export async function getCampaignById(db: any, id: string): Promise<CampaignRow | null> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureDonationsTable(db);
+		const res = await db.prepare(`SELECT * FROM campaigns WHERE id = ?`).bind(id).first();
+		if (!res) return null;
+		return { ...res, is_active: Boolean(res.is_active) } as CampaignRow;
+	}
+	return memoryCampaigns.find((c) => c.id === id) || null;
+}
+
+export async function createCampaign(
+	db: any,
+	data: { id: string; title: string; subtitle?: string; target_goal: number; is_active?: boolean }
+): Promise<CampaignRow> {
+	await ensureLocalDefaultAdmin();
+	const created_at = new Date().toISOString();
+	const campaign: CampaignRow = {
+		id: data.id,
+		title: data.title,
+		subtitle: data.subtitle || null,
+		target_goal: Number(data.target_goal),
+		is_active: data.is_active !== undefined ? data.is_active : true,
+		created_at
+	};
+
+	if (db) {
+		await ensureDonationsTable(db);
+		await db
+			.prepare(`
+				INSERT INTO campaigns (id, title, subtitle, target_goal, is_active, created_at)
+				VALUES (?, ?, ?, ?, ?, ?)
+			`)
+			.bind(campaign.id, campaign.title, campaign.subtitle, campaign.target_goal, campaign.is_active ? 1 : 0, created_at)
+			.run();
+	} else {
+		memoryCampaigns.unshift(campaign);
+	}
+	return campaign;
+}
+
+// DONATION QUERIES
 export async function getDonations(db: any, campaignId = 'nepal-flood-2024'): Promise<DonationRow[]> {
 	await ensureLocalDefaultAdmin();
 	if (db) {
@@ -544,6 +719,7 @@ export async function getDonations(db: any, campaignId = 'nepal-flood-2024'): Pr
 			.all();
 		return (res.results || []).map((r: any) => ({
 			...r,
+			status: (r.status as 'pledged' | 'received') || 'received',
 			is_anonymous: Boolean(r.is_anonymous)
 		})) as DonationRow[];
 	}
@@ -551,6 +727,21 @@ export async function getDonations(db: any, campaignId = 'nepal-flood-2024'): Pr
 	return memoryDonations
 		.filter((d) => d.campaign_id === campaignId)
 		.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export async function getDonationById(db: any, id: string): Promise<DonationRow | null> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureDonationsTable(db);
+		const res = await db.prepare(`SELECT * FROM donations WHERE id = ?`).bind(id).first();
+		if (!res) return null;
+		return {
+			...res,
+			status: (res.status as 'pledged' | 'received') || 'received',
+			is_anonymous: Boolean(res.is_anonymous)
+		} as DonationRow;
+	}
+	return memoryDonations.find((d) => d.id === id) || null;
 }
 
 export async function createDonation(
@@ -562,15 +753,18 @@ export async function createDonation(
 		amount: number;
 		currency?: string;
 		message?: string;
+		status?: 'pledged' | 'received';
 		is_anonymous?: boolean;
 		campaign_id?: string;
+		created_at?: string;
 	}
 ): Promise<DonationRow> {
 	await ensureLocalDefaultAdmin();
 	const id = data.id || ('don_' + crypto.randomUUID().slice(0, 8));
-	const created_at = new Date().toISOString();
+	const created_at = data.created_at || new Date().toISOString();
 	const campaign_id = data.campaign_id || 'nepal-flood-2024';
 	const currency = data.currency || 'CAD';
+	const status = data.status || 'received';
 	const is_anonymous = Boolean(data.is_anonymous);
 
 	const newDonation: DonationRow = {
@@ -581,6 +775,7 @@ export async function createDonation(
 		amount: Number(data.amount),
 		currency,
 		message: data.message ? data.message.trim() : null,
+		status,
 		is_anonymous,
 		created_at
 	};
@@ -589,8 +784,8 @@ export async function createDonation(
 		await ensureDonationsTable(db);
 		await db
 			.prepare(`
-				INSERT INTO donations (id, campaign_id, donor_name, email, amount, currency, message, is_anonymous, created_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+				INSERT INTO donations (id, campaign_id, donor_name, email, amount, currency, message, status, is_anonymous, created_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			`)
 			.bind(
 				id,
@@ -600,6 +795,7 @@ export async function createDonation(
 				newDonation.amount,
 				currency,
 				newDonation.message,
+				status,
 				is_anonymous ? 1 : 0,
 				created_at
 			)
@@ -611,3 +807,221 @@ export async function createDonation(
 	return newDonation;
 }
 
+export async function updateDonation(
+	db: any,
+	id: string,
+	data: {
+		donor_name?: string;
+		email?: string | null;
+		amount?: number;
+		message?: string | null;
+		status?: 'pledged' | 'received';
+		is_anonymous?: boolean;
+	}
+): Promise<void> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureDonationsTable(db);
+		const fields: string[] = [];
+		const values: any[] = [];
+
+		if (data.donor_name !== undefined) {
+			fields.push('donor_name = ?');
+			values.push(data.donor_name);
+		}
+		if (data.email !== undefined) {
+			fields.push('email = ?');
+			values.push(data.email);
+		}
+		if (data.amount !== undefined) {
+			fields.push('amount = ?');
+			values.push(Number(data.amount));
+		}
+		if (data.message !== undefined) {
+			fields.push('message = ?');
+			values.push(data.message);
+		}
+		if (data.status !== undefined) {
+			fields.push('status = ?');
+			values.push(data.status);
+		}
+		if (data.is_anonymous !== undefined) {
+			fields.push('is_anonymous = ?');
+			values.push(data.is_anonymous ? 1 : 0);
+		}
+
+		if (fields.length > 0) {
+			values.push(id);
+			await db.prepare(`UPDATE donations SET ${fields.join(', ')} WHERE id = ?`).bind(...values).run();
+		}
+	} else {
+		const idx = memoryDonations.findIndex((d) => d.id === id);
+		if (idx !== -1) {
+			memoryDonations[idx] = {
+				...memoryDonations[idx],
+				...data
+			};
+		}
+	}
+}
+
+export async function deleteDonation(db: any, id: string): Promise<void> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureDonationsTable(db);
+		await db.prepare(`DELETE FROM donations WHERE id = ?`).bind(id).run();
+		await db.prepare(`DELETE FROM disbursement_allocations WHERE donation_id = ?`).bind(id).run();
+	} else {
+		memoryDonations = memoryDonations.filter((d) => d.id !== id);
+		memoryAllocations = memoryAllocations.filter((a) => a.donation_id !== id);
+	}
+}
+
+// DISBURSEMENT QUERIES
+export async function getDisbursements(db: any, campaignId = 'nepal-flood-2024'): Promise<DisbursementRow[]> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureDonationsTable(db);
+		const res = await db
+			.prepare(`SELECT * FROM disbursements WHERE campaign_id = ? ORDER BY disbursed_at DESC, created_at DESC`)
+			.bind(campaignId)
+			.all();
+		const disbursements = (res.results || []) as DisbursementRow[];
+
+		// Attach allocated donations
+		for (const disb of disbursements) {
+			const allocRes = await db
+				.prepare(`
+					SELECT da.donation_id, da.amount, d.donor_name 
+					FROM disbursement_allocations da 
+					JOIN donations d ON da.donation_id = d.id 
+					WHERE da.disbursement_id = ?
+				`)
+				.bind(disb.id)
+				.all();
+			disb.allocated_donations = (allocRes.results || []).map((a: any) => ({
+				donation_id: a.donation_id,
+				donor_name: a.donor_name,
+				amount: Number(a.amount)
+			}));
+		}
+
+		return disbursements;
+	}
+
+	return memoryDisbursements
+		.filter((d) => d.campaign_id === campaignId)
+		.map((disb) => {
+			const allocations = memoryAllocations.filter((a) => a.disbursement_id === disb.id);
+			return {
+				...disb,
+				allocated_donations: allocations.map((a) => {
+					const don = memoryDonations.find((d) => d.id === a.donation_id);
+					return {
+						donation_id: a.donation_id,
+						donor_name: don ? don.donor_name : 'Unknown Donor',
+						amount: a.amount
+					};
+				})
+			};
+		})
+		.sort((a, b) => new Date(b.disbursed_at).getTime() - new Date(a.disbursed_at).getTime());
+}
+
+export async function createDisbursement(
+	db: any,
+	data: {
+		campaign_id?: string;
+		recipient: string;
+		amount: number;
+		disbursed_at: string;
+		reference_number?: string;
+		notes?: string;
+		document_url?: string;
+		donation_ids?: string[];
+	}
+): Promise<DisbursementRow> {
+	await ensureLocalDefaultAdmin();
+	const id = 'disb_' + crypto.randomUUID().slice(0, 8);
+	const created_at = new Date().toISOString();
+	const campaign_id = data.campaign_id || 'nepal-flood-2024';
+
+	const newDisbursement: DisbursementRow = {
+		id,
+		campaign_id,
+		recipient: data.recipient.trim(),
+		amount: Number(data.amount),
+		disbursed_at: data.disbursed_at,
+		reference_number: data.reference_number ? data.reference_number.trim() : null,
+		notes: data.notes ? data.notes.trim() : null,
+		document_url: data.document_url ? data.document_url.trim() : null,
+		created_at
+	};
+
+	if (db) {
+		await ensureDonationsTable(db);
+		await db
+			.prepare(`
+				INSERT INTO disbursements (id, campaign_id, recipient, amount, disbursed_at, reference_number, notes, document_url, created_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`)
+			.bind(
+				id,
+				campaign_id,
+				newDisbursement.recipient,
+				newDisbursement.amount,
+				newDisbursement.disbursed_at,
+				newDisbursement.reference_number,
+				newDisbursement.notes,
+				newDisbursement.document_url,
+				created_at
+			)
+			.run();
+
+		// Record allocations if provided
+		if (data.donation_ids && data.donation_ids.length > 0) {
+			for (const donId of data.donation_ids) {
+				const don = await getDonationById(db, donId);
+				if (don) {
+					const allocId = 'alloc_' + crypto.randomUUID().slice(0, 8);
+					await db
+						.prepare(`
+							INSERT INTO disbursement_allocations (id, disbursement_id, donation_id, amount)
+							VALUES (?, ?, ?, ?)
+						`)
+						.bind(allocId, id, don.id, don.amount)
+						.run();
+				}
+			}
+		}
+	} else {
+		memoryDisbursements.unshift(newDisbursement);
+		if (data.donation_ids) {
+			for (const donId of data.donation_ids) {
+				const don = memoryDonations.find((d) => d.id === donId);
+				if (don) {
+					memoryAllocations.push({
+						id: 'alloc_' + crypto.randomUUID().slice(0, 8),
+						disbursement_id: id,
+						donation_id: don.id,
+						amount: don.amount
+					});
+				}
+			}
+		}
+	}
+
+	return newDisbursement;
+}
+
+export async function deleteDisbursement(db: any, id: string): Promise<void> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureDonationsTable(db);
+		await db.prepare(`DELETE FROM disbursements WHERE id = ?`).bind(id).run();
+		await db.prepare(`DELETE FROM disbursement_allocations WHERE disbursement_id = ?`).bind(id).run();
+	} else {
+		memoryDisbursements = memoryDisbursements.filter((d) => d.id !== id);
+		memoryAllocations = memoryAllocations.filter((a) => a.disbursement_id !== id);
+	}
+};

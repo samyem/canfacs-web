@@ -61,10 +61,11 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 
 	const db = getDb(platform);
 	const email = googleUser.email.toLowerCase().trim();
+	const ADMIN_EMAILS = ['info@canfacs.org', 'samyem@gmail.com', 'samyem@canfacs.org'];
+	const isAdmin = ADMIN_EMAILS.includes(email);
 	let member = await getMemberByEmail(db, email);
 
 	if (!member) {
-		const isAdmin = email === 'info@canfacs.org';
 		member = await createMember(db, {
 			email,
 			full_name: googleUser.name || 'Member',
@@ -89,12 +90,25 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 				}
 			}
 		}
-	} else if (member.status === 'pending') {
-		// Auto-activate member on verified Google sign-in
-		await updateMemberStatus(db, member.id, 'approved');
-		member.status = 'approved';
-	} else if (member.status === 'denied') {
-		throw redirect(303, '/login?error=account_denied');
+	} else {
+		if (member.status === 'pending') {
+			// Auto-activate member on verified Google sign-in
+			await updateMemberStatus(db, member.id, 'approved');
+			member.status = 'approved';
+		} else if (member.status === 'denied') {
+			throw redirect(303, '/login?error=account_denied');
+		}
+
+		if (isAdmin && member.role !== 'admin') {
+			member.role = 'admin';
+			if (db) {
+				try {
+					await db.prepare("UPDATE members SET role = 'admin' WHERE id = ?").bind(member.id).run();
+				} catch (err) {
+					console.warn('Could not update admin role:', err);
+				}
+			}
+		}
 	}
 
 	const sessionToken = createSessionToken({

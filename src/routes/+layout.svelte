@@ -112,7 +112,13 @@
 							href="/admin/members"
 							class="px-3 py-2 rounded-lg text-sm font-semibold text-amber-400 hover:text-amber-300 hover:bg-slate-800/60 transition-all"
 						>
-							⚡ Admin Panel
+							⚡ Members
+						</a>
+						<a
+							href="/admin/fundraising"
+							class="px-3 py-2 rounded-lg text-sm font-semibold text-rose-400 hover:text-rose-300 hover:bg-slate-800/60 transition-all"
+						>
+							💰 Fundraising
 						</a>
 					{/if}
 
@@ -193,7 +199,14 @@
 							onclick={() => (isMobileMenuOpen = false)}
 							class="block px-4 py-2.5 rounded-lg text-base font-semibold text-amber-400 hover:bg-slate-800"
 						>
-							⚡ Admin Panel
+							⚡ Member Governance
+						</a>
+						<a
+							href="/admin/fundraising"
+							onclick={() => (isMobileMenuOpen = false)}
+							class="block px-4 py-2.5 rounded-lg text-base font-semibold text-rose-400 hover:bg-slate-800"
+						>
+							💰 Fundraising & Disbursements
 						</a>
 					{/if}
 					<div class="pt-3 border-t border-slate-800 flex items-center justify-between">

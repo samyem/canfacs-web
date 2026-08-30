@@ -230,9 +230,15 @@
 							style="width: {data.stats.percentRaised}%"
 						></div>
 					</div>
-					<div class="flex items-center justify-between text-xs font-semibold text-slate-400">
-						<span>{data.stats.percentRaised}% of goal reached</span>
-						<span>{data.stats.donorCount} Community Donors</span>
+					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs font-semibold text-slate-400">
+						<div class="flex items-center gap-3">
+							<span class="text-white font-bold">{data.stats.percentRaised}% of goal</span>
+							<span>•</span>
+							<span class="text-emerald-400 font-bold">${data.stats.totalReceived.toLocaleString('en-CA')} Received</span>
+							<span>•</span>
+							<span class="text-amber-400 font-bold">${data.stats.totalPledged.toLocaleString('en-CA')} Pledged</span>
+						</div>
+						<span>{data.stats.donorCount} Total Contributors</span>
 					</div>
 				</div>
 
@@ -260,12 +266,12 @@
 			</div>
 		</div>
 
-		<!-- Disaster Overview & Donation Form -->
+		<!-- Campaign Main Content & Form Grid -->
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-			<!-- Disaster Context & Public Disbursement Log -->
-			<div class="lg:col-span-2 space-y-6">
-				<!-- Official Government PMO Fund Disbursement Commitment -->
-				<div class="glass-panel p-8 rounded-2xl border border-amber-900/40 bg-gradient-to-br from-slate-900/90 to-slate-950/90 space-y-4 shadow-xl">
+			<!-- Narrative & Relief Strategy -->
+			<div class="lg:col-span-2 space-y-8">
+				<!-- Transparency & Disbursement Box -->
+				<div class="glass-panel p-8 rounded-2xl border border-amber-900/40 space-y-4">
 					<div class="flex items-center gap-3">
 						<div class="w-10 h-10 rounded-xl bg-amber-950 border border-amber-800 text-amber-400 flex items-center justify-center text-xl font-bold">
 							🏛️
@@ -283,34 +289,74 @@
 					<div class="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
 						<div class="flex items-center justify-between text-xs font-bold text-slate-400 border-b border-slate-800/80 pb-2">
 							<span>PUBLIC DISBURSEMENT TRACKING</span>
-							<span class="text-emerald-400">Live Status</span>
+							<span class="text-emerald-400">Auditable Live Status</span>
 						</div>
 
 						<div class="space-y-3 text-xs">
-							<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-slate-900/60 border border-slate-800">
-								<div>
-									<div class="font-bold text-white flex items-center gap-2">
-										<span>Tranche 1 (Active Campaign)</span>
-										<span class="px-2 py-0.5 rounded bg-amber-950 border border-amber-800 text-[10px] text-amber-300 font-semibold">
-											Accumulating for Transfer
-										</span>
-									</div>
-									<div class="text-[11px] text-slate-400 mt-0.5">
-										Recipient: <strong>Prime Minister's Disaster Relief Fund, Nepal (PMO)</strong>
-									</div>
-								</div>
+							{#if data.disbursements && data.disbursements.length > 0}
+								{#each data.disbursements as disb}
+									<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 p-3 rounded-lg bg-slate-900/60 border border-slate-800">
+										<div class="space-y-1">
+											<div class="font-bold text-white flex items-center gap-2">
+												<span>{disb.recipient}</span>
+												<span class="px-2 py-0.5 rounded bg-blue-950 border border-blue-800 text-[10px] text-blue-300 font-semibold">
+													Disbursed
+												</span>
+											</div>
+											<div class="text-[11px] text-slate-400">
+												Date: <strong class="text-slate-300">{disb.disbursed_at}</strong>
+												{#if disb.reference_number}
+													• Ref: <code class="font-mono text-amber-400 bg-slate-950 px-1 py-0.5 rounded">{disb.reference_number}</code>
+												{/if}
+											</div>
+											{#if disb.notes}
+												<div class="text-[11px] text-slate-300 italic">"{disb.notes}"</div>
+											{/if}
+										</div>
 
-								<div class="sm:text-right">
-									<div class="text-base font-black text-amber-400">
-										${data.stats.totalRaised.toLocaleString('en-CA')} CAD
+										<div class="sm:text-right shrink-0">
+											<div class="text-base font-black text-emerald-400">
+												${Number(disb.amount).toLocaleString('en-CA')} CAD
+											</div>
+											{#if disb.document_url}
+												<a
+													href={disb.document_url}
+													target="_blank"
+													rel="noopener noreferrer"
+													class="text-[11px] text-blue-400 hover:text-blue-300 underline block mt-1"
+												>
+													📄 View Receipt / Voucher &rarr;
+												</a>
+											{/if}
+										</div>
 									</div>
-									<div class="text-[10px] text-slate-400">of $10,000 CAD Target</div>
+								{/each}
+							{:else}
+								<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-slate-900/60 border border-slate-800">
+									<div>
+										<div class="font-bold text-white flex items-center gap-2">
+											<span>Tranche 1 (Accumulating Pool)</span>
+											<span class="px-2 py-0.5 rounded bg-amber-950 border border-amber-800 text-[10px] text-amber-300 font-semibold">
+												Accumulating for Transfer
+											</span>
+										</div>
+										<div class="text-[11px] text-slate-400 mt-0.5">
+											Recipient: <strong>Prime Minister's Disaster Relief Fund, Nepal (PMO)</strong>
+										</div>
+									</div>
+
+									<div class="sm:text-right">
+										<div class="text-base font-black text-amber-400">
+											${data.stats.totalRaised.toLocaleString('en-CA')} CAD
+										</div>
+										<div class="text-[10px] text-slate-400">of $10,000 CAD Target</div>
+									</div>
 								</div>
-							</div>
+							{/if}
 						</div>
 
 						<p class="text-[11px] text-slate-400 italic pt-1">
-							📌 Wire transfer confirmation receipts, official acknowledgment documents, and disbursement notices will be posted directly to this log once processed.
+							📌 Wire transfer confirmation receipts, official acknowledgment documents, and disbursement notices are logged here for full community transparency.
 						</p>
 					</div>
 				</div>
@@ -705,13 +751,24 @@
 								</div>
 								<div>
 									<h4 class="font-bold text-white text-sm">{donation.donor_name}</h4>
-									<span class="text-[11px] text-slate-400">
-										{new Date(donation.created_at).toLocaleDateString('en-CA', {
-											month: 'short',
-											day: 'numeric',
-											year: 'numeric'
-										})}
-									</span>
+									<div class="flex items-center gap-2 mt-0.5">
+										<span class="text-[11px] text-slate-400">
+											{new Date(donation.created_at).toLocaleDateString('en-CA', {
+												month: 'short',
+												day: 'numeric',
+												year: 'numeric'
+											})}
+										</span>
+										{#if donation.status === 'received'}
+											<span class="px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-800 text-[10px] font-bold text-emerald-400">
+												✓ Received
+											</span>
+										{:else}
+											<span class="px-2 py-0.5 rounded-full bg-amber-950 border border-amber-800 text-[10px] font-bold text-amber-400">
+												⏳ Pledged
+											</span>
+										{/if}
+									</div>
 								</div>
 							</div>
 
