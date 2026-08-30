@@ -3,6 +3,7 @@ import { fail } from '@sveltejs/kit';
 import { getDb, getDonations, createDonation } from '$lib/server/db';
 import { NEPAL_FLOOD_RELIEF_CAMPAIGN } from '$lib/data/siteData';
 import { getSquareConfig, processSquarePayment } from '$lib/server/square';
+import { sendDonationConfirmationEmail } from '$lib/server/email';
 
 export const load: PageServerLoad = async ({ platform }) => {
 	const db = getDb(platform);
@@ -63,8 +64,16 @@ export const actions: Actions = {
 		let paymentReceiptUrl: string | undefined;
 		let paymentId: string | undefined;
 
-		// Process online payment with Square if payment token was generated from Card form
-		if (payment_method === 'card' && payment_token) {
+		// Process online payment with Square when user chose Card
+		if (payment_method === 'card') {
+			if (!payment_token) {
+				return fail(400, {
+					error:
+						'Square card payment could not be processed because the payment token was missing. Please ensure card details are entered in the Square form or select Interac e-Transfer to info@canfacs.org.',
+					values: { donor_name, email, amountStr, message, is_anonymous, payment_method }
+				});
+			}
+
 			try {
 				const paymentResult = await processSquarePayment({
 					platform,
@@ -80,7 +89,7 @@ export const actions: Actions = {
 			} catch (err: any) {
 				console.error('Square payment processing error:', err);
 				return fail(400, {
-					error: `Payment failed: ${err.message || 'Unable to process card payment. Please verify your card details or try sending an Interac e-Transfer.'}`,
+					error: `Payment failed: ${err.message || 'Unable to process card payment. Please verify your card details or try sending an Interac e-Transfer to info@canfacs.org.'}`,
 					values: { donor_name, email, amountStr, message, is_anonymous, payment_method }
 				});
 			}
@@ -97,6 +106,28 @@ export const actions: Actions = {
 				campaign_id: NEPAL_FLOOD_RELIEF_CAMPAIGN.id
 			});
 
+			// Send automated confirmation / receipt email if email is provided
+			if (email && email.includes('@')) {
+				try {
+					await sendDonationConfirmationEmail(
+						{
+							to: email,
+							donorName: is_anonymous ? 'Anonymous Donor' : donor_name,
+							amountCAD: amount,
+							campaignName: NEPAL_FLOOD_RELIEF_CAMPAIGN.title,
+							isOnlinePayment: Boolean(paymentId),
+							paymentMethod: payment_method === 'card' ? 'card' : 'etransfer',
+							transactionId: paymentId,
+							receiptUrl: paymentReceiptUrl,
+							message: message || undefined
+						},
+						platform?.env
+					);
+				} catch (emailErr) {
+					console.warn('Could not send donation confirmation email:', emailErr);
+				}
+			}
+
 			return {
 				success: true,
 				isOnlinePayment: Boolean(paymentId),
@@ -104,7 +135,7 @@ export const actions: Actions = {
 				paymentId,
 				amount,
 				message: paymentId
-					? `Thank you! Your payment of $${amount.toFixed(2)} CAD has been successfully processed through Square.`
+					? `Thank you! Your donation of $${amount.toFixed(2)} CAD has been successfully processed through Square.`
 					: `Thank you for recording your pledge of $${amount.toFixed(2)} CAD towards the Nepal Flood Emergency Relief Fund!`
 			};
 		} catch (err: any) {

@@ -109,7 +109,14 @@
 	});
 
 	async function handleFormSubmit(e: SubmitEvent) {
-		if (paymentMethod === 'card' && squareCard && data.square.isConfigured) {
+		if (paymentMethod === 'card') {
+			if (!data.square.isConfigured || !squareCard) {
+				e.preventDefault();
+				cardTokenError =
+					'Online card processing with Square requires SQUARE_APPLICATION_ID and SQUARE_ACCESS_TOKEN. To donate immediately, please choose Interac e-Transfer to info@canfacs.org.';
+				return;
+			}
+
 			e.preventDefault();
 			cardTokenError = null;
 
@@ -139,7 +146,7 @@
 				}
 			} catch (err: any) {
 				isSubmitting = false;
-				cardTokenError = err.message || 'Unable to tokenize payment card.';
+				cardTokenError = err.message || 'Unable to process payment card.';
 			}
 		}
 	}

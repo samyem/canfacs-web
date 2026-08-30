@@ -19,6 +19,9 @@ declare global {
 				SQUARE_ACCESS_TOKEN?: string;
 				SQUARE_LOCATION_ID?: string;
 				SQUARE_ENVIRONMENT?: 'production' | 'sandbox';
+				CLOUDFLARE_API_TOKEN?: string;
+				CLOUDFLARE_ACCOUNT_ID?: string;
+				CLOUDFLARE_FROM_EMAIL?: string;
 			};
 			ctx: ExecutionContext;
 			caches: CacheStorage;
