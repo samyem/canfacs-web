@@ -14,7 +14,8 @@
 		{
 			"binding": "DB",
 			"database_name": "canfacs-db",
-			"database_id": "7dc45450-332e-46a8-ad78-a0cb76bfc9a7"
+			"database_id": "7dc45450-332e-46a8-ad78-a0cb76bfc9a7",
+			"migrations_dir": "migrations"
 		}
 	],
 	"r2_buckets": [

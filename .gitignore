@@ -24,3 +24,6 @@ old-web/
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Database Backups
+.database_backups/
