@@ -166,7 +166,7 @@
 					</h2>
 
 					<p class="text-slate-300 text-sm sm:text-base leading-relaxed">
-						Devastating floods and landslides have inundated settlements and displaced thousands of vulnerable families across Nepal. CANFACS is raising a <strong>$10,000 CAD emergency fund</strong>, which will be <strong>disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members with public tracking.
+						On 26 August 2026, a catastrophic glacier collapse and ice avalanche on Langtang Lirung triggered an Ms 5.2 seismic tremor and severe debris flow flash floods surging down the Trishuli River basin across Rasuwa and Nuwakot districts. CANFACS is raising a <strong>$10,000 CAD emergency fund</strong>, which will be <strong>disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members with public tracking.
 					</p>
 
 					<div class="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300 pt-1">
