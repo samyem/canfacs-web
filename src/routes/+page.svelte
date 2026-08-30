@@ -104,11 +104,11 @@
 				</div>
 
 				<h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-					Help Rebuild Nepal: Flood & Landslide Emergency Appeal
+					2026 Nepal Flood & Landslide Emergency Appeal
 				</h2>
 
 				<p class="text-slate-300 text-sm sm:text-base leading-relaxed">
-					Catastrophic monsoon flash floods and landslides claimed over 250 lives and displaced 8,000+ people across Nepal. CANFACS has launched an emergency fund with a <strong>target goal of $10,000 CAD</strong>. <strong>All collected funds will be disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members, with public tracking on our website.
+					Devastating floods and landslides have inundated communities and displaced thousands across Nepal. CANFACS has launched an emergency fund with a <strong>target goal of $10,000 CAD</strong>. <strong>All collected funds will be disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members, with public tracking on our website.
 				</p>
 
 				<div class="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300 pt-1">

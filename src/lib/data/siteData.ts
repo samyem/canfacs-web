@@ -352,10 +352,10 @@ export interface DisbursementRecord {
 }
 
 export const NEPAL_FLOOD_RELIEF_CAMPAIGN = {
-	id: 'nepal-flood-2024',
-	title: 'Nepal Flood Emergency Relief & Rehabilitation Fund',
+	id: 'nepal-flood-2026',
+	title: '2026 Nepal Flood Emergency Relief & Rehabilitation Fund',
 	subtitle:
-		'Supporting flood and landslide-affected families, children, and displaced communities across Kathmandu Valley, Kavre, and Koshi/Bagmati provinces.',
+		'Supporting flood and landslide-affected families, vulnerable children, and displaced communities across Rasuwa, Nuwakot, and downstream Trishuli River basin districts in Nepal.',
 	targetGoalCAD: 10000,
 	etransferEmail: 'info@canfacs.org',
 	disbursementRecipient: "Government of Nepal Prime Minister's Disaster Relief Fund (PMO)",
@@ -363,20 +363,20 @@ export const NEPAL_FLOOD_RELIEF_CAMPAIGN = {
 		'All funds collected through this campaign will be disbursed directly to the Government of Nepal Prime Minister’s Disaster Relief Fund (PMO Fund) on behalf of CANFACS and its members. Every disbursement and transfer will be publicly tracked on this page for complete transparency.',
 	disasterContext: {
 		event:
-			'In late September, Nepal suffered catastrophic flash floods and landslides triggered by record-breaking monsoon rainfall—the heaviest recorded in the region in over 50 years. Over 250 lives were lost, 4,600+ homes were destroyed, and critical highways, bridges, rural water systems, and schools were devastated.',
+			'On 26 August 2026, a massive glacier collapse and ice avalanche on Langtang Lirung in the Himalayas triggered an Ms 5.2 seismic tremor and catastrophic debris flow flash floods down the Trishuli River basin. The disaster destroyed the Gyirong Port border crossing and swept through dozens of settlements across a 72 km stretch through Rasuwa and Nuwakot districts, leaving over 780 confirmed dead, thousands missing, and extensive destruction to vital infrastructure.',
 		impactStats: [
-			{ label: 'Lives Lost', value: '250+' },
-			{ label: 'Homes Destroyed', value: '4,600+' },
-			{ label: 'Displaced Families', value: '8,000+' },
+			{ label: 'Confirmed Dead (Nepal)', value: '788+' },
+			{ label: 'Missing Persons', value: '2,500+' },
+			{ label: 'Injuries Reported', value: '1,470+' },
 			{ label: 'Target Goal', value: '$10,000 CAD' }
 		],
 		affectedRegions:
-			'Kathmandu Valley (Bagmati, Bishnumati, Hanumante rivers), Lalitpur, Kavrepalanchok, Sindhuli, Makwanpur, and Koshi Province',
+			'Trishuli River basin, Rasuwa District, Nuwakot District, and downstream warning zones in Dhading, Gorkha, Tanahun, Nawalparasi, and Chitwan',
 		reliefFocus: [
-			'Emergency food rations, clean potable drinking water, and water purification kits to prevent waterborne disease outbreaks.',
-			'Temporary waterproof shelter kits, warm blankets, and hygiene care packages for displaced families.',
-			'Essential medical supplies, wound care, and pediatric first aid in hard-hit rural municipalities.',
-			'School rehabilitation support, replacement textbooks, and classroom restoration for children.'
+			'Emergency food rations, clean potable drinking water, and water purification kits for displaced families.',
+			'Temporary emergency waterproof shelter kits, warm blankets, and hygiene care packages.',
+			'Essential medical supplies, wound care, and trauma first aid in affected municipalities.',
+			'Community rebuilding support, replacement educational supplies, and infrastructure rehabilitation.'
 		]
 	},
 	disbursements: [
@@ -394,11 +394,11 @@ export const NEPAL_FLOOD_RELIEF_CAMPAIGN = {
 
 export const GLOBAL_IMPACT_ACTIVITIES: ImpactActivity[] = [
 	{
-		id: 'humanitarian-disaster-relief',
-		title: 'Nepal Flood Emergency Relief & PMO Fund (Active Campaign)',
-		category: 'Humanitarian & Crisis Relief',
+		id: 'nepal-flood-relief-fund',
+		title: '2026 Nepal Flood Emergency Relief Fund',
+		category: 'Disaster Relief & Rebuilding',
 		summary:
-			'Mobilizing rapid emergency relief for families and children displaced by catastrophic monsoon flooding. All collected funds will be disbursed to the Nepal Government Prime Minister’s Office (PMO) Disaster Relief Fund on behalf of CANFACS and its members, with public tracking on our website.',
+			'Mobilizing emergency relief for families and communities affected by the catastrophic 26 August 2026 Langtang Lirung glacier collapse and Trishuli River flash floods. All collected funds will be disbursed to the Nepal Government Prime Minister’s Office (PMO) Disaster Relief Fund on behalf of CANFACS and its members, with public tracking on our website.',
 		details: [
 			'Target goal of $10,000 CAD to support national flood relief, drinking water restoration, and rural reconstruction.',
 			'Collected funds will be disbursed directly to the Government of Nepal PMO Disaster Relief Fund.',

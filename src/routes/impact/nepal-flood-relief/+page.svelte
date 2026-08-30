@@ -209,12 +209,12 @@
 				</div>
 
 				<h1 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
-					Nepal Flood & Landslide <br />
+					2026 Nepal Flood & Landslide <br />
 					<span class="text-gradient-nepal">Emergency Relief Fund</span>
 				</h1>
 
 				<p class="text-slate-300 text-base sm:text-lg leading-relaxed">
-					Mobilizing direct humanitarian assistance for families displaced by catastrophic monsoon flooding across Nepal. <strong>All collected funds will be disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members, with transparent public tracking on this page.
+					Mobilizing direct humanitarian assistance for families and communities affected by the catastrophic 26 August 2026 Langtang Lirung glacier collapse and Trishuli River flash floods. <strong>All collected funds will be disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members, with transparent public tracking on this page.
 				</p>
 			</div>
 
@@ -386,11 +386,11 @@
 				<div class="glass-panel p-8 rounded-2xl border border-slate-800 space-y-6">
 					<div class="space-y-2">
 						<span class="text-xs uppercase font-bold text-red-400 tracking-wider">The Crisis on the Ground</span>
-						<h2 class="text-2xl font-bold text-white">Record-Breaking Monsoon Disaster</h2>
+						<h2 class="text-2xl font-bold text-white">2026 Langtang Lirung Glacier Collapse & Flash Floods</h2>
 					</div>
 
 					<p class="text-slate-300 text-sm leading-relaxed">
-						In late September, Nepal experienced the heaviest rainfall recorded in over 50 years. A stationary low-pressure system dumped unprecedented torrential rains over 48 hours, causing rivers across the Kathmandu Valley—including the Bagmati, Bishnumati, and Hanumante—to burst their banks and triggering massive landslides in Kavrepalanchok, Sindhuli, Lalitpur, and Koshi Province.
+						On the morning of <strong>26 August 2026</strong>, a massive <strong>glacier collapse and ice avalanche occurred on Langtang Lirung</strong> in the Himalayas, generating an <strong>Ms 5.2 seismic tremor</strong> detected worldwide. The catastrophic collapse released unprecedented debris flows and flash floods surging down the <strong>Trishuli River (Bhotekoshi) basin</strong>. The flood destroyed the Gyirong Port border crossing and devastated settlements along a <strong>72 km (45 mi) stretch across Rasuwa and Nuwakot districts</strong>. With over 780 confirmed dead, thousands missing, and critical highways obliterated, affected communities are in urgent need of emergency shelter, clean drinking water, trauma healthcare, and rehabilitation aid.
 					</p>
 
 					<!-- Key Stats Grid -->
@@ -442,9 +442,9 @@
 				</div>
 			</div>
 
-			<!-- Donation Checkout Form -->
-			<div class="lg:col-span-1">
-				<div class="sticky top-24 glass-panel p-6 sm:p-8 rounded-2xl border border-red-800/40 shadow-xl space-y-6">
+			<!-- Donation Checkout Form & Share Sidebar -->
+			<div class="lg:col-span-1 space-y-6">
+				<div class="glass-panel p-6 sm:p-8 rounded-3xl border border-red-800/40 shadow-xl space-y-6">
 					<div class="space-y-1">
 						<span class="text-xs uppercase font-bold text-red-400 tracking-wider">Make a Contribution</span>
 						<h3 class="text-xl font-bold text-white">Donate to Nepal Relief</h3>

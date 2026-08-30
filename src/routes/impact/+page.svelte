@@ -162,11 +162,11 @@
 					</div>
 
 					<h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-						Nepal Flood Emergency Relief Fund
+						2026 Nepal Flood Emergency Relief Fund
 					</h2>
 
 					<p class="text-slate-300 text-sm sm:text-base leading-relaxed">
-						Catastrophic late September flash floods and landslides claimed over 250 lives and displaced 8,000+ people across Nepal. CANFACS is raising a <strong>$10,000 CAD emergency fund</strong>, which will be <strong>disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members with public tracking.
+						Devastating floods and landslides have inundated settlements and displaced thousands of vulnerable families across Nepal. CANFACS is raising a <strong>$10,000 CAD emergency fund</strong>, which will be <strong>disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members with public tracking.
 					</p>
 
 					<div class="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300 pt-1">
