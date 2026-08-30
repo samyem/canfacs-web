@@ -380,6 +380,22 @@ export async function updateMemberStatus(
 	}
 }
 
+export async function updateMemberRole(
+	db: any,
+	id: string,
+	role: 'member' | 'admin'
+): Promise<void> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await db.prepare(`UPDATE members SET role = ? WHERE id = ?`).bind(role, id).run();
+	} else {
+		const idx = memoryMembers.findIndex((m) => m.id === id);
+		if (idx !== -1) {
+			memoryMembers[idx].role = role;
+		}
+	}
+}
+
 // POST QUERIES
 export async function getPosts(db: any, currentUserId?: string): Promise<PostRow[]> {
 	await ensureLocalDefaultAdmin();
