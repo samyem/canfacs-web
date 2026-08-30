@@ -95,21 +95,10 @@
 				{/each}
 
 				{#if data.user}
-					<a
-						href="/feed"
-						class="px-3 py-2 rounded-lg text-sm font-semibold text-red-400 hover:text-red-300 hover:bg-slate-800/60 transition-all"
-					>
-						🌐 Community Feed
-					</a>
-					<a
-						href="/members"
-						class="px-3 py-2 rounded-lg text-sm font-semibold text-blue-400 hover:text-blue-300 hover:bg-slate-800/60 transition-all"
-					>
-						👥 Directory
-					</a>
 					<div class="ml-3 pl-3 border-l border-slate-800 flex items-center gap-3">
-						<span class="text-xs font-semibold text-slate-300 bg-slate-900 px-3 py-1.5 rounded-full border border-slate-800">
-							👤 {data.user.fullName}
+						<span class="text-xs font-semibold text-slate-300 bg-slate-900 px-3 py-1.5 rounded-full border border-slate-800 flex items-center gap-1.5">
+							<span>👤</span>
+							<span>{data.user.fullName}</span>
 							{#if data.user.role === 'admin'}
 								<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase">Admin</span>
 							{/if}
@@ -167,42 +156,48 @@
 				{/each}
 
 				{#if data.user}
-					<a
-						href="/feed"
-						onclick={() => (isMobileMenuOpen = false)}
-						class="block px-4 py-2.5 rounded-lg text-base font-semibold text-red-400 hover:bg-slate-800"
-					>
-						🌐 Community Feed
-					</a>
-					<a
-						href="/members"
-						onclick={() => (isMobileMenuOpen = false)}
-						class="block px-4 py-2.5 rounded-lg text-base font-semibold text-blue-400 hover:bg-slate-800"
-					>
-						👥 Member Directory
-					</a>
-					{#if data.user.role === 'admin'}
+					<div class="pt-3 border-t border-slate-800 space-y-1">
+						<div class="px-4 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+							Member Portal
+						</div>
 						<a
-							href="/admin/members"
+							href="/feed"
 							onclick={() => (isMobileMenuOpen = false)}
-							class="block px-4 py-2.5 rounded-lg text-base font-semibold text-amber-400 hover:bg-slate-800"
+							class="block px-4 py-2 rounded-lg text-sm font-semibold text-red-400 hover:bg-slate-800"
 						>
-							⚡ Member Governance
+							🌐 Community Feed
 						</a>
-						<a
-							href="/admin/fundraising"
-							onclick={() => (isMobileMenuOpen = false)}
-							class="block px-4 py-2.5 rounded-lg text-base font-semibold text-rose-400 hover:bg-slate-800"
-						>
-							💰 Fundraising & Disbursements
-						</a>
-					{/if}
-					<div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+						{#if data.user.role === 'admin'}
+							<a
+								href="/members"
+								onclick={() => (isMobileMenuOpen = false)}
+								class="block px-4 py-2 rounded-lg text-sm font-semibold text-blue-400 hover:bg-slate-800"
+							>
+								👥 Member Directory
+							</a>
+							<a
+								href="/admin/members"
+								onclick={() => (isMobileMenuOpen = false)}
+								class="block px-4 py-2 rounded-lg text-sm font-semibold text-amber-400 hover:bg-slate-800"
+							>
+								⚡ Member Governance
+							</a>
+							<a
+								href="/admin/fundraising"
+								onclick={() => (isMobileMenuOpen = false)}
+								class="block px-4 py-2 rounded-lg text-sm font-semibold text-rose-400 hover:bg-slate-800"
+							>
+								💰 Fundraising & Disbursements
+							</a>
+						{/if}
+					</div>
+
+					<div class="pt-3 border-t border-slate-800 flex items-center justify-between px-4">
 						<span class="text-sm font-semibold text-slate-300">👤 {data.user.fullName}</span>
 						<a
 							href="/logout"
 							onclick={() => (isMobileMenuOpen = false)}
-							class="px-4 py-2 rounded-lg text-xs font-semibold bg-red-600/80 text-white"
+							class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-red-600/80 text-white"
 						>
 							Logout
 						</a>
@@ -227,39 +222,65 @@
 		{/if}
 	</header>
 
-	<!-- Admin Secondary Navigation Bar (Visible to Admins) -->
-	{#if data.user && data.user.role === 'admin'}
-		<nav aria-label="Admin Navigation" class="bg-slate-900/95 border-b border-amber-500/20 py-2 px-4 sm:px-6 lg:px-8 shadow-md backdrop-blur-sm sticky top-20 z-40">
+	<!-- Secondary Navigation Bar for Logged-In Users -->
+	{#if data.user}
+		<nav aria-label="Logged-in User Navigation" class="bg-slate-900/95 border-b border-slate-800 py-2 px-4 sm:px-6 lg:px-8 shadow-md backdrop-blur-sm sticky top-20 z-40">
 			<div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
+				<!-- Member Hub Links -->
 				<div class="flex items-center gap-2">
-					<span class="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 font-bold border border-amber-500/30 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
-						<span>🛡️</span>
-						<span>Admin Center</span>
+					<span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold border border-slate-700 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+						<span>🍁</span>
+						<span>Portal</span>
 					</span>
-					<span class="text-slate-500 hidden sm:inline">•</span>
-					<span class="text-slate-400 hidden sm:inline font-medium">Executive Management</span>
+					<a
+						href="/feed"
+						class="px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 {data.pathname === '/feed'
+							? 'bg-red-600 text-white font-bold shadow-md shadow-red-600/20'
+							: 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/80'}"
+					>
+						<span>🌐</span>
+						<span>Community Feed</span>
+					</a>
+					{#if data.user.role === 'admin'}
+						<a
+							href="/members"
+							class="px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 {data.pathname === '/members'
+								? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/20'
+								: 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/80'}"
+						>
+							<span>👥</span>
+							<span>Member Directory</span>
+						</a>
+					{/if}
 				</div>
 
-				<div class="flex items-center gap-2">
-					<a
-						href="/admin/members"
-						class="px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 {data.pathname === '/admin/members'
-							? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
-							: 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'}"
-					>
-						<span>👥</span>
-						<span>Member Governance</span>
-					</a>
-					<a
-						href="/admin/fundraising"
-						class="px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 {data.pathname === '/admin/fundraising'
-							? 'bg-red-600 text-white font-bold shadow-md shadow-red-600/20'
-							: 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'}"
-					>
-						<span>💰</span>
-						<span>Fundraising & Relief</span>
-					</a>
-				</div>
+				<!-- Executive Admin Controls -->
+				{#if data.user.role === 'admin'}
+					<div class="flex items-center gap-2 pl-3 sm:border-l sm:border-slate-800">
+						<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold border border-amber-500/30 uppercase tracking-wider text-[10px] hidden sm:inline-flex items-center gap-1">
+							<span>🛡️</span>
+							<span>Admin Panel</span>
+						</span>
+						<a
+							href="/admin/members"
+							class="px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 {data.pathname === '/admin/members'
+								? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
+								: 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'}"
+						>
+							<span>👥</span>
+							<span>Governance</span>
+						</a>
+						<a
+							href="/admin/fundraising"
+							class="px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 {data.pathname === '/admin/fundraising'
+								? 'bg-rose-600 text-white font-bold shadow-md shadow-rose-600/20'
+								: 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'}"
+						>
+							<span>💰</span>
+							<span>Fundraising</span>
+						</a>
+					</div>
+				{/if}
 			</div>
 		</nav>
 	{/if}

@@ -20,11 +20,7 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 
 	const db = getDb(platform);
 	const rawCampaigns = await getCampaigns(db);
-	const selectedCampaignId = url.searchParams.get('campaign') || NEPAL_FLOOD_RELIEF_CAMPAIGN.id;
-
-	// Load donations and disbursements for the selected campaign
-	const donations = await getDonations(db, selectedCampaignId);
-	const disbursements = await getDisbursements(db, selectedCampaignId);
+	const selectedCampaignId = url.searchParams.get('campaign') || null;
 
 	// Compute stats for all campaigns
 	const campaigns = await Promise.all(
@@ -43,31 +39,47 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 					totalPledged: cPledged,
 					totalDisbursed: cDisbursed,
 					donorCount: cDonations.length,
+					receivedCount: cDonations.filter((d) => d.status === 'received').length,
+					pledgedCount: cDonations.filter((d) => d.status === 'pledged').length,
 					netBalance: cReceived - cDisbursed
 				}
 			};
 		})
 	);
 
-	const selectedCampaign = campaigns.find((c) => c.id === selectedCampaignId) || campaigns[0];
+	// Society-wide global statistics across all initiatives
+	const globalStats = {
+		totalTargetGoal: campaigns.reduce((sum, c) => sum + Number(c.target_goal), 0),
+		totalRaised: campaigns.reduce((sum, c) => sum + c.stats.totalRaised, 0),
+		totalReceived: campaigns.reduce((sum, c) => sum + c.stats.totalReceived, 0),
+		totalPledged: campaigns.reduce((sum, c) => sum + c.stats.totalPledged, 0),
+		totalDisbursed: campaigns.reduce((sum, c) => sum + c.stats.totalDisbursed, 0),
+		totalNetTreasury: campaigns.reduce((sum, c) => sum + c.stats.netBalance, 0),
+		totalDonors: campaigns.reduce((sum, c) => sum + c.stats.donorCount, 0),
+		campaignCount: campaigns.length
+	};
 
-	const totalRaised = donations.reduce((sum, d) => sum + Number(d.amount), 0);
-	const totalReceived = donations
-		.filter((d) => d.status === 'received')
-		.reduce((sum, d) => sum + Number(d.amount), 0);
-	const totalPledged = donations
-		.filter((d) => d.status === 'pledged')
-		.reduce((sum, d) => sum + Number(d.amount), 0);
-	const totalDisbursed = disbursements.reduce((sum, d) => sum + Number(d.amount), 0);
-	const netAvailableBalance = totalReceived - totalDisbursed;
+	let selectedCampaign: any = null;
+	let donations: any[] = [];
+	let disbursements: any[] = [];
+	let campaignStats = null;
 
-	return {
-		campaigns,
-		selectedCampaignId,
-		selectedCampaign,
-		donations,
-		disbursements,
-		stats: {
+	if (selectedCampaignId) {
+		selectedCampaign = campaigns.find((c) => c.id === selectedCampaignId) || campaigns[0];
+		donations = await getDonations(db, selectedCampaign.id);
+		disbursements = await getDisbursements(db, selectedCampaign.id);
+
+		const totalRaised = donations.reduce((sum, d) => sum + Number(d.amount), 0);
+		const totalReceived = donations
+			.filter((d) => d.status === 'received')
+			.reduce((sum, d) => sum + Number(d.amount), 0);
+		const totalPledged = donations
+			.filter((d) => d.status === 'pledged')
+			.reduce((sum, d) => sum + Number(d.amount), 0);
+		const totalDisbursed = disbursements.reduce((sum, d) => sum + Number(d.amount), 0);
+		const netAvailableBalance = totalReceived - totalDisbursed;
+
+		campaignStats = {
 			totalRaised,
 			totalReceived,
 			totalPledged,
@@ -76,6 +88,25 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 			totalDonors: donations.length,
 			receivedCount: donations.filter((d) => d.status === 'received').length,
 			pledgedCount: donations.filter((d) => d.status === 'pledged').length
+		};
+	}
+
+	return {
+		campaigns,
+		selectedCampaignId,
+		selectedCampaign,
+		globalStats,
+		donations,
+		disbursements,
+		stats: campaignStats || {
+			totalRaised: globalStats.totalRaised,
+			totalReceived: globalStats.totalReceived,
+			totalPledged: globalStats.totalPledged,
+			totalDisbursed: globalStats.totalDisbursed,
+			netAvailableBalance: globalStats.totalNetTreasury,
+			totalDonors: globalStats.totalDonors,
+			receivedCount: 0,
+			pledgedCount: 0
 		}
 	};
 };
