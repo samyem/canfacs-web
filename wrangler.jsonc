@@ -22,5 +22,12 @@
 			"binding": "IMAGES_BUCKET",
 			"bucket_name": "canfacs-images"
 		}
-	]
+	],
+	"observability": {
+		"enabled": true,
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true
+		}
+	}
 }
