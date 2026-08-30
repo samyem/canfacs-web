@@ -22,6 +22,8 @@ declare global {
 				CLOUDFLARE_API_TOKEN?: string;
 				CLOUDFLARE_ACCOUNT_ID?: string;
 				CLOUDFLARE_FROM_EMAIL?: string;
+				GOOGLE_CLIENT_ID?: string;
+				GOOGLE_CLIENT_SECRET?: string;
 			};
 			ctx: ExecutionContext;
 			caches: CacheStorage;

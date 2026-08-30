@@ -3,11 +3,25 @@ import type { Actions, PageServerLoad } from './$types';
 import { getDb, getMemberByEmail } from '$lib/server/db';
 import { createSessionToken, verifyPassword } from '$lib/server/auth';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	if (locals.user) {
 		throw redirect(303, '/feed');
 	}
-	return {};
+
+	const errorParam = url.searchParams.get('error');
+	let error: string | null = null;
+
+	if (errorParam === 'google_not_configured') {
+		error = 'Google Sign-In is not currently configured.';
+	} else if (errorParam === 'google_cancelled') {
+		error = 'Google Sign-In was cancelled.';
+	} else if (errorParam === 'account_denied') {
+		error = 'Your account application has been reviewed and declined.';
+	} else if (errorParam === 'invalid_state' || errorParam === 'token_exchange_failed' || errorParam === 'user_info_failed') {
+		error = 'Unable to complete Google authentication. Please try again or use email.';
+	}
+
+	return { error };
 };
 
 export const actions: Actions = {

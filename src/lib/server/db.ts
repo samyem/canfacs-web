@@ -114,11 +114,11 @@ async function ensureLocalDefaultAdmin() {
 			campaign_id: 'nepal-flood-2024',
 			donor_name: 'Dr. Meghraj Gnawali',
 			email: 'meghraj@canfacs.org',
-			amount: 100,
+			amount: 500,
 			currency: 'CAD',
 			message: 'CANFACS Board contribution for immediate flood & pediatric relief.',
 			is_anonymous: false,
-			created_at: '2024-10-01T10:00:00Z'
+			created_at: '2026-08-30T10:00:00Z'
 		},
 		{
 			id: 'don-bod-02',
@@ -129,7 +129,7 @@ async function ensureLocalDefaultAdmin() {
 			currency: 'CAD',
 			message: 'Supporting affected school children and families in Nepal.',
 			is_anonymous: false,
-			created_at: '2024-10-01T10:30:00Z'
+			created_at: '2026-08-30T10:30:00Z'
 		},
 		{
 			id: 'don-bod-03',
@@ -140,7 +140,7 @@ async function ensureLocalDefaultAdmin() {
 			currency: 'CAD',
 			message: 'In solidarity with emergency restoration and community relief.',
 			is_anonymous: false,
-			created_at: '2024-10-01T11:00:00Z'
+			created_at: '2026-08-30T11:00:00Z'
 		},
 		{
 			id: 'don-bod-04',
@@ -151,7 +151,7 @@ async function ensureLocalDefaultAdmin() {
 			currency: 'CAD',
 			message: 'Solidarity from Atlantic Canada for our communities in Nepal.',
 			is_anonymous: false,
-			created_at: '2024-10-01T11:30:00Z'
+			created_at: '2026-08-30T11:30:00Z'
 		},
 		{
 			id: 'don-bod-06',
@@ -162,7 +162,7 @@ async function ensureLocalDefaultAdmin() {
 			currency: 'CAD',
 			message: 'Supporting essential emergency relief and community rebuilding.',
 			is_anonymous: false,
-			created_at: '2024-10-01T12:30:00Z'
+			created_at: '2026-08-30T12:30:00Z'
 		},
 		{
 			id: 'don-bod-07',
@@ -173,18 +173,7 @@ async function ensureLocalDefaultAdmin() {
 			currency: 'CAD',
 			message: 'Every contribution counts towards urgent medical & food relief.',
 			is_anonymous: false,
-			created_at: '2024-10-01T13:00:00Z'
-		},
-		{
-			id: 'don-bod-08',
-			campaign_id: 'nepal-flood-2024',
-			donor_name: 'Mr. Purushottam Thapa',
-			email: 'purushottam@canfacs.org',
-			amount: 100,
-			currency: 'CAD',
-			message: 'Prayers and support for displaced families across Nepal.',
-			is_anonymous: false,
-			created_at: '2024-10-01T13:30:00Z'
+			created_at: '2026-08-30T13:00:00Z'
 		},
 		{
 			id: 'don-bod-09',
@@ -195,7 +184,7 @@ async function ensureLocalDefaultAdmin() {
 			currency: 'CAD',
 			message: 'CANFACS Board contribution towards disaster rehabilitation.',
 			is_anonymous: false,
-			created_at: '2024-10-01T14:00:00Z'
+			created_at: '2026-08-30T14:00:00Z'
 		},
 		{
 			id: 'don-bod-10',
@@ -206,7 +195,7 @@ async function ensureLocalDefaultAdmin() {
 			currency: 'CAD',
 			message: 'With love and solidarity from Alberta for flood-hit regions.',
 			is_anonymous: false,
-			created_at: '2024-10-01T14:30:00Z'
+			created_at: '2026-08-30T14:30:00Z'
 		},
 		{
 			id: 'don-bod-11',
@@ -217,7 +206,18 @@ async function ensureLocalDefaultAdmin() {
 			currency: 'CAD',
 			message: 'Standing united with our brothers and sisters in Nepal.',
 			is_anonymous: false,
-			created_at: '2024-10-01T15:00:00Z'
+			created_at: '2026-08-30T15:00:00Z'
+		},
+		{
+			id: 'don_navin_dhakal',
+			campaign_id: 'nepal-flood-2024',
+			donor_name: 'Mr. Navin Dhakal',
+			email: 'navin@canfacs.org',
+			amount: 100,
+			currency: 'CAD',
+			message: 'In solidarity with flood-affected communities in Nepal.',
+			is_anonymous: false,
+			created_at: '2026-08-30T18:38:00Z'
 		}
 	);
 }
