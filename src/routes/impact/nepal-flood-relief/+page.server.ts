@@ -5,15 +5,31 @@ import { NEPAL_FLOOD_RELIEF_CAMPAIGN } from '$lib/data/siteData';
 import { getSquareConfig, getOrFetchLocationId, processSquarePayment } from '$lib/server/square';
 import { sendDonationConfirmationEmail } from '$lib/server/email';
 
+function cleanDonorMessage(msg: string | null | undefined): string | null {
+	if (!msg) return null;
+	const cleaned = msg
+		.replace(/\s*\(Processed via Square(?: Webhook)? - Ref: [^)]+\)/gi, '')
+		.replace(/\s*•\s*$/, '')
+		.trim();
+	return cleaned.length > 0 ? cleaned : null;
+}
+
 export const load: PageServerLoad = async ({ platform }) => {
 	const db = getDb(platform);
-	const donations = await getDonations(db, NEPAL_FLOOD_RELIEF_CAMPAIGN.id);
+	const rawDonations = await getDonations(db, NEPAL_FLOOD_RELIEF_CAMPAIGN.id);
 	const square = getSquareConfig(platform);
 
 	let resolvedLocationId = square.locationId;
 	if (square.isConfigured && !resolvedLocationId) {
 		resolvedLocationId = await getOrFetchLocationId(square);
 	}
+
+	const donations = rawDonations
+		.filter((d) => d.id !== 'don-bod-05')
+		.map((d) => ({
+			...d,
+			message: cleanDonorMessage(d.message)
+		}));
 
 	const totalRaised = donations.reduce((sum, d) => sum + Number(d.amount), 0);
 	const targetGoal = NEPAL_FLOOD_RELIEF_CAMPAIGN.targetGoalCAD;
@@ -102,11 +118,12 @@ export const actions: Actions = {
 
 		try {
 			await createDonation(db, {
+				id: paymentId ? `sq_${paymentId}` : undefined,
 				donor_name: is_anonymous ? 'Anonymous Donor' : donor_name,
 				email,
 				amount,
 				currency: 'CAD',
-				message: paymentId ? `${message ? message + ' • ' : ''}(Processed via Square - Ref: ${paymentId})` : message,
+				message: message ? message.trim() : null,
 				is_anonymous,
 				campaign_id: NEPAL_FLOOD_RELIEF_CAMPAIGN.id
 			});

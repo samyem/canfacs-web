@@ -41,7 +41,9 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 
 				// Check if this payment is already recorded in the database
 				const existing = await getDonations(db, NEPAL_FLOOD_RELIEF_CAMPAIGN.id);
-				const isAlreadySaved = existing.some((d) => d.message && d.message.includes(paymentId));
+				const isAlreadySaved = existing.some(
+					(d) => d.id === `sq_${paymentId}` || d.id === paymentId || (d.message && d.message.includes(paymentId))
+				);
 
 				const donorName =
 					payment.buyer_name ||
@@ -52,11 +54,12 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 
 				if (!isAlreadySaved) {
 					await createDonation(db, {
+						id: `sq_${paymentId}`,
 						donor_name: donorName,
 						email: buyerEmail,
 						amount: amountCAD,
 						currency: 'CAD',
-						message: `${note ? note + ' • ' : ''}(Processed via Square Webhook - Ref: ${paymentId})`,
+						message: note ? note.trim() : null,
 						is_anonymous: false,
 						campaign_id: NEPAL_FLOOD_RELIEF_CAMPAIGN.id
 					});
