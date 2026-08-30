@@ -165,12 +165,15 @@
 					</h2>
 
 					<p class="text-slate-300 text-sm sm:text-base leading-relaxed">
-						Catastrophic late September flash floods and landslides—the heaviest rainfall recorded in over 50 years—claimed over 250 lives and displaced 8,000+ people across Nepal. CANFACS has launched a dedicated fundraising initiative with a <strong>target goal of $10,000 CAD</strong>.
+						Catastrophic late September flash floods and landslides claimed over 250 lives and displaced 8,000+ people across Nepal. CANFACS is raising a <strong>$10,000 CAD emergency fund</strong>, which will be <strong>disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members with public tracking.
 					</p>
 
 					<div class="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300 pt-1">
 						<span class="flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
 							🎯 Target Goal: <strong class="text-red-400">$10,000 CAD</strong>
+						</span>
+						<span class="flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+							🏛️ Recipient: <strong class="text-amber-400">Nepal PMO Fund</strong>
 						</span>
 						<span class="flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
 							💳 Interac e-Transfer: <strong class="text-white font-mono">info@canfacs.org</strong>

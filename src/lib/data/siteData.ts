@@ -339,6 +339,18 @@ export const LOCAL_IMPACT_ACTIVITIES: ImpactActivity[] = [
 	}
 ];
 
+export interface DisbursementRecord {
+	id: string;
+	date: string;
+	recipient: string;
+	amountCAD: number;
+	amountNPR?: string;
+	status: 'Pending Collection' | 'In Processing' | 'Disbursed';
+	referenceNumber?: string;
+	notes: string;
+	officialReceiptAvailable?: boolean;
+}
+
 export const NEPAL_FLOOD_RELIEF_CAMPAIGN = {
 	id: 'nepal-flood-2024',
 	title: 'Nepal Flood Emergency Relief & Rehabilitation Fund',
@@ -346,6 +358,9 @@ export const NEPAL_FLOOD_RELIEF_CAMPAIGN = {
 		'Supporting flood and landslide-affected families, children, and displaced communities across Kathmandu Valley, Kavre, and Koshi/Bagmati provinces.',
 	targetGoalCAD: 10000,
 	etransferEmail: 'info@canfacs.org',
+	disbursementRecipient: "Government of Nepal Prime Minister's Disaster Relief Fund (PMO)",
+	disbursementStatement:
+		'All funds collected through this campaign will be disbursed directly to the Government of Nepal Prime Minister’s Disaster Relief Fund (PMO Fund) on behalf of CANFACS and its members. Every disbursement and transfer will be publicly tracked on this page for complete transparency.',
 	disasterContext: {
 		event:
 			'In late September, Nepal suffered catastrophic flash floods and landslides triggered by record-breaking monsoon rainfall—the heaviest recorded in the region in over 50 years. Over 250 lives were lost, 4,600+ homes were destroyed, and critical highways, bridges, rural water systems, and schools were devastated.',
@@ -363,25 +378,36 @@ export const NEPAL_FLOOD_RELIEF_CAMPAIGN = {
 			'Essential medical supplies, wound care, and pediatric first aid in hard-hit rural municipalities.',
 			'School rehabilitation support, replacement textbooks, and classroom restoration for children.'
 		]
-	}
+	},
+	disbursements: [
+		{
+			id: 'disb-001',
+			date: 'Current Campaign Phase',
+			recipient: "Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)",
+			amountCAD: 1100,
+			status: 'Pending Collection' as const,
+			notes:
+				'Initial Board of Directors contributions ($1,100 CAD) and ongoing community donations are accumulating towards the scheduled wire disbursement to the PMO Disaster Relief Fund.'
+		}
+	]
 };
 
 export const GLOBAL_IMPACT_ACTIVITIES: ImpactActivity[] = [
 	{
 		id: 'humanitarian-disaster-relief',
-		title: 'Nepal Flood Emergency Relief & Rehabilitation Fund (Active Campaign)',
+		title: 'Nepal Flood Emergency Relief & PMO Fund (Active Campaign)',
 		category: 'Humanitarian & Crisis Relief',
 		summary:
-			'Mobilizing rapid emergency assistance, medical relief, and rebuilding aid for families and children displaced by unprecedented monsoon flooding and landslides in Nepal. Target goal: $10,000 CAD.',
+			'Mobilizing rapid emergency relief for families and children displaced by catastrophic monsoon flooding. All collected funds will be disbursed to the Nepal Government Prime Minister’s Office (PMO) Disaster Relief Fund on behalf of CANFACS and its members, with public tracking on our website.',
 		details: [
-			'Dedicated Canadian fundraising campaign targeting $10,000 CAD for verified on-the-ground relief in Kathmandu, Kavre, and rural districts.',
-			'Procuring and distributing clean water purification, emergency food parcels, and temporary shelter kits.',
-			'Long-term community rehabilitation support for affected rural schools, sanitation systems, and health posts.',
-			'Direct Interac e-Transfer contributions available to info@canfacs.org with transparent public donor listings.'
+			'Target goal of $10,000 CAD to support national flood relief, drinking water restoration, and rural reconstruction.',
+			'Collected funds will be disbursed directly to the Government of Nepal PMO Disaster Relief Fund.',
+			'Full public disbursement tracking, wire confirmation, and donor honor roll published on this site.',
+			'Contributions accepted via Credit/Debit Card (Square) or Interac e-Transfer to info@canfacs.org.'
 		],
 		icon: '🌊',
-		tags: ['Nepal Flood Relief', 'Emergency Aid', 'Disaster Response', '$10k Goal', 'Active Fundraiser'],
-		beneficiaries: 'Over 8,000 displaced individuals, children, and flood-affected rural communities in Nepal'
+		tags: ['Nepal Flood Relief', 'PMO Disaster Fund', 'Government Relief', '$10k Goal', 'Public Tracking'],
+		beneficiaries: 'Flood-affected families, children, and rural communities across Nepal via the PMO Disaster Relief Fund'
 	},
 	{
 		id: 'diplomatic-partnership',

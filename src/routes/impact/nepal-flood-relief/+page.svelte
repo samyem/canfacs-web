@@ -187,7 +187,7 @@
 				</h1>
 
 				<p class="text-slate-300 text-base sm:text-lg leading-relaxed">
-					Mobilizing direct humanitarian assistance, potable water purification, emergency shelter, and educational rehabilitation for families displaced by catastrophic monsoon flooding across Nepal.
+					Mobilizing direct humanitarian assistance for families displaced by catastrophic monsoon flooding across Nepal. <strong>All collected funds will be disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members, with transparent public tracking on this page.
 				</p>
 			</div>
 
@@ -250,8 +250,59 @@
 
 		<!-- Disaster Overview & Donation Form -->
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-			<!-- Disaster Context -->
+			<!-- Disaster Context & Public Disbursement Log -->
 			<div class="lg:col-span-2 space-y-6">
+				<!-- Official Government PMO Fund Disbursement Commitment -->
+				<div class="glass-panel p-8 rounded-2xl border border-amber-900/40 bg-gradient-to-br from-slate-900/90 to-slate-950/90 space-y-4 shadow-xl">
+					<div class="flex items-center gap-3">
+						<div class="w-10 h-10 rounded-xl bg-amber-950 border border-amber-800 text-amber-400 flex items-center justify-center text-xl font-bold">
+							🏛️
+						</div>
+						<div>
+							<span class="text-xs uppercase font-bold text-amber-400 tracking-wider">Fund Destination & Transparency</span>
+							<h3 class="text-lg sm:text-xl font-bold text-white">Disbursement to Nepal Government PMO Fund</h3>
+						</div>
+					</div>
+
+					<p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+						All funds raised through this campaign will be disbursed directly to the <strong>Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of <strong>CANFACS and its members</strong>.
+					</p>
+
+					<div class="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+						<div class="flex items-center justify-between text-xs font-bold text-slate-400 border-b border-slate-800/80 pb-2">
+							<span>PUBLIC DISBURSEMENT TRACKING</span>
+							<span class="text-emerald-400">Live Status</span>
+						</div>
+
+						<div class="space-y-3 text-xs">
+							<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-slate-900/60 border border-slate-800">
+								<div>
+									<div class="font-bold text-white flex items-center gap-2">
+										<span>Tranche 1 (Active Campaign)</span>
+										<span class="px-2 py-0.5 rounded bg-amber-950 border border-amber-800 text-[10px] text-amber-300 font-semibold">
+											Accumulating for Transfer
+										</span>
+									</div>
+									<div class="text-[11px] text-slate-400 mt-0.5">
+										Recipient: <strong>Prime Minister's Disaster Relief Fund, Nepal (PMO)</strong>
+									</div>
+								</div>
+
+								<div class="sm:text-right">
+									<div class="text-base font-black text-amber-400">
+										${data.stats.totalRaised.toLocaleString('en-CA')} CAD
+									</div>
+									<div class="text-[10px] text-slate-400">of $10,000 CAD Target</div>
+								</div>
+							</div>
+						</div>
+
+						<p class="text-[11px] text-slate-400 italic pt-1">
+							📌 Wire transfer confirmation receipts, official acknowledgment documents, and disbursement notices will be posted directly to this log once processed.
+						</p>
+					</div>
+				</div>
+
 				<div class="glass-panel p-8 rounded-2xl border border-slate-800 space-y-6">
 					<div class="space-y-2">
 						<span class="text-xs uppercase font-bold text-red-400 tracking-wider">The Crisis on the Ground</span>

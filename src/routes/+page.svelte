@@ -108,7 +108,7 @@
 				</h2>
 
 				<p class="text-slate-300 text-sm sm:text-base leading-relaxed">
-					Catastrophic monsoon flash floods and landslides—the heaviest in over 50 years—claimed over 250 lives and displaced 8,000+ people in Kathmandu Valley, Kavre, and Koshi/Bagmati provinces. CANFACS has mobilized an emergency fund with a <strong>target goal of $10,000 CAD</strong>.
+					Catastrophic monsoon flash floods and landslides claimed over 250 lives and displaced 8,000+ people across Nepal. CANFACS has launched an emergency fund with a <strong>target goal of $10,000 CAD</strong>. <strong>All collected funds will be disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members, with public tracking on our website.
 				</p>
 
 				<div class="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300 pt-1">
@@ -116,10 +116,13 @@
 						🎯 Target Goal: <strong class="text-red-400">$10,000 CAD</strong>
 					</span>
 					<span class="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+						🏛️ Recipient: <strong class="text-amber-400">Nepal PMO Fund</strong>
+					</span>
+					<span class="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
 						💳 Interac e-Transfer: <strong class="text-white font-mono">info@canfacs.org</strong>
 					</span>
 					<span class="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-emerald-400">
-						🔒 Online Card Payments Supported
+						🔒 Online Card Payments
 					</span>
 				</div>
 			</div>
