@@ -273,6 +273,8 @@
 					<li><a href="/events" class="hover:text-red-400 transition-colors">Events & Everest Day</a></li>
 					<li><a href="/join-canfacs" class="hover:text-red-400 transition-colors">Membership Form</a></li>
 					<li><a href="/login" class="hover:text-red-400 font-semibold transition-colors">🔑 Member Login</a></li>
+					<li><a href="/privacy-policy" class="hover:text-red-400 text-xs text-slate-400 transition-colors">Privacy Policy</a></li>
+					<li><a href="/terms-of-service" class="hover:text-red-400 text-xs text-slate-400 transition-colors">Terms of Service</a></li>
 				</ul>
 			</div>
 
@@ -290,7 +292,13 @@
 
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-slate-800/60 text-xs text-center text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-4">
 			<p>© 2016 - 2026 {SITE_INFO.fullName}. All rights reserved.</p>
-			<p></p>
+			<div class="flex items-center gap-4">
+				<a href="/privacy-policy" class="hover:text-slate-300 underline transition-colors">Privacy Policy</a>
+				<span>•</span>
+				<a href="/terms-of-service" class="hover:text-slate-300 underline transition-colors">Terms of Service</a>
+				<span>•</span>
+				<a href="/impact/nepal-flood-relief" class="hover:text-slate-300 underline transition-colors">Relief Initiative</a>
+			</div>
 		</div>
 	</footer>
 </div>

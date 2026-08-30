@@ -18,7 +18,9 @@ const PUBLIC_PAGES: SitemapEntry[] = [
 	{ path: '/events', priority: '0.8', changefreq: 'weekly' },
 	{ path: '/bhetghat', priority: '0.8', changefreq: 'monthly' },
 	{ path: '/newsletters', priority: '0.7', changefreq: 'monthly' },
-	{ path: '/join-canfacs', priority: '0.8', changefreq: 'monthly' }
+	{ path: '/join-canfacs', priority: '0.8', changefreq: 'monthly' },
+	{ path: '/privacy-policy', priority: '0.5', changefreq: 'monthly' },
+	{ path: '/terms-of-service', priority: '0.5', changefreq: 'monthly' }
 ];
 
 export const GET: RequestHandler = async () => {
