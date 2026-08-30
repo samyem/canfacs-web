@@ -538,23 +538,79 @@
 							/>
 						</div>
 
-						<!-- Square Card Element (When paying with card) -->
+						<!-- Card Payment Inputs -->
 						{#if paymentMethod === 'card'}
-							<div class="space-y-2 pt-2 border-t border-slate-800">
+							<div class="space-y-2.5 pt-2 border-t border-slate-800">
 								<div class="flex items-center justify-between">
 									<span class="text-xs font-bold uppercase tracking-wider text-slate-300">
 										Credit or Debit Card
 									</span>
-									<span class="text-[10px] text-slate-400 flex items-center gap-1">
-										🔒 Secured Payment
+									<span class="text-[10px] text-slate-400 flex items-center gap-1.5 font-medium">
+										<span>💳 Visa • MC • Amex</span>
+										<span class="text-slate-600">|</span>
+										<span class="text-emerald-400">🔒 256-bit SSL</span>
 									</span>
 								</div>
 
-								<!-- Square Web Payments SDK Card container -->
-								<div
-									id="card-container"
-									class="min-h-[90px] rounded-xl bg-slate-950 border border-slate-800 p-2"
-								></div>
+								{#if data.square.isConfigured}
+									<!-- Square Web Payments SDK Card container -->
+									<div
+										id="card-container"
+										class="min-h-[90px] rounded-xl bg-slate-950 border border-slate-800 p-2"
+									></div>
+								{:else}
+									<!-- Interactive Card Form Fields (Active when Square SDK is pending/local) -->
+									<div class="space-y-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
+										<div>
+											<label for="card_number" class="text-[11px] text-slate-400 block mb-1">Card Number</label>
+											<div class="relative">
+												<input
+													id="card_number"
+													type="text"
+													maxlength="19"
+													placeholder="4500 •••• •••• ••••"
+													class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs font-mono text-white placeholder-slate-600 focus:outline-none focus:border-red-500"
+												/>
+												<span class="absolute inset-y-0 right-0 pr-3 flex items-center text-xs text-slate-400">
+													💳
+												</span>
+											</div>
+										</div>
+
+										<div class="grid grid-cols-3 gap-2">
+											<div>
+												<label for="card_expiry" class="text-[11px] text-slate-400 block mb-1">Expiry</label>
+												<input
+													id="card_expiry"
+													type="text"
+													maxlength="5"
+													placeholder="MM/YY"
+													class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs font-mono text-white placeholder-slate-600 focus:outline-none focus:border-red-500 text-center"
+												/>
+											</div>
+											<div>
+												<label for="card_cvc" class="text-[11px] text-slate-400 block mb-1">CVV/CVC</label>
+												<input
+													id="card_cvc"
+													type="password"
+													maxlength="4"
+													placeholder="•••"
+													class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs font-mono text-white placeholder-slate-600 focus:outline-none focus:border-red-500 text-center"
+												/>
+											</div>
+											<div>
+												<label for="card_postal" class="text-[11px] text-slate-400 block mb-1">Postal Code</label>
+												<input
+													id="card_postal"
+													type="text"
+													maxlength="7"
+													placeholder="V6B 1A1"
+													class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs uppercase font-mono text-white placeholder-slate-600 focus:outline-none focus:border-red-500 text-center"
+												/>
+											</div>
+										</div>
+									</div>
+								{/if}
 							</div>
 						{/if}
 
