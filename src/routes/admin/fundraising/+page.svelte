@@ -29,7 +29,14 @@
 	let showEditDonationModal = $state(false);
 	let showAddDisbursementModal = $state(false);
 	let showCreateCampaignModal = $state(false);
+	let showEditCampaignModal = $state(false);
 	let editingDonation = $state<any>(null);
+	let editingCampaign = $state<any>(null);
+
+	function openEditCampaign(camp: any) {
+		editingCampaign = { ...camp };
+		showEditCampaignModal = true;
+	}
 
 	const filteredDonations = $derived(
 		(data.donations || []).filter((d: any) => {
@@ -251,25 +258,37 @@
 							</div>
 
 							<!-- Action Buttons -->
-							<div class="pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
+							<div class="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
 								<a
 									href="/admin/fundraising?campaign={camp.id}"
-									class="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/20 transition-all flex items-center gap-1.5"
+									class="px-4 py-2 rounded-xl text-xs font-extrabold bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/20 transition-all flex items-center gap-1.5"
 								>
-									<span>👉 Open & Manage Initiative</span>
+									<span>👉 Open Initiative</span>
 									<span>&rarr;</span>
 								</a>
 
-								{#if camp.id === 'nepal-flood-2024'}
-									<a
-										href="/impact/nepal-flood-relief"
-										target="_blank"
-										class="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1"
+								<div class="flex items-center gap-2">
+									<button
+										type="button"
+										onclick={() => openEditCampaign(camp)}
+										class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1 transition-colors"
+										title="Edit Initiative Text & Goal"
 									>
-										<span>Public Page</span>
-										<span>↗</span>
-									</a>
-								{/if}
+										<span>✏️</span>
+										<span>Edit Text</span>
+									</button>
+
+									{#if camp.id === 'nepal-flood-2024'}
+										<a
+											href="/impact/nepal-flood-relief"
+											target="_blank"
+											class="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1 px-2 py-1.5"
+										>
+											<span>Public Page</span>
+											<span>↗</span>
+										</a>
+									{/if}
+								</div>
 							</div>
 						</div>
 					{/each}
@@ -326,7 +345,16 @@
 						{/if}
 					</div>
 
-					<div class="flex items-center gap-2">
+					<div class="flex items-center gap-2.5">
+						<button
+							type="button"
+							onclick={() => openEditCampaign(data.selectedCampaign)}
+							class="px-4 py-2 rounded-xl text-xs font-extrabold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 transition-all flex items-center gap-1.5"
+						>
+							<span>✏️</span>
+							<span>Edit Initiative Details</span>
+						</button>
+
 						{#if data.selectedCampaign.id === 'nepal-flood-2024'}
 							<a
 								href="/impact/nepal-flood-relief"
@@ -1166,6 +1194,118 @@
 						class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow"
 					>
 						Create Initiative
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}
+
+<!-- MODAL: EDIT INITIATIVE DETAILS -->
+{#if showEditCampaignModal && editingCampaign}
+	<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+		<div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-6">
+			<div class="flex items-center justify-between border-b border-slate-800 pb-4">
+				<div class="flex items-center gap-3">
+					<div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center font-bold text-lg">
+						✏️
+					</div>
+					<div>
+						<h3 class="text-lg font-bold text-white">Edit Initiative Details</h3>
+						<p class="text-xs text-slate-400">Update the title, target goal, description, and status.</p>
+					</div>
+				</div>
+				<button
+					type="button"
+					onclick={() => {
+						showEditCampaignModal = false;
+						editingCampaign = null;
+					}}
+					class="text-slate-400 hover:text-white font-bold"
+				>
+					✕
+				</button>
+			</div>
+
+			<form method="POST" action="?/updateCampaign" use:enhance class="space-y-4 text-xs">
+				<input type="hidden" name="id" value={editingCampaign.id} />
+
+				<div>
+					<label for="edit_camp_id" class="block font-bold text-slate-300 mb-1">Initiative ID (Slug)</label>
+					<input
+						id="edit_camp_id"
+						type="text"
+						disabled
+						value={editingCampaign.id}
+						class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-slate-400 font-mono cursor-not-allowed"
+					/>
+				</div>
+
+				<div>
+					<label for="edit_camp_title" class="block font-bold text-slate-300 mb-1">Initiative Title *</label>
+					<input
+						id="edit_camp_title"
+						name="title"
+						type="text"
+						required
+						bind:value={editingCampaign.title}
+						class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-red-500"
+					/>
+				</div>
+
+				<div>
+					<label for="edit_camp_goal" class="block font-bold text-slate-300 mb-1">Target Goal (CAD) *</label>
+					<input
+						id="edit_camp_goal"
+						name="target_goal"
+						type="number"
+						min="100"
+						required
+						bind:value={editingCampaign.target_goal}
+						class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-red-500 font-mono"
+					/>
+				</div>
+
+				<div>
+					<label for="edit_camp_subtitle" class="block font-bold text-slate-300 mb-1">Description / Disaster Summary</label>
+					<textarea
+						id="edit_camp_subtitle"
+						name="subtitle"
+						rows="3"
+						bind:value={editingCampaign.subtitle}
+						class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-red-500"
+					></textarea>
+				</div>
+
+				<div class="flex items-center gap-2 pt-1">
+					<input
+						id="edit_camp_active"
+						name="is_active"
+						type="checkbox"
+						bind:checked={editingCampaign.is_active}
+						class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-red-600 focus:ring-red-500"
+					/>
+					<label for="edit_camp_active" class="font-bold text-slate-200 cursor-pointer">
+						Mark this initiative as Active & Accepting Donations
+					</label>
+				</div>
+
+				<div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+					<button
+						type="button"
+						onclick={() => {
+							showEditCampaignModal = false;
+							editingCampaign = null;
+						}}
+						class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold"
+					>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow"
+					>
+						Save Changes
 					</button>
 				</div>
 			</form>

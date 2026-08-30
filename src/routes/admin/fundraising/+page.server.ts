@@ -3,6 +3,8 @@ import type { Actions, PageServerLoad } from './$types';
 import {
 	getDb,
 	getCampaigns,
+	createCampaign,
+	updateCampaign,
 	getDonations,
 	createDonation,
 	updateDonation,
@@ -139,6 +141,34 @@ export const actions: Actions = {
 
 		return { success: true, message: `Created new initiative "${title}" successfully.` };
 	},
+
+	updateCampaign: async ({ request, locals, platform }) => {
+		if (!locals.user || locals.user.role !== 'admin') {
+			return fail(403, { error: 'Unauthorized' });
+		}
+
+		const formData = await request.formData();
+		const id = formData.get('id')?.toString();
+		const title = formData.get('title')?.toString().trim();
+		const subtitle = formData.get('subtitle')?.toString().trim() || null;
+		const target_goal = parseFloat(formData.get('target_goal')?.toString() || '0');
+		const is_active = formData.get('is_active') === 'on' || formData.get('is_active') === 'true' || formData.get('is_active') === '1';
+
+		if (!id || !title || isNaN(target_goal) || target_goal <= 0) {
+			return fail(400, { error: 'Please provide a valid initiative title and target goal.' });
+		}
+
+		const db = getDb(platform);
+		await updateCampaign(db, id, {
+			title,
+			subtitle,
+			target_goal,
+			is_active
+		});
+
+		return { success: true, message: `Updated initiative "${title}" details successfully.` };
+	},
+
 	addDonation: async ({ request, locals, platform }) => {
 		if (!locals.user || locals.user.role !== 'admin') {
 			return fail(403, { error: 'Unauthorized' });

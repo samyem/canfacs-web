@@ -724,6 +724,49 @@ export async function createCampaign(
 	return campaign;
 }
 
+export async function updateCampaign(
+	db: any,
+	id: string,
+	data: { title?: string; subtitle?: string | null; target_goal?: number; is_active?: boolean }
+): Promise<void> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureDonationsTable(db);
+		const fields: string[] = [];
+		const values: any[] = [];
+
+		if (data.title !== undefined) {
+			fields.push('title = ?');
+			values.push(data.title.trim());
+		}
+		if (data.subtitle !== undefined) {
+			fields.push('subtitle = ?');
+			values.push(data.subtitle ? data.subtitle.trim() : null);
+		}
+		if (data.target_goal !== undefined) {
+			fields.push('target_goal = ?');
+			values.push(Number(data.target_goal));
+		}
+		if (data.is_active !== undefined) {
+			fields.push('is_active = ?');
+			values.push(data.is_active ? 1 : 0);
+		}
+
+		if (fields.length > 0) {
+			values.push(id);
+			await db.prepare(`UPDATE campaigns SET ${fields.join(', ')} WHERE id = ?`).bind(...values).run();
+		}
+	} else {
+		const idx = memoryCampaigns.findIndex((c) => c.id === id);
+		if (idx !== -1) {
+			memoryCampaigns[idx] = {
+				...memoryCampaigns[idx],
+				...data
+			};
+		}
+	}
+}
+
 // DONATION QUERIES
 export async function getDonations(db: any, campaignId = 'nepal-flood-2024'): Promise<DonationRow[]> {
 	await ensureLocalDefaultAdmin();
