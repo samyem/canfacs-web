@@ -123,6 +123,7 @@
 						</div>
 						<h3 class="text-2xl font-bold text-white">{event.title}</h3>
 						<p class="text-slate-300 text-sm leading-relaxed">{event.description}</p>
+					</div>
 				</div>
 			{/each}
 		</div>
