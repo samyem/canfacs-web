@@ -1,17 +1,22 @@
 <script lang="ts">
 	import { NEWSLETTERS, SITE_INFO } from '$lib/data/siteData';
+	import ShareButtons from '$lib/components/ShareButtons.svelte';
 </script>
 
 <svelte:head>
 	<title>Newsletters & Souvenir - {SITE_INFO.name}</title>
+	<meta
+		name="description"
+		content="Explore CANFACS archives of community magazines, essays, greetings, and community achievements across Canada and Nepal."
+	/>
 </svelte:head>
 
-<section class="py-20 bg-slate-950">
-	<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-		<div class="text-center mb-16">
+<section class="py-20 bg-slate-950 min-h-screen">
+	<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+		<div class="text-center">
 			<span class="text-xs uppercase font-bold text-red-500 tracking-wider">Publications</span>
-			<h1 class="text-4xl sm:text-5xl font-extrabold text-white mt-2 mb-6">Newsletters & Publications</h1>
-			<p class="text-slate-400 max-w-2xl mx-auto">
+			<h1 class="text-4xl sm:text-5xl font-extrabold text-white mt-2 mb-4">Newsletters & Publications</h1>
+			<p class="text-slate-400 max-w-2xl mx-auto text-sm">
 				Explore our archives of community magazines, essays, greetings, and community achievements.
 			</p>
 		</div>
@@ -34,5 +39,12 @@
 				</div>
 			{/each}
 		</div>
+
+		<!-- Share Publications -->
+		<ShareButtons
+			title="CANFACS Newsletters & Souvenir Archives"
+			description="Read and explore Canada-Nepal Friendship & Cultural Society community magazines, souvenirs, and essays."
+			variant="bar"
+		/>
 	</div>
 </section>

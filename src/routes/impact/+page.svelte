@@ -5,6 +5,7 @@
 		GLOBAL_IMPACT_ACTIVITIES,
 		NEPAL_FLOOD_RELIEF_CAMPAIGN
 	} from '$lib/data/siteData';
+	import ShareButtons from '$lib/components/ShareButtons.svelte';
 
 	let activeFilter = $state<'all' | 'local' | 'global'>('all');
 	let searchQuery = $state('');
@@ -188,6 +189,14 @@
 					>
 						Donate & View Campaign &rarr;
 					</a>
+					<div class="flex justify-center">
+						<ShareButtons
+							title="Nepal Flood Emergency Relief Fund - CANFACS"
+							description="Join CANFACS in raising $10,000 CAD for disaster relief and emergency rehabilitation in Nepal."
+							url="https://canfacs.org/impact/nepal-flood-relief"
+							variant="compact"
+						/>
+					</div>
 					<span class="text-[11px] text-center text-slate-400">
 						100% of proceeds go towards relief & rebuilding
 					</span>

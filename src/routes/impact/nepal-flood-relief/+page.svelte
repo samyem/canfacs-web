@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { onMount, tick } from 'svelte';
 	import { SITE_INFO } from '$lib/data/siteData';
+	import ShareButtons from '$lib/components/ShareButtons.svelte';
 
 	let { data, form } = $props();
 
@@ -161,8 +162,22 @@
 	<title>Nepal Flood Emergency Relief Fund ($10k Goal) - {SITE_INFO.name}</title>
 	<meta
 		name="description"
-		content="Donate online via Square or e-Transfer to the CANFACS Nepal Flood Emergency Relief & Rehabilitation Fund. Target goal: $10,000 CAD."
+		content="Mobilizing emergency assistance for flood-displaced families in Nepal. All funds are disbursed directly to the PMO Disaster Relief Fund with live public transparency. Donate online via Square or e-Transfer."
 	/>
+	<!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content="https://canfacs.org/impact/nepal-flood-relief" />
+	<meta property="og:title" content="Nepal Flood Emergency Relief Fund - CANFACS" />
+	<meta property="og:description" content="Support flood-affected families across Nepal. Direct disbursement to the Government of Nepal Prime Minister's Disaster Relief Fund with 100% transparent public accounting." />
+	<meta property="og:image" content="https://canfacs.org/canfacs-logo.png" />
+
+	<!-- Twitter / X -->
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:url" content="https://canfacs.org/impact/nepal-flood-relief" />
+	<meta name="twitter:title" content="Nepal Flood Emergency Relief Fund - CANFACS" />
+	<meta name="twitter:description" content="Support flood-affected families across Nepal. Direct disbursement to the PMO Disaster Relief Fund with 100% transparency." />
+	<meta name="twitter:image" content="https://canfacs.org/canfacs-logo.png" />
+
 	{#if data.square.sdkUrl}
 		<script src={data.square.sdkUrl}></script>
 	{/if}
@@ -265,6 +280,13 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Social Share Banner -->
+		<ShareButtons
+			title="Nepal Flood Emergency Relief & Rehabilitation Fund - CANFACS"
+			description="Support flood-affected families across Nepal. Direct disbursement to the PMO Disaster Relief Fund with 100% transparent public accounting. Donate online via Square or e-Transfer."
+			variant="bar"
+		/>
 
 		<!-- Campaign Main Content & Form Grid -->
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -718,6 +740,13 @@
 						{/if}
 					</form>
 				</div>
+
+				<!-- Share Card in Sidebar -->
+				<ShareButtons
+					title="Nepal Flood Emergency Relief Fund - CANFACS"
+					description="Join CANFACS in delivering direct relief, emergency shelters, and rehabilitation support to families displaced by flooding across Nepal."
+					variant="card"
+				/>
 			</div>
 		</div>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { EVENTS, SITE_INFO } from '$lib/data/siteData';
+	import ShareButtons from '$lib/components/ShareButtons.svelte';
 
 	const GALLERY_PHOTOS = [
 		{ src: '/pptx-gallery/image28.jpg', title: 'Multicultural & First Nations Exchange', desc: 'CANFACS celebrating cultural unity & partnership' },
@@ -122,15 +123,17 @@
 						</div>
 						<h3 class="text-2xl font-bold text-white">{event.title}</h3>
 						<p class="text-slate-300 text-sm leading-relaxed">{event.description}</p>
-					</div>
-					<div class="flex-shrink-0">
-						<span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 font-semibold text-xs">
-							<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
-							Past Event
-						</span>
-					</div>
 				</div>
 			{/each}
+		</div>
+
+		<!-- Social Share Bar for Events -->
+		<div class="mt-12">
+			<ShareButtons
+				title="CANFACS Events & Everest Day Celebrations"
+				description="Explore cultural festivals, Mount Everest Day commemorations, and community gatherings with CANFACS across Canada."
+				variant="bar"
+			/>
 		</div>
 	</div>
 </section>
