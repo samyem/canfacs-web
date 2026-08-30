@@ -192,45 +192,54 @@
 			<span class="text-slate-200">Nepal Flood Emergency Relief</span>
 		</div>
 
-		<!-- Hero / Emergency Header with Real Disaster Imagery -->
-		<div class="relative rounded-3xl overflow-hidden glass-panel border border-red-900/60 p-6 sm:p-12 shadow-2xl">
-			<!-- Background Disaster Image with Controlled Gradient Overlay -->
-			<div class="absolute inset-0 z-0 pointer-events-none">
-				<img
-					src="/nepal-flood-2026-relief-hero.jpg"
-					alt="2026 Nepal Flash Flood & Debris Flow along Trishuli River"
-					class="w-full h-full object-cover object-center scale-105 filter brightness-40 contrast-125 opacity-25"
-				/>
-				<div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-slate-950/60"></div>
-			</div>
-
+		<!-- Hero / Emergency Header with Prominent Disaster Photo & Live Progress -->
+		<div class="relative rounded-3xl overflow-hidden glass-panel border border-red-900/60 p-6 sm:p-10 shadow-2xl space-y-8">
 			<!-- Background Ambient Glow -->
 			<div
-				class="absolute top-0 right-0 w-96 h-96 bg-red-600/20 rounded-full blur-3xl pointer-events-none z-0"
+				class="absolute top-0 right-0 w-96 h-96 bg-red-600/15 rounded-full blur-3xl pointer-events-none z-0"
 			></div>
 			<div
-				class="absolute bottom-0 left-0 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none z-0"
+				class="absolute bottom-0 left-0 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none z-0"
 			></div>
 
-			<!-- Hero Text Content -->
-			<div class="relative z-10 max-w-3xl space-y-4">
-				<div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-950 border border-red-700 text-xs font-bold text-red-300 uppercase tracking-wider shadow-md">
-					<span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
-					Active Emergency Relief Campaign
+			<!-- Split Header: Narrative on Left, High-Resolution Photo on Right -->
+			<div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+				<!-- Left Column: Appeal Details -->
+				<div class="lg:col-span-7 space-y-4">
+					<div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-950 border border-red-700 text-xs font-bold text-red-300 uppercase tracking-wider shadow-md">
+						<span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+						Active Emergency Relief Campaign
+					</div>
+
+					<h1 class="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight drop-shadow-md">
+						2026 Nepal Flood & Landslide <br />
+						<span class="text-gradient-nepal">Emergency Relief Fund</span>
+					</h1>
+
+					<p class="text-slate-200 text-sm sm:text-base leading-relaxed font-normal">
+						Mobilizing direct humanitarian assistance for families and communities affected by the catastrophic 26 August 2026 Langtang Lirung glacier collapse and Trishuli River flash floods. <strong class="text-white font-semibold">All collected funds will be disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members, with transparent public tracking on this page.
+					</p>
 				</div>
 
-				<h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight drop-shadow-md">
-					2026 Nepal Flood & Landslide <br />
-					<span class="text-gradient-nepal">Emergency Relief Fund</span>
-				</h1>
-
-				<p class="text-slate-200 text-base sm:text-lg leading-relaxed font-normal">
-					Mobilizing direct humanitarian assistance for families and communities affected by the catastrophic 26 August 2026 Langtang Lirung glacier collapse and Trishuli River flash floods. <strong class="text-white font-semibold">All collected funds will be disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members, with transparent public tracking on this page.
-				</p>
+				<!-- Right Column: Prominent Visual Photo Card -->
+				<div class="lg:col-span-5">
+					<div class="relative rounded-2xl overflow-hidden border-2 border-slate-700/90 shadow-2xl group bg-slate-950">
+						<img
+							src="/nepal-flood-2026-relief-hero.jpg"
+							alt="2026 Nepal Flash Flood & Glacial Debris Flow along Trishuli River Valley"
+							class="w-full h-64 sm:h-72 object-cover object-center group-hover:scale-105 transition-transform duration-500"
+						/>
+						<div class="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-transparent to-transparent flex items-end p-4">
+							<p class="text-xs text-slate-200 font-medium leading-snug">
+								📷 <strong class="text-white font-bold">Trishuli River Valley (26 Aug 2026):</strong> Glacial debris flow & flash flood damage across Rasuwa and Nuwakot districts.
+							</p>
+						</div>
+					</div>
+				</div>
 			</div>
 
 			<!-- Live Fundraising Progress Banner (High Contrast & Sharp Typography) -->
-			<div class="relative z-20 mt-10 p-6 sm:p-8 rounded-2xl bg-slate-900/95 border border-slate-700 shadow-2xl backdrop-blur-md space-y-6">
+			<div class="relative z-10 p-6 sm:p-8 rounded-2xl bg-slate-900/98 border border-slate-700 shadow-2xl backdrop-blur-md space-y-6">
 				<div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4">
 					<div>
 						<div class="text-xs uppercase font-extrabold tracking-wider text-slate-300">Total Raised So Far</div>
@@ -403,20 +412,6 @@
 					<p class="text-slate-300 text-sm leading-relaxed">
 						On the morning of <strong>26 August 2026</strong>, a massive <strong>glacier collapse and ice avalanche occurred on Langtang Lirung</strong> in the Himalayas, generating an <strong>Ms 5.2 seismic tremor</strong> detected worldwide. The catastrophic collapse released unprecedented debris flows and flash floods surging down the <strong>Trishuli River (Bhotekoshi) basin</strong>. The flood destroyed the Gyirong Port border crossing and devastated settlements along a <strong>72 km (45 mi) stretch across Rasuwa and Nuwakot districts</strong>. With over 780 confirmed dead, thousands missing, and critical highways obliterated, affected communities are in urgent need of emergency shelter, clean drinking water, trauma healthcare, and rehabilitation aid.
 					</p>
-
-					<!-- Visual Disaster Coverage -->
-					<div class="relative rounded-2xl overflow-hidden border border-slate-800 shadow-xl group">
-						<img
-							src="/nepal-flood-2026-relief-hero.jpg"
-							alt="Devastation along the Trishuli River Valley following the Langtang Lirung glacier collapse"
-							class="w-full h-64 sm:h-80 object-cover object-center group-hover:scale-105 transition-transform duration-500"
-						/>
-						<div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent flex items-end p-4">
-							<p class="text-[11px] text-slate-300 font-medium leading-tight">
-								📷 <strong class="text-white">Trishuli River Valley (26 Aug 2026):</strong> Massive debris flows and alluvial silt inundating riverside settlements across Rasuwa and Nuwakot districts.
-							</p>
-						</div>
-					</div>
 
 					<!-- Key Stats Grid -->
 					<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
