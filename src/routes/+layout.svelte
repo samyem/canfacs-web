@@ -1,10 +1,19 @@
 <script lang="ts">
 	import './layout.css';
+	import { afterNavigate } from '$app/navigation';
 	import favicon from '$lib/assets/favicon.png';
 	import { SITE_INFO } from '$lib/data/siteData';
 
 	let { data, children } = $props();
 	let isMobileMenuOpen = $state(false);
+
+	afterNavigate(() => {
+		if (typeof window !== 'undefined' && typeof (window as any).gtag === 'function') {
+			(window as any).gtag('config', 'G-CJDN30DC0L', {
+				page_path: window.location.pathname + window.location.search
+			});
+		}
+	});
 
 	const publicNavItems = [
 		{ label: 'Home', href: '/' },
@@ -21,6 +30,35 @@
 	<title>{SITE_INFO.name} - {SITE_INFO.fullName}</title>
 	<meta name="description" content={SITE_INFO.missionSummary} />
 	<link rel="icon" href={favicon} />
+	<link rel="canonical" href={`https://canfacs.org${data.pathname === '/' ? '' : data.pathname}`} />
+
+	<!-- Open Graph / Social Media Meta -->
+	<meta property="og:type" content="website" />
+	<meta property="og:site_name" content={SITE_INFO.fullName} />
+	<meta property="og:title" content={`${SITE_INFO.name} - ${SITE_INFO.fullName}`} />
+	<meta property="og:description" content={SITE_INFO.missionSummary} />
+	<meta property="og:url" content={`https://canfacs.org${data.pathname === '/' ? '' : data.pathname}`} />
+	<meta property="og:image" content="https://canfacs.org/canfacs-logo.png" />
+
+	<!-- Twitter Card -->
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content={`${SITE_INFO.name} - ${SITE_INFO.fullName}`} />
+	<meta name="twitter:description" content={SITE_INFO.missionSummary} />
+	<meta name="twitter:image" content="https://canfacs.org/canfacs-logo.png" />
+
+	<!-- Schema.org Organization JSON-LD -->
+	{@html `<script type="application/ld+json">
+	{
+		"@context": "https://schema.org",
+		"@type": "NGO",
+		"name": "${SITE_INFO.fullName}",
+		"alternateName": "${SITE_INFO.name}",
+		"url": "https://canfacs.org",
+		"logo": "https://canfacs.org/canfacs-logo.png",
+		"foundingDate": "2016-11-30",
+		"description": "${SITE_INFO.missionSummary}"
+	}
+	</script>`}
 </svelte:head>
 
 <div class="min-h-screen flex flex-col bg-slate-950 text-slate-100">

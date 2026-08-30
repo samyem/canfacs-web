@@ -1,3 +1,13 @@
-# allow crawling everything by default
+# CANFACS Web Crawler Directives
 User-agent: *
-Disallow:
+Allow: /
+
+# Protected & authenticated member areas
+Disallow: /admin/
+Disallow: /feed
+Disallow: /members
+Disallow: /logout
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://canfacs.org/sitemap.xml
