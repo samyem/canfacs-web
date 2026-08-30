@@ -65,28 +65,32 @@
 			await tick();
 			const cardContainer = document.getElementById('card-container');
 			if (cardContainer && !squareCard) {
-				const card = await payments.card({
+				const card = await payments.card();
+				await card.attach('#card-container');
+				await card.configure({
 					style: {
 						input: {
-							color: '#0f172a',
-							fontSize: '14px'
+							color: '#f8fafc',
+							fontFamily: 'sans-serif',
+							fontSize: '14px',
+							backgroundColor: '#020617'
 						},
 						'input::placeholder': {
 							color: '#64748b'
 						},
 						'.input-container': {
-							borderColor: '#cbd5e1',
-							borderRadius: '10px'
+							borderColor: '#334155',
+							borderWidth: '1px',
+							borderRadius: '12px'
 						},
 						'.input-container.is-focus': {
-							borderColor: '#dc2626'
+							borderColor: '#ef4444'
 						},
 						'.input-container.is-error': {
-							borderColor: '#ef4444'
+							borderColor: '#f87171'
 						}
 					}
 				});
-				await card.attach('#card-container');
 				squareCard = card;
 				isSquareInitialized = true;
 			}
@@ -564,7 +568,7 @@
 									<!-- Square Web Payments SDK Card container -->
 									<div
 										id="card-container"
-										class="min-h-[90px] rounded-xl bg-white border border-slate-700 p-2.5 shadow-sm"
+										class="min-h-[90px] rounded-xl bg-slate-950 border border-slate-800 p-2"
 									></div>
 
 									{#if squareInitError || cardTokenError}
