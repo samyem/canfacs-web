@@ -76,11 +76,13 @@
 						},
 						'.input-container': {
 							borderColor: '#334155',
-							borderRadius: '12px',
-							backgroundColor: '#020617'
+							borderRadius: '12px'
 						},
 						'.input-container.is-focus': {
 							borderColor: '#ef4444'
+						},
+						'.input-container.is-error': {
+							borderColor: '#f87171'
 						}
 					}
 				});
