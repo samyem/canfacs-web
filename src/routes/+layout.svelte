@@ -10,6 +10,7 @@
 		{ label: 'Home', href: '/' },
 		{ label: 'Our Story', href: '/our-story' },
 		{ label: 'Mission & Vision', href: '/mission-and-vision' },
+		{ label: 'Impact', href: '/impact' },
 		{ label: 'Team', href: '/team' },
 		{ label: 'Events', href: '/events' },
 		{ label: 'Newsletters', href: '/newsletters' }
@@ -216,6 +217,7 @@
 				<ul class="space-y-2.5 text-sm">
 					<li><a href="/our-story" class="hover:text-red-400 transition-colors">Our Story</a></li>
 					<li><a href="/mission-and-vision" class="hover:text-red-400 transition-colors">Mission & Vision</a></li>
+					<li><a href="/impact" class="hover:text-red-400 transition-colors">Impact & Initiatives</a></li>
 					<li><a href="/team" class="hover:text-red-400 transition-colors">Executive Team</a></li>
 					<li><a href="/events" class="hover:text-red-400 transition-colors">Events & Everest Day</a></li>
 					<li><a href="/join-canfacs" class="hover:text-red-400 transition-colors">Membership Form</a></li>

@@ -40,12 +40,25 @@ export interface CommentRow {
 	created_at: string;
 }
 
+export interface DonationRow {
+	id: string;
+	campaign_id: string;
+	donor_name: string;
+	email: string | null;
+	amount: number;
+	currency: string;
+	message: string | null;
+	is_anonymous: boolean;
+	created_at: string;
+}
+
 // In-memory fallback store for local development when D1 binding is unattached
 let localStoreInitialized = false;
 let memoryMembers: MemberRow[] = [];
 let memoryPosts: PostRow[] = [];
 let memoryComments: CommentRow[] = [];
 let memoryLikes: { post_id: string; member_id: string }[] = [];
+let memoryDonations: DonationRow[] = [];
 
 async function ensureLocalDefaultAdmin() {
 	if (localStoreInitialized) return;
@@ -93,6 +106,131 @@ async function ensureLocalDefaultAdmin() {
 		image_url: null,
 		created_at: new Date().toISOString()
 	});
+
+	// Seed Board of Directors (BOD) donations ($100 CAD each)
+	memoryDonations.push(
+		{
+			id: 'don-bod-01',
+			campaign_id: 'nepal-flood-2024',
+			donor_name: 'Dr. Meghraj Gnawali',
+			email: 'meghraj@canfacs.org',
+			amount: 100,
+			currency: 'CAD',
+			message: 'CANFACS Board contribution for immediate flood & pediatric relief.',
+			is_anonymous: false,
+			created_at: '2024-10-01T10:00:00Z'
+		},
+		{
+			id: 'don-bod-02',
+			campaign_id: 'nepal-flood-2024',
+			donor_name: 'Ms. Bina Shrestha',
+			email: 'bina@canfacs.org',
+			amount: 100,
+			currency: 'CAD',
+			message: 'Supporting affected school children and families in Nepal.',
+			is_anonymous: false,
+			created_at: '2024-10-01T10:30:00Z'
+		},
+		{
+			id: 'don-bod-03',
+			campaign_id: 'nepal-flood-2024',
+			donor_name: 'Mr. Prem Devkota',
+			email: 'prem@canfacs.org',
+			amount: 100,
+			currency: 'CAD',
+			message: 'In solidarity with emergency restoration and community relief.',
+			is_anonymous: false,
+			created_at: '2024-10-01T11:00:00Z'
+		},
+		{
+			id: 'don-bod-04',
+			campaign_id: 'nepal-flood-2024',
+			donor_name: 'Mr. Rudra Adhikari',
+			email: 'rudra@canfacs.org',
+			amount: 100,
+			currency: 'CAD',
+			message: 'Solidarity from Atlantic Canada for our communities in Nepal.',
+			is_anonymous: false,
+			created_at: '2024-10-01T11:30:00Z'
+		},
+		{
+			id: 'don-bod-05',
+			campaign_id: 'nepal-flood-2024',
+			donor_name: 'Mr. Samyem Tuladhar',
+			email: 'samyem@canfacs.org',
+			amount: 100,
+			currency: 'CAD',
+			message: 'Standing together to rebuild lives and support flood victims.',
+			is_anonymous: false,
+			created_at: '2024-10-01T12:00:00Z'
+		},
+		{
+			id: 'don-bod-06',
+			campaign_id: 'nepal-flood-2024',
+			donor_name: 'Mr. Kiroj Shrestha',
+			email: 'kiroj@canfacs.org',
+			amount: 100,
+			currency: 'CAD',
+			message: 'Supporting essential emergency relief and community rebuilding.',
+			is_anonymous: false,
+			created_at: '2024-10-01T12:30:00Z'
+		},
+		{
+			id: 'don-bod-07',
+			campaign_id: 'nepal-flood-2024',
+			donor_name: 'Mr. Debraj Dhakal',
+			email: 'debraj@canfacs.org',
+			amount: 100,
+			currency: 'CAD',
+			message: 'Every contribution counts towards urgent medical & food relief.',
+			is_anonymous: false,
+			created_at: '2024-10-01T13:00:00Z'
+		},
+		{
+			id: 'don-bod-08',
+			campaign_id: 'nepal-flood-2024',
+			donor_name: 'Mr. Purushottam Thapa',
+			email: 'purushottam@canfacs.org',
+			amount: 100,
+			currency: 'CAD',
+			message: 'Prayers and support for displaced families across Nepal.',
+			is_anonymous: false,
+			created_at: '2024-10-01T13:30:00Z'
+		},
+		{
+			id: 'don-bod-09',
+			campaign_id: 'nepal-flood-2024',
+			donor_name: 'Mr. Prakash V Joshi',
+			email: 'prakash@canfacs.org',
+			amount: 100,
+			currency: 'CAD',
+			message: 'CANFACS Board contribution towards disaster rehabilitation.',
+			is_anonymous: false,
+			created_at: '2024-10-01T14:00:00Z'
+		},
+		{
+			id: 'don-bod-10',
+			campaign_id: 'nepal-flood-2024',
+			donor_name: 'Mr. Hemanta Joshi',
+			email: 'hemanta@canfacs.org',
+			amount: 100,
+			currency: 'CAD',
+			message: 'With love and solidarity from Alberta for flood-hit regions.',
+			is_anonymous: false,
+			created_at: '2024-10-01T14:30:00Z'
+		},
+		{
+			id: 'don-bod-11',
+			campaign_id: 'nepal-flood-2024',
+			donor_name: 'Mr. Bal Sharma',
+			email: 'bal@canfacs.org',
+			amount: 100,
+			currency: 'CAD',
+			message: 'Standing united with our brothers and sisters in Nepal.',
+			is_anonymous: false,
+			created_at: '2024-10-01T15:00:00Z'
+		}
+	);
 }
 
 export function getDb(platform?: App.Platform) {
@@ -356,3 +494,130 @@ export async function createComment(
 	}
 	return newComment;
 }
+
+// DONATION QUERIES
+async function ensureDonationsTable(db: any) {
+	if (!db) return;
+	try {
+		await db
+			.prepare(`
+				CREATE TABLE IF NOT EXISTS donations (
+					id TEXT PRIMARY KEY,
+					campaign_id TEXT NOT NULL DEFAULT 'nepal-flood-2024',
+					donor_name TEXT NOT NULL,
+					email TEXT,
+					amount REAL NOT NULL,
+					currency TEXT NOT NULL DEFAULT 'CAD',
+					message TEXT,
+					is_anonymous INTEGER NOT NULL DEFAULT 0,
+					created_at TEXT NOT NULL
+				);
+			`)
+			.run();
+
+		// Check if table is empty, if so seed initial donations
+		const countRes = await db
+			.prepare(`SELECT COUNT(*) as count FROM donations WHERE campaign_id = 'nepal-flood-2024'`)
+			.first();
+		if (countRes && Number(countRes.count) === 0) {
+			for (const don of memoryDonations) {
+				await db
+					.prepare(`
+						INSERT OR IGNORE INTO donations (id, campaign_id, donor_name, email, amount, currency, message, is_anonymous, created_at)
+						VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+					`)
+					.bind(
+						don.id,
+						don.campaign_id,
+						don.donor_name,
+						don.email,
+						don.amount,
+						don.currency,
+						don.message,
+						don.is_anonymous ? 1 : 0,
+						don.created_at
+					)
+					.run();
+			}
+		}
+	} catch (err) {
+		console.warn('Error ensuring donations table:', err);
+	}
+}
+
+export async function getDonations(db: any, campaignId = 'nepal-flood-2024'): Promise<DonationRow[]> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureDonationsTable(db);
+		const res = await db
+			.prepare(`SELECT * FROM donations WHERE campaign_id = ? ORDER BY created_at DESC`)
+			.bind(campaignId)
+			.all();
+		return (res.results || []).map((r: any) => ({
+			...r,
+			is_anonymous: Boolean(r.is_anonymous)
+		})) as DonationRow[];
+	}
+
+	return memoryDonations
+		.filter((d) => d.campaign_id === campaignId)
+		.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export async function createDonation(
+	db: any,
+	data: {
+		donor_name: string;
+		email?: string;
+		amount: number;
+		currency?: string;
+		message?: string;
+		is_anonymous?: boolean;
+		campaign_id?: string;
+	}
+): Promise<DonationRow> {
+	await ensureLocalDefaultAdmin();
+	const id = 'don_' + crypto.randomUUID().slice(0, 8);
+	const created_at = new Date().toISOString();
+	const campaign_id = data.campaign_id || 'nepal-flood-2024';
+	const currency = data.currency || 'CAD';
+	const is_anonymous = Boolean(data.is_anonymous);
+
+	const newDonation: DonationRow = {
+		id,
+		campaign_id,
+		donor_name: is_anonymous ? 'Anonymous Donor' : data.donor_name.trim(),
+		email: data.email ? data.email.trim() : null,
+		amount: Number(data.amount),
+		currency,
+		message: data.message ? data.message.trim() : null,
+		is_anonymous,
+		created_at
+	};
+
+	if (db) {
+		await ensureDonationsTable(db);
+		await db
+			.prepare(`
+				INSERT INTO donations (id, campaign_id, donor_name, email, amount, currency, message, is_anonymous, created_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`)
+			.bind(
+				id,
+				campaign_id,
+				newDonation.donor_name,
+				newDonation.email,
+				newDonation.amount,
+				currency,
+				newDonation.message,
+				is_anonymous ? 1 : 0,
+				created_at
+			)
+			.run();
+	} else {
+		memoryDonations.unshift(newDonation);
+	}
+
+	return newDonation;
+}
+

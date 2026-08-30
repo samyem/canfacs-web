@@ -55,3 +55,15 @@ CREATE TABLE IF NOT EXISTS reshares (
     FOREIGN KEY (original_post_id) REFERENCES posts(id) ON DELETE CASCADE,
     FOREIGN KEY (reshared_by_id) REFERENCES members(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS donations (
+    id TEXT PRIMARY KEY,
+    campaign_id TEXT NOT NULL DEFAULT 'nepal-flood-2024',
+    donor_name TEXT NOT NULL,
+    email TEXT,
+    amount REAL NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'CAD',
+    message TEXT,
+    is_anonymous INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+);

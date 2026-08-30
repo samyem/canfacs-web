@@ -15,6 +15,10 @@ declare global {
 			env: {
 				DB?: any;
 				IMAGES_BUCKET?: any;
+				SQUARE_APPLICATION_ID?: string;
+				SQUARE_ACCESS_TOKEN?: string;
+				SQUARE_LOCATION_ID?: string;
+				SQUARE_ENVIRONMENT?: 'production' | 'sandbox';
 			};
 			ctx: ExecutionContext;
 			caches: CacheStorage;
