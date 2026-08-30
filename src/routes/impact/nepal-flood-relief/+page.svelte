@@ -169,14 +169,14 @@
 	<meta property="og:url" content="https://canfacs.org/impact/nepal-flood-relief" />
 	<meta property="og:title" content="Nepal Flood Emergency Relief Fund - CANFACS" />
 	<meta property="og:description" content="Support flood-affected families across Nepal. Direct disbursement to the Government of Nepal Prime Minister's Disaster Relief Fund with 100% transparent public accounting." />
-	<meta property="og:image" content="https://canfacs.org/canfacs-logo.png" />
+	<meta property="og:image" content="https://canfacs.org/nepal-flood-2026-relief-hero.jpg" />
 
 	<!-- Twitter / X -->
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:url" content="https://canfacs.org/impact/nepal-flood-relief" />
 	<meta name="twitter:title" content="Nepal Flood Emergency Relief Fund - CANFACS" />
 	<meta name="twitter:description" content="Support flood-affected families across Nepal. Direct disbursement to the PMO Disaster Relief Fund with 100% transparency." />
-	<meta name="twitter:image" content="https://canfacs.org/canfacs-logo.png" />
+	<meta name="twitter:image" content="https://canfacs.org/nepal-flood-2026-relief-hero.jpg" />
 
 	{#if data.square.sdkUrl}
 		<script src={data.square.sdkUrl}></script>
@@ -192,8 +192,18 @@
 			<span class="text-slate-200">Nepal Flood Emergency Relief</span>
 		</div>
 
-		<!-- Hero / Emergency Header -->
+		<!-- Hero / Emergency Header with Real Disaster Imagery -->
 		<div class="relative rounded-3xl overflow-hidden glass-panel border border-red-900/50 p-8 sm:p-12 shadow-2xl">
+			<!-- Background Disaster Image with Dark Gradient Overlay -->
+			<div class="absolute inset-0 z-0">
+				<img
+					src="/nepal-flood-2026-relief-hero.jpg"
+					alt="2026 Nepal Flash Flood & Debris Flow along Trishuli River"
+					class="w-full h-full object-cover object-center scale-105 filter brightness-50 contrast-125 opacity-25"
+				/>
+				<div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent"></div>
+			</div>
+
 			<!-- Background Ambient Glow -->
 			<div
 				class="absolute top-0 right-0 w-96 h-96 bg-red-600/15 rounded-full blur-3xl pointer-events-none"
@@ -392,6 +402,20 @@
 					<p class="text-slate-300 text-sm leading-relaxed">
 						On the morning of <strong>26 August 2026</strong>, a massive <strong>glacier collapse and ice avalanche occurred on Langtang Lirung</strong> in the Himalayas, generating an <strong>Ms 5.2 seismic tremor</strong> detected worldwide. The catastrophic collapse released unprecedented debris flows and flash floods surging down the <strong>Trishuli River (Bhotekoshi) basin</strong>. The flood destroyed the Gyirong Port border crossing and devastated settlements along a <strong>72 km (45 mi) stretch across Rasuwa and Nuwakot districts</strong>. With over 780 confirmed dead, thousands missing, and critical highways obliterated, affected communities are in urgent need of emergency shelter, clean drinking water, trauma healthcare, and rehabilitation aid.
 					</p>
+
+					<!-- Visual Disaster Coverage -->
+					<div class="relative rounded-2xl overflow-hidden border border-slate-800 shadow-xl group">
+						<img
+							src="/nepal-flood-2026-relief-hero.jpg"
+							alt="Devastation along the Trishuli River Valley following the Langtang Lirung glacier collapse"
+							class="w-full h-64 sm:h-80 object-cover object-center group-hover:scale-105 transition-transform duration-500"
+						/>
+						<div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent flex items-end p-4">
+							<p class="text-[11px] text-slate-300 font-medium leading-tight">
+								📷 <strong class="text-white">Trishuli River Valley (26 Aug 2026):</strong> Massive debris flows and alluvial silt inundating riverside settlements across Rasuwa and Nuwakot districts.
+							</p>
+						</div>
+					</div>
 
 					<!-- Key Stats Grid -->
 					<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
@@ -740,13 +764,6 @@
 						{/if}
 					</form>
 				</div>
-
-				<!-- Share Card in Sidebar -->
-				<ShareButtons
-					title="Nepal Flood Emergency Relief Fund - CANFACS"
-					description="Join CANFACS in delivering direct relief, emergency shelters, and rehabilitation support to families displaced by flooding across Nepal."
-					variant="card"
-				/>
 			</div>
 		</div>
 

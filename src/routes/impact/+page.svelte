@@ -151,6 +151,16 @@
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
 		<!-- Featured Emergency Fundraiser Spotlight Card -->
 		<div class="relative overflow-hidden rounded-3xl glass-panel border border-red-800/60 p-8 sm:p-10 shadow-2xl">
+			<!-- Background Disaster Image Overlay -->
+			<div class="absolute inset-0 z-0 pointer-events-none">
+				<img
+					src="/nepal-flood-2026-relief-hero.jpg"
+					alt="2026 Nepal Flood Disaster Background"
+					class="w-full h-full object-cover object-center filter brightness-50 contrast-125 opacity-20"
+				/>
+				<div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent"></div>
+			</div>
+
 			<div class="absolute -right-16 -top-16 w-80 h-80 bg-red-600/15 rounded-full blur-3xl pointer-events-none"></div>
 			<div class="absolute -left-16 -bottom-16 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
 
