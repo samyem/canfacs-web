@@ -35,8 +35,7 @@ export function getSquareConfig(platform?: App.Platform): SquareConfig {
 
 	const isSandbox =
 		envSetting === 'sandbox' ||
-		appId.startsWith('sandbox-') ||
-		accessToken.startsWith('EAAA');
+		appId.startsWith('sandbox-');
 
 	const baseUrl = isSandbox
 		? 'https://connect.squareupsandbox.com'
@@ -60,9 +59,13 @@ export function getSquareConfig(platform?: App.Platform): SquareConfig {
 /**
  * Fetches the merchant's first active location if locationId is not explicitly configured.
  */
-async function getOrFetchLocationId(config: SquareConfig): Promise<string> {
+export async function getOrFetchLocationId(config: SquareConfig): Promise<string> {
 	if (config.locationId) {
 		return config.locationId;
+	}
+
+	if (!config.accessToken) {
+		return '';
 	}
 
 	try {
@@ -77,20 +80,16 @@ async function getOrFetchLocationId(config: SquareConfig): Promise<string> {
 
 		if (!response.ok) {
 			const errData = await response.json().catch(() => ({}));
-			console.error('Failed to fetch Square locations:', errData);
-			throw new Error('Could not retrieve merchant location from Square.');
+			console.warn('Square location lookup response not ok:', errData);
+			return '';
 		}
 
 		const data = await response.json();
 		const activeLocation = data.locations?.find((loc: any) => loc.status === 'ACTIVE') || data.locations?.[0];
-		if (!activeLocation?.id) {
-			throw new Error('No active location found on your Square merchant account.');
-		}
-
-		return activeLocation.id;
+		return activeLocation?.id || '';
 	} catch (err: any) {
-		console.error('Error fetching Square location:', err);
-		throw new Error(err.message || 'Failed to detect Square location.');
+		console.warn('Error auto-detecting Square location ID:', err);
+		return '';
 	}
 }
 

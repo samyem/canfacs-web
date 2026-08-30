@@ -2,13 +2,18 @@ import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { getDb, getDonations, createDonation } from '$lib/server/db';
 import { NEPAL_FLOOD_RELIEF_CAMPAIGN } from '$lib/data/siteData';
-import { getSquareConfig, processSquarePayment } from '$lib/server/square';
+import { getSquareConfig, getOrFetchLocationId, processSquarePayment } from '$lib/server/square';
 import { sendDonationConfirmationEmail } from '$lib/server/email';
 
 export const load: PageServerLoad = async ({ platform }) => {
 	const db = getDb(platform);
 	const donations = await getDonations(db, NEPAL_FLOOD_RELIEF_CAMPAIGN.id);
 	const square = getSquareConfig(platform);
+
+	let resolvedLocationId = square.locationId;
+	if (square.isConfigured && !resolvedLocationId) {
+		resolvedLocationId = await getOrFetchLocationId(square);
+	}
 
 	const totalRaised = donations.reduce((sum, d) => sum + Number(d.amount), 0);
 	const targetGoal = NEPAL_FLOOD_RELIEF_CAMPAIGN.targetGoalCAD;
@@ -25,7 +30,7 @@ export const load: PageServerLoad = async ({ platform }) => {
 		},
 		square: {
 			applicationId: square.applicationId,
-			locationId: square.locationId,
+			locationId: resolvedLocationId,
 			isConfigured: square.isConfigured,
 			isSandbox: square.isSandbox,
 			sdkUrl: square.sdkUrl

@@ -57,10 +57,9 @@
 
 		try {
 			squareInitError = null;
-			const payments = (window as any).Square.payments(
-				data.square.applicationId,
-				data.square.locationId || undefined
-			);
+			const payments = data.square.locationId
+				? (window as any).Square.payments(data.square.applicationId, data.square.locationId)
+				: (window as any).Square.payments(data.square.applicationId);
 			squarePayments = payments;
 
 			await tick();
@@ -90,7 +89,7 @@
 				isSquareInitialized = true;
 			}
 		} catch (err: any) {
-			console.warn('Square card initialization notice:', err);
+			console.warn('Square card initialization error:', err);
 			squareInitError = err.message || 'Could not initialize Square card form.';
 		}
 	}
@@ -565,6 +564,15 @@
 										id="card-container"
 										class="min-h-[90px] rounded-xl bg-slate-950 border border-slate-800 p-2"
 									></div>
+
+									{#if squareInitError || cardTokenError}
+										<div class="p-3 rounded-xl bg-red-950/80 border border-red-800 text-xs text-red-300 space-y-1">
+											<div class="font-bold flex items-center gap-1.5 text-red-200">
+												<span>⚠️</span> Payment Notice
+											</div>
+											<p>{squareInitError || cardTokenError}</p>
+										</div>
+									{/if}
 								{:else}
 									<!-- Interactive Card Form Fields (Active when Square SDK is pending/local) -->
 									<div class="space-y-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
