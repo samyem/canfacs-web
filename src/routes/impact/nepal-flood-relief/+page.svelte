@@ -68,21 +68,21 @@
 				const card = await payments.card({
 					style: {
 						input: {
-							color: '#ffffff',
+							color: '#0f172a',
 							fontSize: '14px'
 						},
 						'input::placeholder': {
 							color: '#64748b'
 						},
 						'.input-container': {
-							borderColor: '#334155',
-							borderRadius: '12px'
+							borderColor: '#cbd5e1',
+							borderRadius: '10px'
 						},
 						'.input-container.is-focus': {
-							borderColor: '#ef4444'
+							borderColor: '#dc2626'
 						},
 						'.input-container.is-error': {
-							borderColor: '#f87171'
+							borderColor: '#ef4444'
 						}
 					}
 				});
@@ -564,7 +564,7 @@
 									<!-- Square Web Payments SDK Card container -->
 									<div
 										id="card-container"
-										class="min-h-[90px] rounded-xl bg-slate-950 border border-slate-800 p-2"
+										class="min-h-[90px] rounded-xl bg-white border border-slate-700 p-2.5 shadow-sm"
 									></div>
 
 									{#if squareInitError || cardTokenError}
