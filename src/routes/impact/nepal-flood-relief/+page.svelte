@@ -193,96 +193,97 @@
 		</div>
 
 		<!-- Hero / Emergency Header with Real Disaster Imagery -->
-		<div class="relative rounded-3xl overflow-hidden glass-panel border border-red-900/50 p-8 sm:p-12 shadow-2xl">
-			<!-- Background Disaster Image with Dark Gradient Overlay -->
-			<div class="absolute inset-0 z-0">
+		<div class="relative rounded-3xl overflow-hidden glass-panel border border-red-900/60 p-6 sm:p-12 shadow-2xl">
+			<!-- Background Disaster Image with Controlled Gradient Overlay -->
+			<div class="absolute inset-0 z-0 pointer-events-none">
 				<img
 					src="/nepal-flood-2026-relief-hero.jpg"
 					alt="2026 Nepal Flash Flood & Debris Flow along Trishuli River"
-					class="w-full h-full object-cover object-center scale-105 filter brightness-50 contrast-125 opacity-25"
+					class="w-full h-full object-cover object-center scale-105 filter brightness-40 contrast-125 opacity-25"
 				/>
-				<div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent"></div>
+				<div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-slate-950/60"></div>
 			</div>
 
 			<!-- Background Ambient Glow -->
 			<div
-				class="absolute top-0 right-0 w-96 h-96 bg-red-600/15 rounded-full blur-3xl pointer-events-none"
+				class="absolute top-0 right-0 w-96 h-96 bg-red-600/20 rounded-full blur-3xl pointer-events-none z-0"
 			></div>
 			<div
-				class="absolute bottom-0 left-0 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"
+				class="absolute bottom-0 left-0 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none z-0"
 			></div>
 
+			<!-- Hero Text Content -->
 			<div class="relative z-10 max-w-3xl space-y-4">
-				<div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-950/90 border border-red-800 text-xs font-bold text-red-400 uppercase tracking-wider">
+				<div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-950 border border-red-700 text-xs font-bold text-red-300 uppercase tracking-wider shadow-md">
 					<span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
 					Active Emergency Relief Campaign
 				</div>
 
-				<h1 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
+				<h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight drop-shadow-md">
 					2026 Nepal Flood & Landslide <br />
 					<span class="text-gradient-nepal">Emergency Relief Fund</span>
 				</h1>
 
-				<p class="text-slate-300 text-base sm:text-lg leading-relaxed">
-					Mobilizing direct humanitarian assistance for families and communities affected by the catastrophic 26 August 2026 Langtang Lirung glacier collapse and Trishuli River flash floods. <strong>All collected funds will be disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members, with transparent public tracking on this page.
+				<p class="text-slate-200 text-base sm:text-lg leading-relaxed font-normal">
+					Mobilizing direct humanitarian assistance for families and communities affected by the catastrophic 26 August 2026 Langtang Lirung glacier collapse and Trishuli River flash floods. <strong class="text-white font-semibold">All collected funds will be disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members, with transparent public tracking on this page.
 				</p>
 			</div>
 
-			<!-- Live Fundraising Progress Banner -->
-			<div class="mt-10 p-6 sm:p-8 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-6">
-				<div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+			<!-- Live Fundraising Progress Banner (High Contrast & Sharp Typography) -->
+			<div class="relative z-20 mt-10 p-6 sm:p-8 rounded-2xl bg-slate-900/95 border border-slate-700 shadow-2xl backdrop-blur-md space-y-6">
+				<div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4">
 					<div>
-						<div class="text-xs uppercase font-bold tracking-wider text-slate-400">Total Raised So Far</div>
-						<div class="text-4xl sm:text-5xl font-black text-white mt-1">
-							${data.stats.totalRaised.toLocaleString('en-CA', { minimumFractionDigits: 0 })}
+						<div class="text-xs uppercase font-extrabold tracking-wider text-slate-300">Total Raised So Far</div>
+						<div class="text-4xl sm:text-5xl font-black text-white mt-1 tracking-tight flex items-baseline gap-2">
+							<span>${data.stats.totalRaised.toLocaleString('en-CA', { minimumFractionDigits: 0 })}</span>
 							<span class="text-lg font-bold text-slate-400">CAD</span>
 						</div>
 					</div>
 
 					<div class="sm:text-right">
-						<div class="text-xs uppercase font-bold tracking-wider text-slate-400">Target Campaign Goal</div>
-						<div class="text-2xl sm:text-3xl font-extrabold text-red-400 mt-1">
+						<div class="text-xs uppercase font-extrabold tracking-wider text-slate-300">Target Campaign Goal</div>
+						<div class="text-2xl sm:text-3xl font-black text-red-400 mt-1">
 							${data.stats.targetGoal.toLocaleString('en-CA')} CAD
 						</div>
 					</div>
 				</div>
 
 				<!-- Progress Bar -->
-				<div class="space-y-2">
-					<div class="w-full h-4 bg-slate-950 rounded-full overflow-hidden border border-slate-800 p-0.5">
+				<div class="space-y-2.5">
+					<div class="w-full h-4 bg-slate-950 rounded-full overflow-hidden border border-slate-700 p-0.5 shadow-inner">
 						<div
 							class="h-full rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 transition-all duration-1000 shadow-lg shadow-red-600/40"
-							style="width: {data.stats.percentRaised}%"
+							style="width: {Math.max(3, data.stats.percentRaised)}%"
 						></div>
 					</div>
-					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs font-semibold text-slate-400">
-						<div class="flex items-center gap-3">
-							<span class="text-white font-bold">{data.stats.percentRaised}% of goal</span>
+					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-bold text-slate-300">
+						<div class="flex flex-wrap items-center gap-3">
+							<span class="text-white bg-slate-800 px-2 py-0.5 rounded border border-slate-700">{data.stats.percentRaised}% of goal</span>
 							<span>•</span>
-							<span class="text-emerald-400 font-bold">${data.stats.totalReceived.toLocaleString('en-CA')} Received</span>
+							<span class="text-emerald-400">${data.stats.totalReceived.toLocaleString('en-CA')} Received</span>
 							<span>•</span>
-							<span class="text-amber-400 font-bold">${data.stats.totalPledged.toLocaleString('en-CA')} Pledged</span>
+							<span class="text-amber-400">${data.stats.totalPledged.toLocaleString('en-CA')} Pledged</span>
 						</div>
-						<span>{data.stats.donorCount} Total Contributors</span>
+						<span class="text-slate-400 font-semibold">{data.stats.donorCount} Total Contributors</span>
 					</div>
 				</div>
 
 				<!-- Quick Payment Options Notice -->
-				<div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-800/80">
-					<div class="flex items-center gap-3 text-xs sm:text-sm text-slate-300">
+				<div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-800">
+					<div class="flex items-center gap-3 text-xs sm:text-sm text-slate-200">
 						<span class="text-xl">💳</span>
 						<span>
-							Payment Options: <strong>Credit/Debit Card (Square)</strong> or Interac e-Transfer to <strong class="text-white font-mono bg-slate-950 px-2 py-0.5 rounded border border-slate-800">info@canfacs.org</strong>
+							Payment Options: <strong class="text-white font-bold">Credit/Debit Card (Square)</strong> or Interac e-Transfer to <strong class="text-white font-mono bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-700">info@canfacs.org</strong>
 						</span>
 					</div>
 
 					<button
 						type="button"
 						onclick={copyEtransfer}
-						class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all flex items-center gap-1.5"
+						class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 transition-all flex items-center gap-1.5 shadow"
 					>
 						{#if copiedEmail}
-							<span class="text-emerald-400">✓ Email Copied!</span>
+							<span class="text-emerald-400 font-bold">✓ Email Copied!</span>
 						{:else}
 							<span>📋 Copy E-Transfer Email</span>
 						{/if}

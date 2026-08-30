@@ -141,9 +141,9 @@ async function ensureLocalDefaultAdmin() {
 	});
 
 	memoryCampaigns.push({
-		id: 'nepal-flood-2024',
-		title: 'Nepal Flood Emergency Relief & Rehabilitation Fund',
-		subtitle: 'Supporting flood and landslide-affected families, children, and displaced communities across Nepal.',
+		id: 'nepal-flood-2026',
+		title: '2026 Nepal Flood Emergency Relief & Rehabilitation Fund',
+		subtitle: 'Supporting flood and landslide-affected families, children, and displaced communities across Rasuwa, Nuwakot, and downstream Trishuli River basin districts in Nepal.',
 		target_goal: 10000,
 		is_active: true,
 		created_at: '2026-08-30T09:00:00Z'
@@ -153,7 +153,7 @@ async function ensureLocalDefaultAdmin() {
 	memoryDonations.push(
 		{
 			id: 'don-bod-01',
-			campaign_id: 'nepal-flood-2024',
+			campaign_id: 'nepal-flood-2026',
 			donor_name: 'Dr. Meghraj Gnawali',
 			email: 'meghraj@canfacs.org',
 			amount: 500,
@@ -165,7 +165,7 @@ async function ensureLocalDefaultAdmin() {
 		},
 		{
 			id: 'don-bod-02',
-			campaign_id: 'nepal-flood-2024',
+			campaign_id: 'nepal-flood-2026',
 			donor_name: 'Ms. Bina Shrestha',
 			email: 'bina@canfacs.org',
 			amount: 100,
@@ -177,7 +177,7 @@ async function ensureLocalDefaultAdmin() {
 		},
 		{
 			id: 'don-bod-03',
-			campaign_id: 'nepal-flood-2024',
+			campaign_id: 'nepal-flood-2026',
 			donor_name: 'Mr. Prem Devkota',
 			email: 'prem@canfacs.org',
 			amount: 100,
@@ -189,7 +189,7 @@ async function ensureLocalDefaultAdmin() {
 		},
 		{
 			id: 'don-bod-04',
-			campaign_id: 'nepal-flood-2024',
+			campaign_id: 'nepal-flood-2026',
 			donor_name: 'Mr. Rudra Adhikari',
 			email: 'rudra@canfacs.org',
 			amount: 100,
@@ -201,7 +201,7 @@ async function ensureLocalDefaultAdmin() {
 		},
 		{
 			id: 'don-bod-06',
-			campaign_id: 'nepal-flood-2024',
+			campaign_id: 'nepal-flood-2026',
 			donor_name: 'Mr. Kiroj Shrestha',
 			email: 'kiroj@canfacs.org',
 			amount: 100,
@@ -213,7 +213,7 @@ async function ensureLocalDefaultAdmin() {
 		},
 		{
 			id: 'don-bod-07',
-			campaign_id: 'nepal-flood-2024',
+			campaign_id: 'nepal-flood-2026',
 			donor_name: 'Mr. Debraj Dhakal',
 			email: 'debraj@canfacs.org',
 			amount: 100,
@@ -225,7 +225,7 @@ async function ensureLocalDefaultAdmin() {
 		},
 		{
 			id: 'don-bod-09',
-			campaign_id: 'nepal-flood-2024',
+			campaign_id: 'nepal-flood-2026',
 			donor_name: 'Mr. Prakash V Joshi',
 			email: 'prakash@canfacs.org',
 			amount: 100,
@@ -237,7 +237,7 @@ async function ensureLocalDefaultAdmin() {
 		},
 		{
 			id: 'don-bod-10',
-			campaign_id: 'nepal-flood-2024',
+			campaign_id: 'nepal-flood-2026',
 			donor_name: 'Mr. Hemanta Joshi',
 			email: 'hemanta@canfacs.org',
 			amount: 100,
@@ -249,7 +249,7 @@ async function ensureLocalDefaultAdmin() {
 		},
 		{
 			id: 'don-bod-11',
-			campaign_id: 'nepal-flood-2024',
+			campaign_id: 'nepal-flood-2026',
 			donor_name: 'Mr. Bal Sharma',
 			email: 'bal@canfacs.org',
 			amount: 100,
@@ -261,7 +261,7 @@ async function ensureLocalDefaultAdmin() {
 		},
 		{
 			id: 'don_navin_dhakal',
-			campaign_id: 'nepal-flood-2024',
+			campaign_id: 'nepal-flood-2026',
 			donor_name: 'Mr. Navin Dhakal',
 			email: 'navin@canfacs.org',
 			amount: 100,
@@ -640,7 +640,7 @@ async function ensureDonationsTable(db: any) {
 
 		// Check if donations table is empty, if so seed initial donations
 		const countRes = await db
-			.prepare(`SELECT COUNT(*) as count FROM donations WHERE campaign_id = 'nepal-flood-2024'`)
+			.prepare(`SELECT COUNT(*) as count FROM donations WHERE campaign_id = 'nepal-flood-2026' OR campaign_id = 'nepal-flood-2024'`)
 			.first();
 		if (countRes && Number(countRes.count) === 0) {
 			for (const don of memoryDonations) {
@@ -768,14 +768,23 @@ export async function updateCampaign(
 }
 
 // DONATION QUERIES
-export async function getDonations(db: any, campaignId = 'nepal-flood-2024'): Promise<DonationRow[]> {
+export async function getDonations(db: any, campaignId = 'nepal-flood-2026'): Promise<DonationRow[]> {
 	await ensureLocalDefaultAdmin();
+	const isFloodCampaign = campaignId === 'nepal-flood-2026' || campaignId === 'nepal-flood-2024';
+
 	if (db) {
 		await ensureDonationsTable(db);
-		const res = await db
-			.prepare(`SELECT * FROM donations WHERE campaign_id = ? ORDER BY created_at DESC`)
-			.bind(campaignId)
-			.all();
+		let res;
+		if (isFloodCampaign) {
+			res = await db
+				.prepare(`SELECT * FROM donations WHERE campaign_id = 'nepal-flood-2026' OR campaign_id = 'nepal-flood-2024' ORDER BY created_at DESC`)
+				.all();
+		} else {
+			res = await db
+				.prepare(`SELECT * FROM donations WHERE campaign_id = ? ORDER BY created_at DESC`)
+				.bind(campaignId)
+				.all();
+		}
 		return (res.results || []).map((r: any) => ({
 			...r,
 			status: (r.status as 'pledged' | 'received') || 'received',
@@ -784,7 +793,7 @@ export async function getDonations(db: any, campaignId = 'nepal-flood-2024'): Pr
 	}
 
 	return memoryDonations
-		.filter((d) => d.campaign_id === campaignId)
+		.filter((d) => isFloodCampaign ? (d.campaign_id === 'nepal-flood-2026' || d.campaign_id === 'nepal-flood-2024') : d.campaign_id === campaignId)
 		.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
@@ -937,14 +946,23 @@ export async function deleteDonation(db: any, id: string): Promise<void> {
 }
 
 // DISBURSEMENT QUERIES
-export async function getDisbursements(db: any, campaignId = 'nepal-flood-2024'): Promise<DisbursementRow[]> {
+export async function getDisbursements(db: any, campaignId = 'nepal-flood-2026'): Promise<DisbursementRow[]> {
 	await ensureLocalDefaultAdmin();
+	const isFloodCampaign = campaignId === 'nepal-flood-2026' || campaignId === 'nepal-flood-2024';
+
 	if (db) {
 		await ensureDonationsTable(db);
-		const res = await db
-			.prepare(`SELECT * FROM disbursements WHERE campaign_id = ? ORDER BY disbursed_at DESC, created_at DESC`)
-			.bind(campaignId)
-			.all();
+		let res;
+		if (isFloodCampaign) {
+			res = await db
+				.prepare(`SELECT * FROM disbursements WHERE campaign_id = 'nepal-flood-2026' OR campaign_id = 'nepal-flood-2024' ORDER BY disbursed_at DESC, created_at DESC`)
+				.all();
+		} else {
+			res = await db
+				.prepare(`SELECT * FROM disbursements WHERE campaign_id = ? ORDER BY disbursed_at DESC, created_at DESC`)
+				.bind(campaignId)
+				.all();
+		}
 		const disbursements = (res.results || []) as DisbursementRow[];
 
 		// Attach allocated donations
