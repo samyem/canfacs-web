@@ -31,7 +31,7 @@
 					<span class="text-red-500">1.</span> Agreement to Terms
 				</h2>
 				<p>
-					These Terms of Service ("Terms") constitute a legally binding agreement between you and the <strong>Canada-Nepal Friendship & Cultural Society</strong> ("CANFACS", "we", "us", or "our", Society Registration #S-0066228). By accessing <a href="https://canfacs.org" class="text-red-400 hover:underline">canfacs.org</a>, applying for membership, participating in our community feed, or donating to our relief campaigns, you agree to be bound by these Terms and our <a href="/privacy-policy" class="text-red-400 hover:underline">Privacy Policy</a>.
+					These Terms of Service ("Terms") constitute a legally binding agreement between you and the <strong>Canada-Nepal Friendship & Cultural Society</strong> ("CANFACS", "we", "us", or "our", Society Registration #{SITE_INFO.registrationNumber}). By accessing <a href="https://canfacs.org" class="text-red-400 hover:underline">canfacs.org</a>, applying for membership, participating in our community feed, or donating to our relief campaigns, you agree to be bound by these Terms and our <a href="/privacy-policy" class="text-red-400 hover:underline">Privacy Policy</a>.
 				</p>
 			</div>
 
@@ -117,7 +117,7 @@
 				<p>If you have any questions regarding these Terms of Service, please contact:</p>
 				<div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1 text-slate-300">
 					<div class="font-bold text-white">{SITE_INFO.fullName}</div>
-					<div>Non-profit Society #S-0066228</div>
+					<div>Non-profit Society #{SITE_INFO.registrationNumber}</div>
 					<div>Email: <a href="mailto:info@canfacs.org" class="text-red-400 underline font-semibold">info@canfacs.org</a></div>
 					<div>Website: <a href="https://canfacs.org" class="text-slate-400 hover:text-white">https://canfacs.org</a></div>
 				</div>

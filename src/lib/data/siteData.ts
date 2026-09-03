@@ -41,6 +41,7 @@ export const SITE_INFO = {
 	fullName: 'Canada-Nepal Friendship and Cultural Society',
 	registeredDate: 'November 30, 2016',
 	act: 'Canada Non-Profit Societies Framework',
+	registrationNumber: 'S0066426',
 	diplomaticRelYear: '1965',
 	cooperationYear: '1968',
 	tagline: 'Bridging Nations, Celebrating Cultures & Strengthening Communities Across Canada',

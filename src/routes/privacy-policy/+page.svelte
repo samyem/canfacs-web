@@ -31,7 +31,7 @@
 					<span class="text-red-500">1.</span> Introduction & Scope
 				</h2>
 				<p>
-					The <strong>Canada-Nepal Friendship & Cultural Society</strong> ("CANFACS", "we", "us", or "our", Society Registration #S-0066228) is committed to protecting your privacy and ensuring the confidentiality of the personal information you share with us. This Privacy Policy explains how we collect, use, disclose, and safeguard your personal information when you visit <a href="https://canfacs.org" class="text-red-400 hover:underline">canfacs.org</a>, apply for society membership, contribute donations, or interact with our community platform.
+					The <strong>Canada-Nepal Friendship & Cultural Society</strong> ("CANFACS", "we", "us", or "our", Society Registration #{SITE_INFO.registrationNumber}) is committed to protecting your privacy and ensuring the confidentiality of the personal information you share with us. This Privacy Policy explains how we collect, use, disclose, and safeguard your personal information when you visit <a href="https://canfacs.org" class="text-red-400 hover:underline">canfacs.org</a>, apply for society membership, contribute donations, or interact with our community platform.
 				</p>
 			</div>
 
@@ -119,7 +119,7 @@
 				<p>If you have any questions or concerns regarding this Privacy Policy, please reach out to:</p>
 				<div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1 text-slate-300">
 					<div class="font-bold text-white">{SITE_INFO.fullName}</div>
-					<div>Non-profit Society #S-0066228</div>
+					<div>Non-profit Society #{SITE_INFO.registrationNumber}</div>
 					<div>Email: <a href="mailto:info@canfacs.org" class="text-red-400 underline font-semibold">info@canfacs.org</a></div>
 					<div>Website: <a href="https://canfacs.org" class="text-slate-400 hover:text-white">https://canfacs.org</a></div>
 				</div>

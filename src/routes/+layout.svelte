@@ -64,7 +64,7 @@
 <div class="min-h-screen flex flex-col bg-slate-950 text-slate-100">
 	<!-- Top Bar / Announcement -->
 	<div class="bg-gradient-to-r from-red-700 via-rose-600 to-blue-700 py-2 px-4 text-xs sm:text-sm text-center font-medium tracking-wide text-white shadow-md">
-		🍁 Celebrating Canada-Nepal Diplomatic & Cultural Ties since 1965 • Non-profit Society #S-0066228
+		🍁 Celebrating Canada-Nepal Diplomatic & Cultural Ties since 1965 • Non-profit Society #{SITE_INFO.registrationNumber}
 	</div>
 
 	<!-- Navigation Header -->
