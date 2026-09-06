@@ -96,11 +96,19 @@
 
 				{#if data.user}
 					<div class="ml-3 pl-3 border-l border-slate-800 flex items-center gap-3">
-						<span class="text-xs font-semibold text-slate-300 bg-slate-900 px-3 py-1.5 rounded-full border border-slate-800 flex items-center gap-1.5">
-							<span>👤</span>
+						<span class="text-xs font-semibold text-slate-300 bg-slate-900 px-2.5 py-1 rounded-full border border-slate-800 flex items-center gap-2">
+							{#if data.user.avatarUrl}
+								<img
+									src={data.user.avatarUrl}
+									alt={data.user.fullName}
+									class="w-5 h-5 rounded-full object-cover border border-slate-700"
+								/>
+							{:else}
+								<span>👤</span>
+							{/if}
 							<span>{data.user.fullName}</span>
 							{#if data.user.role === 'admin'}
-								<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase">Admin</span>
+								<span class="ml-0.5 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase">Admin</span>
 							{/if}
 						</span>
 						<a

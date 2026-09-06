@@ -65,6 +65,8 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 	const isAdmin = ADMIN_EMAILS.includes(email);
 	let member = await getMemberByEmail(db, email);
 
+	const avatarUrl = googleUser.picture || null;
+
 	if (!member) {
 		member = await createMember(db, {
 			email,
@@ -76,9 +78,15 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 			bio: 'Joined via Google Sign-In'
 		});
 
-		// Auto-approve verified Google accounts
+		// Auto-approve verified Google accounts & save Google profile avatar
 		await updateMemberStatus(db, member.id, 'approved');
 		member.status = 'approved';
+
+		if (avatarUrl) {
+			const { updateMemberProfile } = await import('$lib/server/db');
+			await updateMemberProfile(db, member.id, { avatar_url: avatarUrl });
+			member.avatar_url = avatarUrl;
+		}
 
 		if (isAdmin) {
 			member.role = 'admin';
@@ -90,8 +98,16 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 				}
 			}
 		}
+	} else {
 		if (member.google_login_enabled === 0 || member.google_login_enabled === false) {
 			throw redirect(303, '/login?error=google_login_disabled');
+		}
+
+		// Update Google avatar if available and member has no custom avatar
+		if (avatarUrl && !member.avatar_url) {
+			const { updateMemberProfile } = await import('$lib/server/db');
+			await updateMemberProfile(db, member.id, { avatar_url: avatarUrl });
+			member.avatar_url = avatarUrl;
 		}
 
 		if (member.status === 'pending') {

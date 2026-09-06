@@ -138,9 +138,17 @@
 						<!-- Post Header -->
 						<div class="flex items-center justify-between mb-4">
 							<div class="flex items-center gap-3">
-								<div class="w-11 h-11 rounded-full bg-gradient-to-tr from-slate-800 to-slate-700 border border-slate-700 text-white font-bold flex items-center justify-center text-sm shadow-md">
-									{post.author_name.charAt(0)}
-								</div>
+								{#if post.author_avatar_url}
+									<img
+										src={post.author_avatar_url}
+										alt={post.author_name}
+										class="w-11 h-11 rounded-full object-cover border border-slate-700 shadow-md flex-shrink-0"
+									/>
+								{:else}
+									<div class="w-11 h-11 rounded-full bg-gradient-to-tr from-slate-800 to-slate-700 border border-slate-700 text-white font-bold flex items-center justify-center text-sm shadow-md flex-shrink-0">
+										{post.author_name.charAt(0)}
+									</div>
+								{/if}
 								<div>
 									<h4 class="font-bold text-white text-sm leading-snug">{post.author_name}</h4>
 									{#if post.author_profession}

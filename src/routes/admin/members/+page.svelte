@@ -7,13 +7,46 @@
 	let searchQuery = $state('');
 	let copiedPassword = $state(false);
 	let editingMember = $state<any | null>(null);
+	let isUploadingAvatar = $state(false);
+	let avatarUploadError = $state('');
 
 	function openEditModal(m: any) {
 		editingMember = { ...m };
+		avatarUploadError = '';
 	}
 
 	function closeEditModal() {
 		editingMember = null;
+		avatarUploadError = '';
+	}
+
+	async function handleAvatarUpload(e: Event) {
+		const target = e.target as HTMLInputElement;
+		const file = target.files?.[0];
+		if (!file || !editingMember) return;
+
+		isUploadingAvatar = true;
+		avatarUploadError = '';
+
+		try {
+			const formData = new FormData();
+			formData.append('file', file);
+			const res = await fetch('/api/upload', {
+				method: 'POST',
+				body: formData
+			});
+
+			const json: any = await res.json();
+			if (!res.ok || json.error) {
+				avatarUploadError = json.error || 'Failed to upload avatar image.';
+			} else {
+				editingMember.avatar_url = json.url;
+			}
+		} catch (err: any) {
+			avatarUploadError = err.message || 'Error uploading file.';
+		} finally {
+			isUploadingAvatar = false;
+		}
 	}
 
 	const pendingMembers = $derived(
@@ -201,14 +234,27 @@
 					<div class="glass-card p-6 rounded-2xl flex flex-col justify-between border border-slate-800/80 hover:border-slate-700 transition-all {member.role === 'admin' ? 'ring-1 ring-amber-500/30' : ''}">
 						<div>
 							<div class="flex items-start justify-between gap-2 mb-3">
-								<div>
-									<h3 class="font-bold text-white text-base leading-snug flex items-center gap-1.5">
-										<span>{member.full_name}</span>
-										{#if member.id === data.currentUserId}
-											<span class="text-[10px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">You</span>
-										{/if}
-									</h3>
-									<p class="text-xs text-slate-400 font-mono">{member.email}</p>
+								<div class="flex items-center gap-3">
+									{#if member.avatar_url}
+										<img
+											src={member.avatar_url}
+											alt={member.full_name}
+											class="w-11 h-11 rounded-2xl object-cover border border-slate-700 shadow-md flex-shrink-0"
+										/>
+									{:else}
+										<div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-700 border border-slate-700 text-white font-bold flex items-center justify-center text-sm shadow-md flex-shrink-0">
+											{member.full_name?.charAt(0) || '👤'}
+										</div>
+									{/if}
+									<div>
+										<h3 class="font-bold text-white text-base leading-snug flex items-center gap-1.5">
+											<span>{member.full_name}</span>
+											{#if member.id === data.currentUserId}
+												<span class="text-[10px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">You</span>
+											{/if}
+										</h3>
+										<p class="text-xs text-slate-400 font-mono">{member.email}</p>
+									</div>
 								</div>
 
 								<div class="flex flex-col items-end gap-1">
@@ -380,8 +426,64 @@
 				class="space-y-4"
 			>
 				<input type="hidden" name="memberId" value={editingMember.id} />
+				<input type="hidden" name="avatar_url" value={editingMember.avatar_url || ''} />
 
-				<!-- Row 1: Salutation, Full Name & Role -->
+				<!-- Avatar Upload & Social Image Preview -->
+				<div class="p-4 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center gap-4">
+					<div class="relative flex-shrink-0">
+						{#if editingMember.avatar_url}
+							<img
+								src={editingMember.avatar_url}
+								alt="Avatar"
+								class="w-16 h-16 rounded-2xl object-cover border-2 border-amber-500/50 shadow-md"
+							/>
+							<button
+								type="button"
+								onclick={() => (editingMember.avatar_url = '')}
+								class="absolute -top-1.5 -right-1.5 bg-red-600 hover:bg-red-500 text-white rounded-full w-5 h-5 text-[10px] flex items-center justify-center font-bold"
+								title="Remove picture"
+							>
+								✕
+							</button>
+						{:else}
+							<div class="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xl font-bold text-slate-300">
+								{editingMember.full_name?.charAt(0) || '👤'}
+							</div>
+						{/if}
+					</div>
+
+					<div class="flex-1 space-y-2 w-full">
+						<div class="flex items-center justify-between">
+							<label for="avatarFileInput" class="text-xs font-bold text-white flex items-center gap-1.5">
+								<span>📸</span>
+								<span>Profile Picture (Upload or Social URL)</span>
+							</label>
+							{#if isUploadingAvatar}
+								<span class="text-[11px] text-amber-400 font-medium animate-pulse">Uploading to R2...</span>
+							{/if}
+						</div>
+
+						<div class="flex flex-col sm:flex-row items-center gap-2">
+							<input
+								type="file"
+								id="avatarFileInput"
+								accept="image/*"
+								onchange={handleAvatarUpload}
+								disabled={isUploadingAvatar}
+								class="text-[11px] text-slate-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer w-full sm:w-auto"
+							/>
+							<input
+								type="url"
+								bind:value={editingMember.avatar_url}
+								placeholder="Or paste external social photo URL..."
+								class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-[11px] text-slate-300 focus:outline-none focus:border-amber-500"
+							/>
+						</div>
+						{#if avatarUploadError}
+							<p class="text-[10px] text-red-400">{avatarUploadError}</p>
+						{/if}
+					</div>
+				</div>
 				<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
 					<div>
 						<label for="mSalutation" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">Salutation</label>

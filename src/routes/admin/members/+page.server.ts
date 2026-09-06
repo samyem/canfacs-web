@@ -122,6 +122,7 @@ export const actions: Actions = {
 		const instagram_id = data.get('instagram_id')?.toString();
 		const associated_organizations = data.get('associated_organizations')?.toString();
 		const google_login_enabled = data.get('google_login_enabled') === '1' ? 1 : 0;
+		const avatar_url = data.get('avatar_url')?.toString();
 		const role = data.get('role')?.toString();
 
 		const db = getDb(platform);
@@ -145,6 +146,7 @@ export const actions: Actions = {
 			instagram_id: instagram_id || null,
 			associated_organizations: associated_organizations || null,
 			google_login_enabled,
+			avatar_url: avatar_url || null,
 			...(role ? { role } : {})
 		});
 

@@ -114,9 +114,17 @@
 						<div class="glass-card p-6 rounded-3xl border border-slate-800 hover:border-blue-500/40 transition-all flex flex-col justify-between group">
 							<div>
 								<div class="flex items-center gap-4 mb-4">
-									<div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-extrabold text-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-900/30 group-hover:scale-105 transition-transform">
-										{member.full_name.charAt(0)}
-									</div>
+									{#if member.avatar_url}
+										<img
+											src={member.avatar_url}
+											alt={member.full_name}
+											class="w-14 h-14 rounded-2xl object-cover border border-slate-700 shadow-lg shadow-blue-900/30 group-hover:scale-105 transition-transform flex-shrink-0"
+										/>
+									{:else}
+										<div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-extrabold text-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-900/30 group-hover:scale-105 transition-transform">
+											{member.full_name.charAt(0)}
+										</div>
+									{/if}
 									<div>
 										<h3 class="font-bold text-white text-base leading-snug">{member.full_name}</h3>
 										{#if member.profession}

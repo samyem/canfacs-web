@@ -34,6 +34,7 @@ export interface PostRow {
 	author_id: string;
 	author_name: string;
 	author_profession: string | null;
+	author_avatar_url?: string | null;
 	content: string;
 	image_url: string | null;
 	original_post_id: string | null;
@@ -505,7 +506,7 @@ export async function getPosts(db: any, currentUserId?: string): Promise<PostRow
 	await ensureLocalDefaultAdmin();
 	if (db) {
 		const res = await db.prepare(`
-			SELECT p.*, m.full_name as author_name, m.profession as author_profession,
+			SELECT p.*, m.full_name as author_name, m.profession as author_profession, m.avatar_url as author_avatar_url,
 			(SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as like_count,
 			(SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count,
 			(SELECT COUNT(*) FROM post_likes WHERE post_id = p.id AND member_id = ?) as user_liked
@@ -528,6 +529,7 @@ export async function getPosts(db: any, currentUserId?: string): Promise<PostRow
 			...p,
 			author_name: author ? author.full_name : p.author_name,
 			author_profession: author ? author.profession : p.author_profession,
+			author_avatar_url: author ? author.avatar_url : null,
 			like_count: likesCount || p.like_count,
 			comment_count: commentsCount || p.comment_count,
 			user_liked: userLiked
