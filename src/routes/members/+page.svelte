@@ -2,12 +2,46 @@
 	let { data } = $props();
 	let searchQuery = $state('');
 	let selectedProvince = $state('ALL');
+	let selectedRoles = $state<string[]>([]);
+	let isRoleDropdownOpen = $state(false);
 	let viewMode = $state<'grid' | 'table'>('grid');
+
+	// Group available roles by category for clean dropdown presentation
+	const availableCategories = [
+		{ id: 'board', label: '🏛️ Board of Directors (BOD)', roles: ['bod', 'admin'] },
+		{ id: 'advisory', label: '🎓 Advisory Board', roles: ['advisory'] },
+		{ id: 'member', label: '👤 Regular Members', roles: ['member'] },
+		{ id: 'partner', label: '🤝 MOU Partners', roles: ['partner'] }
+	];
+
+	function toggleRole(roleKey: string) {
+		if (selectedRoles.includes(roleKey)) {
+			selectedRoles = selectedRoles.filter((r) => r !== roleKey);
+		} else {
+			selectedRoles = [...selectedRoles, roleKey];
+		}
+	}
+
+	function clearRoleFilter() {
+		selectedRoles = [];
+	}
 
 	const filteredMembers = $derived(
 		(data.members || []).filter((m: any) => {
 			const matchesProvince =
 				selectedProvince === 'ALL' || m.province === selectedProvince;
+
+			const matchesRoles =
+				selectedRoles.length === 0 ||
+				selectedRoles.some((roleKey) => {
+					if (roleKey === 'bod') return m.role === 'bod' || m.role === 'admin' || m.org_category === 'board' || m.org_category === 'executive';
+					if (roleKey === 'advisory') return m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul');
+					if (roleKey === 'member') return m.role === 'member' || (!m.role && !m.org_category);
+					if (roleKey === 'partner') return m.role === 'partner';
+					// Specific org_role_id match if selected
+					return m.org_role_id === roleKey || m.organizational_role?.toLowerCase() === roleKey.toLowerCase();
+				});
+
 			const q = searchQuery.toLowerCase();
 			const matchesQuery =
 				!q ||
@@ -15,7 +49,7 @@
 				m.profession?.toLowerCase().includes(q) ||
 				m.city?.toLowerCase().includes(q) ||
 				m.bio?.toLowerCase().includes(q);
-			return matchesProvince && matchesQuery;
+			return matchesProvince && matchesRoles && matchesQuery;
 		})
 	);
 </script>
@@ -84,23 +118,115 @@
 					/>
 				</div>
 
-				<div class="flex items-center gap-3 w-full md:w-auto">
-					<label for="provinceFilter" class="text-xs text-slate-400 font-semibold uppercase whitespace-nowrap">Province:</label>
-					<select
-						id="provinceFilter"
-						bind:value={selectedProvince}
-						class="px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs font-semibold focus:outline-none focus:border-blue-500"
-					>
-						<option value="ALL">All Provinces & Territories</option>
-						<option value="BC">British Columbia (BC)</option>
-						<option value="ON">Ontario (ON)</option>
-						<option value="AB">Alberta (AB)</option>
-						<option value="QC">Quebec (QC)</option>
-						<option value="NS">Nova Scotia (NS)</option>
-						<option value="NB">New Brunswick (NB)</option>
-						<option value="MB">Manitoba (MB)</option>
-						<option value="SK">Saskatchewan (SK)</option>
-					</select>
+				<div class="flex items-center gap-3 w-full md:w-auto flex-wrap">
+					<!-- Multi-Select By Role Dropdown -->
+					<div class="relative">
+						<button
+							type="button"
+							onclick={() => (isRoleDropdownOpen = !isRoleDropdownOpen)}
+							class="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-white text-xs font-semibold flex items-center gap-2 transition-all shadow-sm {selectedRoles.length > 0 ? 'border-amber-500/50 bg-amber-500/10 text-amber-300' : ''}"
+						>
+							<span>🎭</span>
+							<span>Role:</span>
+							<span class="font-bold">
+								{#if selectedRoles.length === 0}
+									All Roles
+								{:else if selectedRoles.length === 1}
+									{selectedRoles[0] === 'bod' ? 'BOD' : selectedRoles[0] === 'advisory' ? 'Advisory' : selectedRoles[0] === 'member' ? 'Regular' : selectedRoles[0] === 'partner' ? 'Partners' : '1 selected'}
+								{:else}
+									{selectedRoles.length} selected
+								{/if}
+							</span>
+							<span class="text-[10px] text-slate-400">▾</span>
+						</button>
+
+						{#if isRoleDropdownOpen}
+							<!-- Backdrop to close on click outside -->
+							<button
+								type="button"
+								tabindex="-1"
+								onclick={() => (isRoleDropdownOpen = false)}
+								class="fixed inset-0 z-20 cursor-default"
+								aria-label="Close dropdown"
+							></button>
+
+							<div class="absolute left-0 mt-2 w-64 rounded-2xl bg-slate-900 border border-slate-800 p-3 shadow-2xl z-30 space-y-2 text-xs">
+								<div class="flex items-center justify-between pb-2 border-b border-slate-800 text-[11px]">
+									<span class="font-bold text-slate-400 uppercase tracking-wider">Filter by Role</span>
+									{#if selectedRoles.length > 0}
+										<button
+											type="button"
+											onclick={clearRoleFilter}
+											class="text-amber-400 hover:underline text-[10px] font-semibold"
+										>
+											Clear All
+										</button>
+									{/if}
+								</div>
+
+								<div class="space-y-1">
+									<label class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-800/60 cursor-pointer transition-colors">
+										<input
+											type="checkbox"
+											checked={selectedRoles.includes('bod')}
+											onchange={() => toggleRole('bod')}
+											class="rounded bg-slate-950 border-slate-700 text-purple-600 focus:ring-0"
+										/>
+										<span class="font-medium text-purple-300">🏛️ Board of Directors (BOD)</span>
+									</label>
+
+									<label class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-800/60 cursor-pointer transition-colors">
+										<input
+											type="checkbox"
+											checked={selectedRoles.includes('advisory')}
+											onchange={() => toggleRole('advisory')}
+											class="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0"
+										/>
+										<span class="font-medium text-indigo-300">🎓 Advisory Board</span>
+									</label>
+
+									<label class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-800/60 cursor-pointer transition-colors">
+										<input
+											type="checkbox"
+											checked={selectedRoles.includes('member')}
+											onchange={() => toggleRole('member')}
+											class="rounded bg-slate-950 border-slate-700 text-blue-600 focus:ring-0"
+										/>
+										<span class="font-medium text-slate-300">👤 Regular Members</span>
+									</label>
+
+									<label class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-800/60 cursor-pointer transition-colors">
+										<input
+											type="checkbox"
+											checked={selectedRoles.includes('partner')}
+											onchange={() => toggleRole('partner')}
+											class="rounded bg-slate-950 border-slate-700 text-emerald-600 focus:ring-0"
+										/>
+										<span class="font-medium text-emerald-300">🤝 MOU Partners</span>
+									</label>
+								</div>
+							</div>
+						{/if}
+					</div>
+
+					<div class="flex items-center gap-1.5">
+						<label for="provinceFilter" class="text-xs text-slate-400 font-semibold uppercase whitespace-nowrap">Province:</label>
+						<select
+							id="provinceFilter"
+							bind:value={selectedProvince}
+							class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs font-semibold focus:outline-none focus:border-blue-500"
+						>
+							<option value="ALL">All Provinces</option>
+							<option value="BC">BC</option>
+							<option value="ON">ON</option>
+							<option value="AB">AB</option>
+							<option value="QC">QC</option>
+							<option value="NS">NS</option>
+							<option value="NB">NB</option>
+							<option value="MB">MB</option>
+							<option value="SK">SK</option>
+						</select>
+					</div>
 
 					<!-- View Mode Toggle: Grid vs Table -->
 					<div class="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 ml-auto md:ml-0">
@@ -173,11 +299,22 @@
 
 							<div class="pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs">
 								<span class="text-slate-400 font-medium">Member</span>
-								{#if member.email}
-									<a href="mailto:{member.email}" class="text-blue-400 hover:underline font-semibold flex items-center gap-1">
-										✉️ Contact
-									</a>
-								{/if}
+								<div class="flex items-center gap-2.5">
+									{#if data.user?.role === 'admin'}
+										<a
+											href="/admin/members?edit={member.id}"
+											class="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-semibold transition-all flex items-center gap-1"
+											title="Edit Member Details in Admin Center"
+										>
+											✏️ Edit
+										</a>
+									{/if}
+									{#if member.email}
+										<a href="mailto:{member.email}" class="text-blue-400 hover:underline font-semibold flex items-center gap-1">
+											✉️ Contact
+										</a>
+									{/if}
+								</div>
 							</div>
 						</div>
 					{/each}
@@ -194,7 +331,7 @@
 									<th class="py-3.5 px-5">Profession</th>
 									<th class="py-3.5 px-5">Location</th>
 									<th class="py-3.5 px-5">Bio</th>
-									<th class="py-3.5 px-5 text-right">Contact</th>
+									<th class="py-3.5 px-5 text-right">Actions</th>
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-slate-800/70">
@@ -252,16 +389,25 @@
 											{/if}
 										</td>
 										<td class="py-3.5 px-5 text-right whitespace-nowrap">
-											{#if member.email}
-												<a
-													href="mailto:{member.email}"
-													class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 transition-all font-semibold"
-												>
-													✉️ Contact
-												</a>
-											{:else}
-												<span class="text-slate-600 italic">—</span>
-											{/if}
+											<div class="inline-flex items-center gap-2">
+												{#if data.user?.role === 'admin'}
+													<a
+														href="/admin/members?edit={member.id}"
+														class="px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold transition-all text-xs"
+														title="Edit Member Details in Admin Center"
+													>
+														✏️ Edit
+													</a>
+												{/if}
+												{#if member.email}
+													<a
+														href="mailto:{member.email}"
+														class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 transition-all font-semibold"
+													>
+														✉️ Contact
+													</a>
+												{/if}
+											</div>
 										</td>
 									</tr>
 								{/each}

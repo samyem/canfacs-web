@@ -3,13 +3,25 @@
 
 	let { data, form } = $props();
 
-	let activeTab = $state<'pending' | 'approved' | 'admins' | 'bod' | 'partners' | 'all' | 'org_roles'>('pending');
+	import { page } from '$app/state';
+
+	let activeTab = $state<'pending' | 'approved' | 'admins' | 'bod' | 'advisory' | 'partners' | 'all' | 'org_roles'>('pending');
 	let searchQuery = $state('');
 	let copiedPassword = $state(false);
 	let editingMember = $state<any | null>(null);
 	let editingOrgRole = $state<{ id?: string; title: string; category: string; rank_order: number; description: string } | null>(null);
 	let isUploadingAvatar = $state(false);
 	let avatarUploadError = $state('');
+
+	$effect(() => {
+		const editId = page.url.searchParams.get('edit');
+		if (editId && !editingMember && data.members) {
+			const target = data.members.find((m: any) => m.id === editId);
+			if (target) {
+				openEditModal(target);
+			}
+		}
+	});
 
 	function openEditModal(m: any) {
 		const existingAssigned = data.memberOrgRoles?.find((mor: any) => mor.member_id === m.id && (mor.is_active === 1 || mor.is_active === true));
@@ -67,6 +79,9 @@
 	const bodMembers = $derived(
 		data.members.filter((m: any) => m.role === 'bod')
 	);
+	const advisoryMembers = $derived(
+		data.members.filter((m: any) => m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul'))
+	);
 	const partnerMembers = $derived(
 		data.members.filter((m: any) => m.role === 'partner')
 	);
@@ -78,6 +93,7 @@
 			else if (activeTab === 'approved') matchesTab = m.status === 'approved';
 			else if (activeTab === 'admins') matchesTab = m.role === 'admin';
 			else if (activeTab === 'bod') matchesTab = m.role === 'bod';
+			else if (activeTab === 'advisory') matchesTab = m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul');
 			else if (activeTab === 'partners') matchesTab = m.role === 'partner';
 
 			const q = searchQuery.toLowerCase();
@@ -201,6 +217,14 @@
 				>
 					<span>🏛️ BOD</span>
 					<span>({bodMembers.length})</span>
+				</button>
+				<button
+					type="button"
+					onclick={() => (activeTab = 'advisory')}
+					class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'advisory' ? 'bg-indigo-600 text-white shadow-lg' : 'text-indigo-400 hover:text-white'}"
+				>
+					<span>🎓 Advisory</span>
+					<span>({advisoryMembers.length})</span>
 				</button>
 				<button
 					type="button"
@@ -389,6 +413,11 @@
 										<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-purple-500 text-white shadow-sm flex items-center gap-1">
 											<span>🏛️</span>
 											<span>BOD Member</span>
+										</span>
+									{:else if member.role === 'advisory' || member.org_category === 'advisory'}
+										<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-indigo-500 text-white shadow-sm flex items-center gap-1">
+											<span>🎓</span>
+											<span>Advisory Board</span>
 										</span>
 									{:else if member.role === 'partner'}
 										<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-blue-500 text-white shadow-sm flex items-center gap-1">
@@ -631,6 +660,7 @@
 						>
 							<option value="member">Regular Member</option>
 							<option value="bod">🏛️ BOD Member</option>
+							<option value="advisory">🎓 Advisory Board</option>
 							<option value="partner">🤝 MOU Partner</option>
 							<option value="admin">👑 Administrator</option>
 						</select>

@@ -20,17 +20,21 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 	}
 
 	const approvedMembers = await getAllMembers(db, 'approved');
-	const { getAllMemberOrganizationalRoles } = await import('$lib/server/db');
+	const { getAllMemberOrganizationalRoles, getOrganizationalRoles } = await import('$lib/server/db');
 	const memberOrgRoles = await getAllMemberOrganizationalRoles(db, true);
+	const orgRoles = await getOrganizationalRoles(db);
 
 	return {
 		user: locals.user,
 		hasAccess: true,
+		orgRoles,
 		members: approvedMembers.map((m) => {
 			const activeAssignment = memberOrgRoles.find((mor) => mor.member_id === m.id);
 			return {
 				...m,
-				organizational_role: activeAssignment?.title || m.organizational_role || null
+				organizational_role: activeAssignment?.title || m.organizational_role || null,
+				org_role_id: activeAssignment?.role_id || null,
+				org_category: activeAssignment?.category || null
 			};
 		})
 	};

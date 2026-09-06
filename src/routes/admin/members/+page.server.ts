@@ -29,6 +29,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 				...m,
 				organizational_role: activeAssignment?.title || m.organizational_role || null,
 				org_role_id: activeAssignment?.role_id || null,
+				org_category: activeAssignment?.category || null,
 				role_start_date: activeAssignment?.start_date || m.role_start_date || null,
 				role_end_date: activeAssignment?.end_date || m.role_end_date || null
 			};
