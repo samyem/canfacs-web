@@ -9,7 +9,7 @@
 	let searchQuery = $state('');
 	let copiedPassword = $state(false);
 	let editingMember = $state<any | null>(null);
-	let editingOrgRole = $state<{ id?: string; title: string; category: string; rank_order: number; description: string } | null>(null);
+	let editingOrgRole = $state<{ id?: string; title: string; category: string; rank_order: number; description: string; parent_role_id?: string | null } | null>(null);
 	let isUploadingAvatar = $state(false);
 	let avatarUploadError = $state('');
 	let isRoleDropdownOpen = $state(false);
@@ -100,10 +100,18 @@
 		data.members.filter((m: any) => m.status === 'approved')
 	);
 	const adminMembers = $derived(
-		data.members.filter((m: any) => m.role === 'admin')
+		data.members.filter((m: any) => m.role === 'admin' || m.org_role_id === 'org_admin')
 	);
 	const bodMembers = $derived(
-		data.members.filter((m: any) => m.role === 'bod')
+		data.members.filter((m: any) =>
+			m.role === 'bod' ||
+			m.role === 'admin' ||
+			m.org_category === 'board' ||
+			m.org_category === 'executive' ||
+			m.parent_role_id === 'org_director' ||
+			m.parent_title?.toLowerCase().includes('director') ||
+			m.organizational_role?.toLowerCase().includes('director')
+		)
 	);
 	const advisoryMembers = $derived(
 		data.members.filter((m: any) => m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul'))
@@ -117,8 +125,8 @@
 			let matchesTab = true;
 			if (activeTab === 'pending') matchesTab = m.status === 'pending';
 			else if (activeTab === 'approved') matchesTab = m.status === 'approved';
-			else if (activeTab === 'admins') matchesTab = m.role === 'admin';
-			else if (activeTab === 'bod') matchesTab = m.role === 'bod';
+			else if (activeTab === 'admins') matchesTab = m.role === 'admin' || m.org_role_id === 'org_admin';
+			else if (activeTab === 'bod') matchesTab = m.role === 'bod' || m.role === 'admin' || m.org_category === 'board' || m.org_category === 'executive' || m.parent_role_id === 'org_director' || m.parent_title?.toLowerCase().includes('director') || m.organizational_role?.toLowerCase().includes('director');
 			else if (activeTab === 'advisory') matchesTab = m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul');
 			else if (activeTab === 'partners') matchesTab = m.role === 'partner';
 
@@ -372,6 +380,7 @@
 									<th class="p-4">Rank</th>
 									<th class="p-4">Title & ID</th>
 									<th class="p-4">Category</th>
+									<th class="p-4">Parent Role (Hierarchy)</th>
 									<th class="p-4">Description</th>
 									<th class="p-4">Assigned Members</th>
 									<th class="p-4 text-right">Actions</th>
@@ -396,6 +405,16 @@
 												{roleItem.category}
 											</span>
 										</td>
+										<td class="p-4">
+											{#if roleItem.parent_title}
+												<div class="flex items-center gap-1.5 text-xs text-purple-300">
+													<span class="text-slate-500">↳ Child of:</span>
+													<span class="font-semibold bg-purple-950/60 border border-purple-800/60 px-2 py-0.5 rounded-lg">{roleItem.parent_title}</span>
+												</div>
+											{:else}
+												<span class="text-slate-500 text-[11px]">— (Top Level)</span>
+											{/if}
+										</td>
 										<td class="p-4 text-slate-400 max-w-xs truncate">{roleItem.description || '—'}</td>
 										<td class="p-4">
 											<span class="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 font-bold text-slate-200">
@@ -405,7 +424,7 @@
 										<td class="p-4 text-right space-x-2">
 											<button
 												type="button"
-												onclick={() => (editingOrgRole = { ...roleItem, description: roleItem.description || '' })}
+												onclick={() => (editingOrgRole = { ...roleItem, description: roleItem.description || '', parent_role_id: roleItem.parent_role_id || '' })}
 												class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold text-xs transition-colors"
 											>
 												Edit ✏️
@@ -485,12 +504,18 @@
 									</span>
 
 									<!-- Role Badge -->
-									{#if member.role === 'admin'}
-										<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-amber-500 text-slate-950 shadow-sm flex items-center gap-1">
-											<span>👑</span>
-											<span>Admin</span>
-										</span>
-									{:else if member.role === 'bod'}
+									{#if member.role === 'admin' || member.org_role_id === 'org_admin'}
+										<div class="flex items-center gap-1 flex-wrap justify-end">
+											<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-amber-500 text-slate-950 shadow-sm flex items-center gap-1">
+												<span>👑</span>
+												<span>Admin</span>
+											</span>
+											<span class="px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider bg-purple-900/80 text-purple-200 border border-purple-700/60 flex items-center gap-0.5" title="Administrator is a governance subset of Board of Directors">
+												<span>🏛️</span>
+												<span>BOD</span>
+											</span>
+										</div>
+									{:else if member.role === 'bod' || member.org_category === 'board' || member.parent_role_id === 'org_director'}
 										<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-purple-500 text-white shadow-sm flex items-center gap-1">
 											<span>🏛️</span>
 											<span>BOD Member</span>
@@ -518,7 +543,11 @@
 									<p><strong class="text-slate-400 font-medium">Salutation:</strong> {member.salutation}</p>
 								{/if}
 								{#if member.organizational_role}
-									<p><strong class="text-amber-400 font-medium">Org Role:</strong> {member.organizational_role}
+									<p>
+										<strong class="text-amber-400 font-medium">Org Role:</strong> {member.organizational_role}
+										{#if member.parent_title}
+											<span class="text-[10px] text-purple-300 font-semibold bg-purple-950/70 border border-purple-800/60 px-1.5 py-0.2 rounded ml-1.5">↳ child of {member.parent_title}</span>
+										{/if}
 										{#if member.role_start_date || member.role_end_date}
 											<span class="text-[10px] text-slate-500 ml-1">({member.role_start_date || '—'} to {member.role_end_date || 'present'})</span>
 										{/if}
@@ -786,7 +815,7 @@
 							<option value="">-- No Official Org Role --</option>
 							{#each data.orgRoles || [] as r}
 								<option value={r.id}>
-									{r.title} ({r.category})
+									{r.title} ({r.category}){r.parent_title ? ` [↳ child of ${r.parent_title}]` : ''}
 								</option>
 							{/each}
 						</select>
@@ -1035,6 +1064,28 @@
 							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
 						/>
 					</div>
+				</div>
+
+				<div>
+					<label for="orgParentRole" class="block text-xs font-semibold uppercase text-slate-400 mb-1">
+						Parent Role (Hierarchy / Subset of)
+					</label>
+					<select
+						id="orgParentRole"
+						name="parent_role_id"
+						bind:value={editingOrgRole.parent_role_id}
+						class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+					>
+						<option value="">-- No Parent Role (Top Level / Standalone) --</option>
+						{#each (data.orgRoles || []).filter((r: any) => r.id !== editingOrgRole?.id) as r}
+							<option value={r.id}>
+								↳ Subset of {r.title} ({r.category})
+							</option>
+						{/each}
+					</select>
+					<p class="text-[11px] text-slate-500 mt-1">
+						e.g. Set "Administrator" or "President" as a child / subset of "Board Director (BOD)" to inherit BOD governance.
+					</p>
 				</div>
 
 				<div>

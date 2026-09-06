@@ -66,7 +66,7 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 	const fromEmail =
 		platform?.env?.CLOUDFLARE_FROM_EMAIL ||
 		process.env.CLOUDFLARE_FROM_EMAIL ||
-		'info@canfacs.org';
+		'welcome@canfacs.org';
 
 	const orgRoles = await getOrganizationalRoles(db);
 	const memberOrgRoles = await getAllMemberOrganizationalRoles(db, true);
@@ -86,6 +86,8 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 				organizational_role: matchedOrgRole?.title || m.organizational_role || '',
 				org_role_id: matchedOrgRole?.role_id || '',
 				org_category: matchedOrgRole?.category || '',
+				parent_role_id: matchedOrgRole?.parent_role_id || null,
+				parent_title: matchedOrgRole?.parent_title || null,
 				role_start_date: m.role_start_date || '',
 				role_end_date: m.role_end_date || '',
 				address_street: m.address_street || '',
@@ -155,7 +157,7 @@ export const actions: Actions = {
 		const subject = (data.get('subject') as string) || '';
 		const contentHtml = (data.get('content_html') as string) || '';
 		const templateId = (data.get('template_id') as string) || '';
-		const fromEmail = (data.get('from_email') as string) || 'info@canfacs.org';
+		const fromEmail = (data.get('from_email') as string) || 'welcome@canfacs.org';
 
 		if (!subject.trim()) {
 			return fail(400, { error: 'Subject is required for test email.' });
@@ -166,11 +168,13 @@ export const actions: Actions = {
 		const selectedTemplate = templates.find((t) => t.id === templateId);
 
 		const sampleData = {
+			salutation: 'Dr.',
 			name: locals.user.fullName || 'Admin User',
 			email: testRecipient,
 			city: 'Vancouver',
 			province: 'BC',
-			role: 'admin'
+			role: 'admin',
+			organizational_role: 'Administrator'
 		};
 
 		const finalHtml = selectedTemplate
@@ -210,7 +214,7 @@ export const actions: Actions = {
 		const subject = (data.get('subject') as string) || '';
 		const contentHtml = (data.get('content_html') as string) || '';
 		const templateId = (data.get('template_id') as string) || '';
-		const fromEmail = (data.get('from_email') as string) || 'info@canfacs.org';
+		const fromEmail = (data.get('from_email') as string) || 'welcome@canfacs.org';
 		const recipientsRaw = (data.get('recipients_data') as string) || '';
 
 		if (!subject.trim()) {

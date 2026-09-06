@@ -204,10 +204,12 @@ Email: info@canfacs.org
 
 		const result: any = await res.json();
 		if (!res.ok || result.success === false) {
-			console.error('[CANFACS Email Error]', result);
+			console.error('[CANFACS Email Error]', JSON.stringify(result, null, 2));
+			const firstError = result.errors?.[0];
+			const errorMsg = firstError?.message || (typeof firstError === 'string' ? firstError : null) || result.messages?.[0]?.message || `Cloudflare HTTP ${res.status}: Failed to send email`;
 			return {
 				success: false,
-				error: result.errors?.[0]?.message || 'Failed to send email via Cloudflare'
+				error: errorMsg
 			};
 		}
 
@@ -240,7 +242,7 @@ export async function sendCustomEmail(
 		data.fromAddress ||
 		env?.CLOUDFLARE_FROM_EMAIL ||
 		process.env.CLOUDFLARE_FROM_EMAIL ||
-		'info@canfacs.org';
+		'welcome@canfacs.org';
 
 	if (!data.to || !data.to.includes('@')) {
 		return { success: false, error: 'Recipient email address missing or invalid' };
@@ -289,10 +291,12 @@ export async function sendCustomEmail(
 
 		const result: any = await res.json();
 		if (!res.ok || result.success === false) {
-			console.error('[CANFACS Email Error]', result);
+			console.error('[CANFACS Email Error]', JSON.stringify(result, null, 2));
+			const firstError = result.errors?.[0];
+			const errorMsg = firstError?.message || (typeof firstError === 'string' ? firstError : null) || result.messages?.[0]?.message || `Cloudflare HTTP ${res.status}: Failed to send email`;
 			return {
 				success: false,
-				error: result.errors?.[0]?.message || 'Failed to send email via Cloudflare'
+				error: errorMsg
 			};
 		}
 

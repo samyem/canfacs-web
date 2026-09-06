@@ -9,7 +9,7 @@
 	// Email Composition Form State
 	let batchLabel = $state(`Announcement - ${new Date().toLocaleDateString('en-CA')}`);
 	let selectedTemplateId = $state('');
-	let fromEmail = $state('info@canfacs.org');
+	let fromEmail = $state('welcome@canfacs.org');
 	let subject = $state('');
 	let bodyHtml = $state('');
 
@@ -220,7 +220,7 @@
 			associated_organizations: 'NRN Canada'
 		};
 
-		let content = bodyHtml || `<p style="color: #94a3b8; font-style: italic;">Enter email body or use Gemini AI to generate draft...</p>`;
+		let content = bodyHtml || `<p style="color: #94a3b8; font-style: italic;">Enter email body or use AI Generator to create draft...</p>`;
 		
 		// Interpolate sample data
 		for (const [k, v] of Object.entries(sampleData)) {
@@ -258,7 +258,7 @@
 				</div>
 				<h1 class="text-3xl font-extrabold text-white mt-2">CANFACS Email Broadcast & Dispatcher</h1>
 				<p class="text-slate-400 text-sm mt-1">
-					Send personalized communications from <code class="text-red-400 font-mono">info@canfacs.org</code> using standard branded templates, dynamic placeholders, and Gemini AI drafting.
+					Send personalized communications from <code class="text-red-400 font-mono">info@canfacs.org</code> using standard branded templates, dynamic placeholders, and AI drafting.
 				</p>
 			</div>
 
@@ -357,12 +357,12 @@
 			<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
 				<!-- Left Column: AI Assistant & Controls -->
 				<div class="lg:col-span-5 space-y-6">
-					<!-- Gemini AI Generator Card -->
+					<!-- AI Generator Card -->
 					<div class="p-6 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-900/60 border border-slate-800 space-y-4 shadow-xl">
 						<div class="flex items-center justify-between border-b border-slate-800 pb-3">
 							<div class="flex items-center gap-2">
 								<span class="text-xl">✨</span>
-								<h2 class="font-bold text-sm text-white">Google Gemini AI Generator</h2>
+								<h2 class="font-bold text-sm text-white">AI Generator</h2>
 							</div>
 							{#if data.hasGeminiKey}
 								<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
@@ -455,10 +455,10 @@
 							>
 								{#if isGeneratingAi}
 									<span class="animate-spin">⏳</span>
-									<span>Drafting with Gemini AI...</span>
+									<span>Drafting with AI...</span>
 								{:else}
 									<span>✨</span>
-									<span>Generate Draft with Gemini</span>
+									<span>Generate Draft with AI</span>
 								{/if}
 							</button>
 						</form>

@@ -30,6 +30,8 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 				organizational_role: activeAssignment?.title || m.organizational_role || null,
 				org_role_id: activeAssignment?.role_id || null,
 				org_category: activeAssignment?.category || null,
+				parent_role_id: activeAssignment?.parent_role_id || null,
+				parent_title: activeAssignment?.parent_title || null,
 				role_start_date: activeAssignment?.start_date || m.role_start_date || null,
 				role_end_date: activeAssignment?.end_date || m.role_end_date || null
 			};
@@ -236,6 +238,7 @@ export const actions: Actions = {
 		const category = formData.get('category')?.toString() || 'board';
 		const rank_order = Number(formData.get('rank_order')) || 100;
 		const description = formData.get('description')?.toString() || '';
+		const parent_role_id = formData.get('parent_role_id')?.toString() || null;
 
 		if (!title?.trim()) {
 			return fail(400, { error: 'Organizational role title is required.' });
@@ -249,7 +252,8 @@ export const actions: Actions = {
 			title: title.trim(),
 			category: category.trim(),
 			rank_order,
-			description
+			description,
+			parent_role_id
 		});
 
 		return {

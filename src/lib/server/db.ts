@@ -137,6 +137,8 @@ export interface OrganizationalRoleRow {
 	category: 'executive' | 'board' | 'committee' | 'advisory' | string;
 	rank_order: number;
 	description: string | null;
+	parent_role_id?: string | null;
+	parent_title?: string | null;
 }
 
 export interface MemberOrganizationalRoleRow {
@@ -146,6 +148,8 @@ export interface MemberOrganizationalRoleRow {
 	title?: string;
 	category?: string;
 	rank_order?: number;
+	parent_role_id?: string | null;
+	parent_title?: string | null;
 	start_date: string | null;
 	end_date: string | null;
 	is_active: boolean | number;
@@ -394,10 +398,11 @@ async function ensureLocalDefaultAdmin() {
 
 	// Seed Standard Organizational Roles
 	const defaultOrgRoles: OrganizationalRoleRow[] = [
-		{ id: 'org_president', title: 'President', category: 'executive', rank_order: 10, description: 'Society President and Chief Executive Officer of the Board' },
-		{ id: 'org_vp', title: 'Vice President', category: 'executive', rank_order: 20, description: 'Executive Vice President assisting the President and leading key society programs' },
-		{ id: 'org_general_secretary', title: 'General Secretary', category: 'executive', rank_order: 30, description: 'Executive Secretary managing society correspondence, records, and minutes' },
-		{ id: 'org_treasurer', title: 'Treasurer', category: 'executive', rank_order: 40, description: 'Executive Treasurer overseeing financial governance, filings, and audit statements' },
+		{ id: 'org_admin', title: 'Administrator', category: 'executive', rank_order: 5, description: 'System Administrator & Governance Lead with administrative privileges (subset of Board of Directors)', parent_role_id: 'org_director' },
+		{ id: 'org_president', title: 'President', category: 'executive', rank_order: 10, description: 'Society President and Chief Executive Officer of the Board', parent_role_id: 'org_director' },
+		{ id: 'org_vp', title: 'Vice President', category: 'executive', rank_order: 20, description: 'Executive Vice President assisting the President and leading key society programs', parent_role_id: 'org_director' },
+		{ id: 'org_general_secretary', title: 'General Secretary', category: 'executive', rank_order: 30, description: 'Executive Secretary managing society correspondence, records, and minutes', parent_role_id: 'org_director' },
+		{ id: 'org_treasurer', title: 'Treasurer', category: 'executive', rank_order: 40, description: 'Executive Treasurer overseeing financial governance, filings, and audit statements', parent_role_id: 'org_director' },
 		{ id: 'org_director', title: 'Board Director', category: 'board', rank_order: 50, description: 'Sitting Member of the Board of Directors (BOD) participating in society governance' },
 		{ id: 'org_cultural_director', title: 'Director of Cultural Affairs', category: 'committee', rank_order: 60, description: 'Leads community cultural events, arts, and diaspora heritage programs' },
 		{ id: 'org_community_outreach', title: 'Director of Community Outreach', category: 'committee', rank_order: 70, description: 'Oversees inter-provincial outreach and member relations' },
@@ -1779,9 +1784,15 @@ async function ensureOrgRolesTables(db: any) {
 			title TEXT NOT NULL,
 			category TEXT NOT NULL DEFAULT 'board',
 			rank_order INTEGER NOT NULL DEFAULT 100,
-			description TEXT
+			description TEXT,
+			parent_role_id TEXT
 		);
 	`).run();
+	try {
+		await db.prepare(`ALTER TABLE organizational_roles ADD COLUMN parent_role_id TEXT`).run();
+	} catch {
+		// Column already exists
+	}
 	await db.prepare(`
 		CREATE TABLE IF NOT EXISTS member_organizational_roles (
 			id TEXT PRIMARY KEY,
@@ -1802,10 +1813,21 @@ export async function getOrganizationalRoles(db: any): Promise<OrganizationalRol
 	await ensureLocalDefaultAdmin();
 	if (db) {
 		await ensureOrgRolesTables(db);
-		const res = await db.prepare(`SELECT * FROM organizational_roles ORDER BY rank_order ASC, title ASC`).all();
+		const res = await db.prepare(`
+			SELECT r.*, p.title as parent_title
+			FROM organizational_roles r
+			LEFT JOIN organizational_roles p ON r.parent_role_id = p.id
+			ORDER BY r.rank_order ASC, r.title ASC
+		`).all();
 		return (res.results || []) as OrganizationalRoleRow[];
 	}
-	return [...memoryOrgRoles].sort((a, b) => a.rank_order - b.rank_order);
+	return [...memoryOrgRoles].map((r) => {
+		const p = memoryOrgRoles.find((pr) => pr.id === r.parent_role_id);
+		return {
+			...r,
+			parent_title: p?.title || null
+		};
+	}).sort((a, b) => a.rank_order - b.rank_order);
 }
 
 export async function getMemberOrganizationalRoles(db: any, memberId: string): Promise<MemberOrganizationalRoleRow[]> {
@@ -1813,9 +1835,10 @@ export async function getMemberOrganizationalRoles(db: any, memberId: string): P
 	if (db) {
 		await ensureOrgRolesTables(db);
 		const res = await db.prepare(`
-			SELECT mor.*, r.title, r.category, r.rank_order
+			SELECT mor.*, r.title, r.category, r.rank_order, r.parent_role_id, p.title as parent_title
 			FROM member_organizational_roles mor
 			JOIN organizational_roles r ON mor.role_id = r.id
+			LEFT JOIN organizational_roles p ON r.parent_role_id = p.id
 			WHERE mor.member_id = ?
 			ORDER BY mor.is_active DESC, r.rank_order ASC, mor.created_at DESC
 		`).bind(memberId).all();
@@ -1823,6 +1846,15 @@ export async function getMemberOrganizationalRoles(db: any, memberId: string): P
 	}
 	return memoryMemberOrgRoles
 		.filter((mor) => mor.member_id === memberId)
+		.map((mor) => {
+			const r = memoryOrgRoles.find((role) => role.id === mor.role_id);
+			const p = r?.parent_role_id ? memoryOrgRoles.find((role) => role.id === r.parent_role_id) : null;
+			return {
+				...mor,
+				parent_role_id: r?.parent_role_id || null,
+				parent_title: p?.title || null
+			};
+		})
 		.sort((a, b) => ((b.is_active ? 1 : 0) - (a.is_active ? 1 : 0)));
 }
 
@@ -1831,9 +1863,10 @@ export async function getAllMemberOrganizationalRoles(db: any, onlyActive = true
 	if (db) {
 		await ensureOrgRolesTables(db);
 		let query = `
-			SELECT mor.*, r.title, r.category, r.rank_order
+			SELECT mor.*, r.title, r.category, r.rank_order, r.parent_role_id, p.title as parent_title
 			FROM member_organizational_roles mor
 			JOIN organizational_roles r ON mor.role_id = r.id
+			LEFT JOIN organizational_roles p ON r.parent_role_id = p.id
 		`;
 		if (onlyActive) {
 			query += ` WHERE mor.is_active = 1`;
@@ -1842,7 +1875,15 @@ export async function getAllMemberOrganizationalRoles(db: any, onlyActive = true
 		const res = await db.prepare(query).all();
 		return (res.results || []) as MemberOrganizationalRoleRow[];
 	}
-	let list = [...memoryMemberOrgRoles];
+	let list = [...memoryMemberOrgRoles].map((mor) => {
+		const r = memoryOrgRoles.find((role) => role.id === mor.role_id);
+		const p = r?.parent_role_id ? memoryOrgRoles.find((role) => role.id === r.parent_role_id) : null;
+		return {
+			...mor,
+			parent_role_id: r?.parent_role_id || null,
+			parent_title: p?.title || null
+		};
+	});
 	if (onlyActive) {
 		list = list.filter((mor) => mor.is_active === 1 || mor.is_active === true);
 	}
@@ -1866,6 +1907,7 @@ export async function assignMemberOrganizationalRole(
 	const isActiveVal = assignment.is_active !== undefined ? (assignment.is_active ? 1 : 0) : 1;
 
 	const roleMeta = memoryOrgRoles.find((r) => r.id === assignment.role_id);
+	const parentMeta = roleMeta?.parent_role_id ? memoryOrgRoles.find((r) => r.id === roleMeta.parent_role_id) : null;
 	const newRow: MemberOrganizationalRoleRow = {
 		id,
 		member_id: assignment.member_id,
@@ -1873,6 +1915,8 @@ export async function assignMemberOrganizationalRole(
 		title: roleMeta?.title || 'Board Director',
 		category: roleMeta?.category || 'board',
 		rank_order: roleMeta?.rank_order || 50,
+		parent_role_id: roleMeta?.parent_role_id || null,
+		parent_title: parentMeta?.title || null,
 		start_date: assignment.start_date || null,
 		end_date: assignment.end_date || null,
 		is_active: isActiveVal,
@@ -1909,32 +1953,36 @@ export async function upsertOrganizationalRole(
 		category: string;
 		rank_order?: number;
 		description?: string | null;
+		parent_role_id?: string | null;
 	}
 ): Promise<OrganizationalRoleRow> {
 	await ensureLocalDefaultAdmin();
 	const id = role.id || 'org_' + role.title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 	const rankOrder = Number(role.rank_order) || 100;
 	const desc = role.description?.trim() || null;
+	const parentRoleId = role.parent_role_id?.trim() || null;
 
 	const newRow: OrganizationalRoleRow = {
 		id,
 		title: role.title.trim(),
 		category: role.category.trim() || 'board',
 		rank_order: rankOrder,
-		description: desc
+		description: desc,
+		parent_role_id: parentRoleId
 	};
 
 	if (db) {
 		await ensureOrgRolesTables(db);
 		await db.prepare(`
-			INSERT INTO organizational_roles (id, title, category, rank_order, description)
-			VALUES (?, ?, ?, ?, ?)
+			INSERT INTO organizational_roles (id, title, category, rank_order, description, parent_role_id)
+			VALUES (?, ?, ?, ?, ?, ?)
 			ON CONFLICT(id) DO UPDATE SET
 				title = excluded.title,
 				category = excluded.category,
 				rank_order = excluded.rank_order,
-				description = excluded.description
-		`).bind(newRow.id, newRow.title, newRow.category, newRow.rank_order, newRow.description).run();
+				description = excluded.description,
+				parent_role_id = excluded.parent_role_id
+		`).bind(newRow.id, newRow.title, newRow.category, newRow.rank_order, newRow.description, newRow.parent_role_id).run();
 	} else {
 		const idx = memoryOrgRoles.findIndex((r) => r.id === id);
 		if (idx !== -1) {

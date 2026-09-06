@@ -153,7 +153,8 @@ CREATE TABLE IF NOT EXISTS organizational_roles (
     title TEXT NOT NULL,
     category TEXT NOT NULL DEFAULT 'board', -- 'executive', 'board', 'committee', 'advisory'
     rank_order INTEGER NOT NULL DEFAULT 100,
-    description TEXT
+    description TEXT,
+    parent_role_id TEXT REFERENCES organizational_roles(id)
 );
 
 CREATE TABLE IF NOT EXISTS member_organizational_roles (
