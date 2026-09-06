@@ -131,6 +131,28 @@ export interface DisbursementAllocationRow {
 	amount: number;
 }
 
+export interface OrganizationalRoleRow {
+	id: string;
+	title: string;
+	category: 'executive' | 'board' | 'committee' | 'advisory' | string;
+	rank_order: number;
+	description: string | null;
+}
+
+export interface MemberOrganizationalRoleRow {
+	id: string;
+	member_id: string;
+	role_id: string;
+	title?: string;
+	category?: string;
+	rank_order?: number;
+	start_date: string | null;
+	end_date: string | null;
+	is_active: boolean | number;
+	notes: string | null;
+	created_at: string;
+}
+
 // In-memory fallback store for local development when D1 binding is unattached
 let localStoreInitialized = false;
 let memoryMembers: MemberRow[] = [];
@@ -144,6 +166,8 @@ let memoryAllocations: DisbursementAllocationRow[] = [];
 let memoryEmailBatches: EmailBatchRow[] = [];
 let memoryEmailLogs: EmailLogRow[] = [];
 let memoryEmailTemplates: EmailTemplateRow[] = [];
+let memoryOrgRoles: OrganizationalRoleRow[] = [];
+let memoryMemberOrgRoles: MemberOrganizationalRoleRow[] = [];
 
 async function ensureLocalDefaultAdmin() {
 	if (localStoreInitialized) return;
@@ -166,6 +190,245 @@ async function ensureLocalDefaultAdmin() {
 		created_at: new Date().toISOString(),
 		approved_at: new Date().toISOString()
 	});
+
+	// Seed Board of Directors (BOD) Members grouped by name with collected emails
+	const bodSeedList: MemberRow[] = [
+		{
+			id: 'bod_bina_shrestha',
+			email: 'bina.shrestha@canfacs.org',
+			password_hash: null,
+			full_name: 'Bina Shrestha',
+			role: 'bod',
+			organizational_role: 'Board of Directors (BOD)',
+			status: 'approved',
+			phone_secondary: 'shresthabina5@gmail.com',
+			phone: null,
+			profession: 'Executive Member & Community Leader',
+			city: 'Vancouver',
+			province: 'BC',
+			bio: 'Board member supporting community outreach and bilateral cultural programs.',
+			google_login_enabled: 1,
+			created_at: '2026-09-06T10:00:00Z',
+			approved_at: '2026-09-06T10:00:00Z'
+		},
+		{
+			id: 'bod_debraj_dhakal',
+			email: 'debrajdhakal1975@gmail.com',
+			password_hash: null,
+			full_name: 'Debraj Dhakal',
+			role: 'bod',
+			organizational_role: 'Board of Directors (BOD)',
+			status: 'approved',
+			phone: null,
+			profession: 'Board Member',
+			city: 'Toronto',
+			province: 'ON',
+			bio: 'Active member of CANFACS Board of Directors.',
+			google_login_enabled: 1,
+			created_at: '2026-09-06T10:00:00Z',
+			approved_at: '2026-09-06T10:00:00Z'
+		},
+		{
+			id: 'bod_kiroj_shrestha',
+			email: 'kirojks@hotmail.com',
+			password_hash: null,
+			full_name: 'Kiroj Shrestha',
+			role: 'bod',
+			organizational_role: 'Board of Directors (BOD)',
+			status: 'approved',
+			phone: null,
+			profession: 'Board Member',
+			city: 'Vancouver',
+			province: 'BC',
+			bio: 'CANFACS Board member championing emergency relief and diaspora engagement.',
+			google_login_enabled: 1,
+			created_at: '2026-09-06T10:00:00Z',
+			approved_at: '2026-09-06T10:00:00Z'
+		},
+		{
+			id: 'bod_mackenzie_gospodin',
+			email: 'mankajee@gmail.com',
+			password_hash: null,
+			full_name: 'Mackenzie Ami Gospodin',
+			role: 'bod',
+			organizational_role: 'Board of Directors (BOD)',
+			status: 'approved',
+			phone: null,
+			profession: 'Board Member',
+			city: 'Vancouver',
+			province: 'BC',
+			bio: 'CANFACS Board of Directors member.',
+			google_login_enabled: 1,
+			created_at: '2026-09-06T10:00:00Z',
+			approved_at: '2026-09-06T10:00:00Z'
+		},
+		{
+			id: 'bod_meghraj_gnawali',
+			email: 'gnawalim@gmail.com',
+			password_hash: null,
+			full_name: 'Meghraj Gnawali',
+			role: 'bod',
+			organizational_role: 'Board of Directors (BOD)',
+			status: 'approved',
+			phone: null,
+			profession: 'Physician / Board Director',
+			city: 'Vancouver',
+			province: 'BC',
+			bio: 'Medical doctor and CANFACS Board member actively contributing to health and disaster relief initiatives.',
+			google_login_enabled: 1,
+			created_at: '2026-09-06T10:00:00Z',
+			approved_at: '2026-09-06T10:00:00Z'
+		},
+		{
+			id: 'bod_navin_dhakal',
+			email: 'navin.dhakal@canfacs.org',
+			password_hash: null,
+			full_name: 'Navin Dhakal',
+			role: 'bod',
+			organizational_role: 'Board of Directors (BOD)',
+			status: 'approved',
+			phone_secondary: 'navin.dhakal@gmail.com',
+			phone: null,
+			profession: 'Board Member',
+			city: 'Calgary',
+			province: 'AB',
+			bio: 'CANFACS Board member supporting Alberta chapter coordination.',
+			google_login_enabled: 1,
+			created_at: '2026-09-06T10:00:00Z',
+			approved_at: '2026-09-06T10:00:00Z'
+		},
+		{
+			id: 'bod_prakash_joshi',
+			email: 'prakash.joshi@canfacs.org',
+			password_hash: null,
+			full_name: 'Prakash Joshi',
+			role: 'bod',
+			organizational_role: 'Board of Directors (BOD)',
+			status: 'approved',
+			phone: null,
+			profession: 'Board Director',
+			city: 'Vancouver',
+			province: 'BC',
+			bio: 'Senior member of the Board of Directors at CANFACS.',
+			google_login_enabled: 1,
+			created_at: '2026-09-06T10:00:00Z',
+			approved_at: '2026-09-06T10:00:00Z'
+		},
+		{
+			id: 'bod_prem_devkota',
+			email: 'devkotapremb@gmail.com',
+			password_hash: null,
+			full_name: 'Prem Devkota',
+			role: 'bod',
+			organizational_role: 'Board of Directors (BOD)',
+			status: 'approved',
+			phone_secondary: 'devkotapremb@yahoo.com',
+			phone: null,
+			profession: 'Board Member',
+			city: 'Toronto',
+			province: 'ON',
+			bio: 'CANFACS Board member actively fostering community relations.',
+			google_login_enabled: 1,
+			created_at: '2026-09-06T10:00:00Z',
+			approved_at: '2026-09-06T10:00:00Z'
+		},
+		{
+			id: 'bod_purushottam_thapa',
+			email: 'purushottam.thapa@canfacs.org',
+			password_hash: null,
+			full_name: 'Purushottam Thapa',
+			role: 'bod',
+			organizational_role: 'Board of Directors (BOD)',
+			status: 'approved',
+			phone_secondary: 'thapapu@gmail.com',
+			phone: null,
+			profession: 'Board Member',
+			city: 'Vancouver',
+			province: 'BC',
+			bio: 'Dedicated CANFACS Board member driving cultural exchanges.',
+			google_login_enabled: 1,
+			created_at: '2026-09-06T10:00:00Z',
+			approved_at: '2026-09-06T10:00:00Z'
+		},
+		{
+			id: 'bod_rudra_adhikari',
+			email: 'adhikari.rudra@gmail.com',
+			password_hash: null,
+			full_name: 'Rudra Adhikari',
+			role: 'bod',
+			organizational_role: 'Board of Directors (BOD)',
+			status: 'approved',
+			phone: null,
+			profession: 'Board Director',
+			city: 'Halifax',
+			province: 'NS',
+			bio: 'Board member representing Atlantic Canada and fostering diaspora bonds.',
+			google_login_enabled: 1,
+			created_at: '2026-09-06T10:00:00Z',
+			approved_at: '2026-09-06T10:00:00Z'
+		},
+		{
+			id: 'bod_samyem_tuladhar',
+			email: 'samyem@gmail.com',
+			password_hash: null,
+			full_name: 'Samyem Tuladhar',
+			role: 'admin',
+			organizational_role: 'Board of Directors (BOD) & Administrator',
+			status: 'approved',
+			phone: null,
+			profession: 'Technology & Executive Lead',
+			city: 'Vancouver',
+			province: 'BC',
+			bio: 'Executive Administrator and Board Member of CANFACS.',
+			google_login_enabled: 1,
+			created_at: '2026-09-06T10:00:00Z',
+			approved_at: '2026-09-06T10:00:00Z'
+		}
+	];
+
+	for (const bod of bodSeedList) {
+		if (!memoryMembers.some((m) => m.email.toLowerCase() === bod.email.toLowerCase())) {
+			memoryMembers.push(bod);
+		}
+	}
+
+	// Seed Standard Organizational Roles
+	const defaultOrgRoles: OrganizationalRoleRow[] = [
+		{ id: 'org_president', title: 'President', category: 'executive', rank_order: 10, description: 'Society President and Chief Executive Officer of the Board' },
+		{ id: 'org_vp', title: 'Vice President', category: 'executive', rank_order: 20, description: 'Executive Vice President assisting the President and leading key society programs' },
+		{ id: 'org_general_secretary', title: 'General Secretary', category: 'executive', rank_order: 30, description: 'Executive Secretary managing society correspondence, records, and minutes' },
+		{ id: 'org_treasurer', title: 'Treasurer', category: 'executive', rank_order: 40, description: 'Executive Treasurer overseeing financial governance, filings, and audit statements' },
+		{ id: 'org_director', title: 'Board Director', category: 'board', rank_order: 50, description: 'Sitting Member of the Board of Directors (BOD) participating in society governance' },
+		{ id: 'org_cultural_director', title: 'Director of Cultural Affairs', category: 'committee', rank_order: 60, description: 'Leads community cultural events, arts, and diaspora heritage programs' },
+		{ id: 'org_community_outreach', title: 'Director of Community Outreach', category: 'committee', rank_order: 70, description: 'Oversees inter-provincial outreach and member relations' },
+		{ id: 'org_youth_coordinator', title: 'Youth & Sports Coordinator', category: 'committee', rank_order: 80, description: 'Coordinates youth activities, student mentorship, and sports events' },
+		{ id: 'org_senior_advisor', title: 'Senior Advisor', category: 'advisory', rank_order: 90, description: 'Eminent community elder or advisor guiding society strategic vision' }
+	];
+
+	for (const r of defaultOrgRoles) {
+		if (!memoryOrgRoles.some((existing) => existing.id === r.id)) {
+			memoryOrgRoles.push(r);
+		}
+	}
+
+	// Seed Member Organizational Role assignments
+	for (const bod of bodSeedList) {
+		if (!memoryMemberOrgRoles.some((mor) => mor.member_id === bod.id)) {
+			memoryMemberOrgRoles.push({
+				id: `mor_${bod.id}`,
+				member_id: bod.id,
+				role_id: 'org_director',
+				title: 'Board Director',
+				category: 'board',
+				rank_order: 50,
+				start_date: '2026-01-01',
+				end_date: null,
+				is_active: 1,
+				notes: 'Elected Board of Directors Member',
+				created_at: '2026-09-06T10:00:00Z'
+			});
+		}
+	}
 
 	// Seed sample post
 	memoryPosts.push({
@@ -1506,4 +1769,193 @@ export async function deleteEmailTemplate(db: any, id: string): Promise<void> {
 		memoryEmailTemplates = memoryEmailTemplates.filter((t) => t.id !== id);
 	}
 }
+
+// ORGANIZATIONAL ROLES QUERIES & MANAGEMENT
+async function ensureOrgRolesTables(db: any) {
+	if (!db) return;
+	await db.prepare(`
+		CREATE TABLE IF NOT EXISTS organizational_roles (
+			id TEXT PRIMARY KEY,
+			title TEXT NOT NULL,
+			category TEXT NOT NULL DEFAULT 'board',
+			rank_order INTEGER NOT NULL DEFAULT 100,
+			description TEXT
+		);
+	`).run();
+	await db.prepare(`
+		CREATE TABLE IF NOT EXISTS member_organizational_roles (
+			id TEXT PRIMARY KEY,
+			member_id TEXT NOT NULL,
+			role_id TEXT NOT NULL,
+			start_date TEXT,
+			end_date TEXT,
+			is_active INTEGER NOT NULL DEFAULT 1,
+			notes TEXT,
+			created_at TEXT NOT NULL,
+			FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
+			FOREIGN KEY (role_id) REFERENCES organizational_roles(id) ON DELETE RESTRICT
+		);
+	`).run();
+}
+
+export async function getOrganizationalRoles(db: any): Promise<OrganizationalRoleRow[]> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureOrgRolesTables(db);
+		const res = await db.prepare(`SELECT * FROM organizational_roles ORDER BY rank_order ASC, title ASC`).all();
+		return (res.results || []) as OrganizationalRoleRow[];
+	}
+	return [...memoryOrgRoles].sort((a, b) => a.rank_order - b.rank_order);
+}
+
+export async function getMemberOrganizationalRoles(db: any, memberId: string): Promise<MemberOrganizationalRoleRow[]> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureOrgRolesTables(db);
+		const res = await db.prepare(`
+			SELECT mor.*, r.title, r.category, r.rank_order
+			FROM member_organizational_roles mor
+			JOIN organizational_roles r ON mor.role_id = r.id
+			WHERE mor.member_id = ?
+			ORDER BY mor.is_active DESC, r.rank_order ASC, mor.created_at DESC
+		`).bind(memberId).all();
+		return (res.results || []) as MemberOrganizationalRoleRow[];
+	}
+	return memoryMemberOrgRoles
+		.filter((mor) => mor.member_id === memberId)
+		.sort((a, b) => ((b.is_active ? 1 : 0) - (a.is_active ? 1 : 0)));
+}
+
+export async function getAllMemberOrganizationalRoles(db: any, onlyActive = true): Promise<MemberOrganizationalRoleRow[]> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureOrgRolesTables(db);
+		let query = `
+			SELECT mor.*, r.title, r.category, r.rank_order
+			FROM member_organizational_roles mor
+			JOIN organizational_roles r ON mor.role_id = r.id
+		`;
+		if (onlyActive) {
+			query += ` WHERE mor.is_active = 1`;
+		}
+		query += ` ORDER BY r.rank_order ASC, mor.created_at DESC`;
+		const res = await db.prepare(query).all();
+		return (res.results || []) as MemberOrganizationalRoleRow[];
+	}
+	let list = [...memoryMemberOrgRoles];
+	if (onlyActive) {
+		list = list.filter((mor) => mor.is_active === 1 || mor.is_active === true);
+	}
+	return list.sort((a, b) => (a.rank_order || 100) - (b.rank_order || 100));
+}
+
+export async function assignMemberOrganizationalRole(
+	db: any,
+	assignment: {
+		member_id: string;
+		role_id: string;
+		start_date?: string | null;
+		end_date?: string | null;
+		is_active?: boolean | number;
+		notes?: string | null;
+	}
+): Promise<MemberOrganizationalRoleRow> {
+	await ensureLocalDefaultAdmin();
+	const id = 'mor_' + crypto.randomUUID().slice(0, 10);
+	const now = new Date().toISOString();
+	const isActiveVal = assignment.is_active !== undefined ? (assignment.is_active ? 1 : 0) : 1;
+
+	const roleMeta = memoryOrgRoles.find((r) => r.id === assignment.role_id);
+	const newRow: MemberOrganizationalRoleRow = {
+		id,
+		member_id: assignment.member_id,
+		role_id: assignment.role_id,
+		title: roleMeta?.title || 'Board Director',
+		category: roleMeta?.category || 'board',
+		rank_order: roleMeta?.rank_order || 50,
+		start_date: assignment.start_date || null,
+		end_date: assignment.end_date || null,
+		is_active: isActiveVal,
+		notes: assignment.notes || null,
+		created_at: now
+	};
+
+	if (db) {
+		await ensureOrgRolesTables(db);
+		await db.prepare(`
+			INSERT INTO member_organizational_roles (id, member_id, role_id, start_date, end_date, is_active, notes, created_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		`).bind(
+			newRow.id,
+			newRow.member_id,
+			newRow.role_id,
+			newRow.start_date,
+			newRow.end_date,
+			newRow.is_active,
+			newRow.notes,
+			newRow.created_at
+		).run();
+	} else {
+		memoryMemberOrgRoles.push(newRow);
+	}
+	return newRow;
+}
+
+export async function upsertOrganizationalRole(
+	db: any,
+	role: {
+		id?: string;
+		title: string;
+		category: string;
+		rank_order?: number;
+		description?: string | null;
+	}
+): Promise<OrganizationalRoleRow> {
+	await ensureLocalDefaultAdmin();
+	const id = role.id || 'org_' + role.title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+	const rankOrder = Number(role.rank_order) || 100;
+	const desc = role.description?.trim() || null;
+
+	const newRow: OrganizationalRoleRow = {
+		id,
+		title: role.title.trim(),
+		category: role.category.trim() || 'board',
+		rank_order: rankOrder,
+		description: desc
+	};
+
+	if (db) {
+		await ensureOrgRolesTables(db);
+		await db.prepare(`
+			INSERT INTO organizational_roles (id, title, category, rank_order, description)
+			VALUES (?, ?, ?, ?, ?)
+			ON CONFLICT(id) DO UPDATE SET
+				title = excluded.title,
+				category = excluded.category,
+				rank_order = excluded.rank_order,
+				description = excluded.description
+		`).bind(newRow.id, newRow.title, newRow.category, newRow.rank_order, newRow.description).run();
+	} else {
+		const idx = memoryOrgRoles.findIndex((r) => r.id === id);
+		if (idx !== -1) {
+			memoryOrgRoles[idx] = newRow;
+		} else {
+			memoryOrgRoles.push(newRow);
+		}
+	}
+	return newRow;
+}
+
+export async function deleteOrganizationalRole(db: any, id: string): Promise<void> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureOrgRolesTables(db);
+		await db.prepare(`DELETE FROM organizational_roles WHERE id = ?`).bind(id).run();
+	} else {
+		memoryOrgRoles = memoryOrgRoles.filter((r) => r.id !== id);
+		memoryMemberOrgRoles = memoryMemberOrgRoles.filter((mor) => mor.role_id !== id);
+	}
+}
+
+
 

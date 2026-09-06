@@ -1,6 +1,15 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { getAllMembers, getDb, updateMemberStatus, updateMemberRole } from '$lib/server/db';
+import {
+	getAllMembers,
+	getDb,
+	updateMemberStatus,
+	updateMemberRole,
+	getOrganizationalRoles,
+	getAllMemberOrganizationalRoles,
+	assignMemberOrganizationalRole,
+	removeMemberOrganizationalRole
+} from '$lib/server/db';
 import { generateTempPassword, hashPassword } from '$lib/server/auth';
 
 export const load: PageServerLoad = async ({ locals, platform }) => {
@@ -10,9 +19,22 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 
 	const db = getDb(platform);
 	const members = await getAllMembers(db);
+	const orgRoles = await getOrganizationalRoles(db);
+	const memberOrgRoles = await getAllMemberOrganizationalRoles(db, false);
 
 	return {
-		members,
+		members: members.map((m) => {
+			const activeAssignment = memberOrgRoles.find((mor) => mor.member_id === m.id && (mor.is_active === 1 || mor.is_active === true));
+			return {
+				...m,
+				organizational_role: activeAssignment?.title || m.organizational_role || null,
+				org_role_id: activeAssignment?.role_id || null,
+				role_start_date: activeAssignment?.start_date || m.role_start_date || null,
+				role_end_date: activeAssignment?.end_date || m.role_end_date || null
+			};
+		}),
+		orgRoles,
+		memberOrgRoles,
 		currentUserId: locals.user.id
 	};
 };
@@ -125,8 +147,22 @@ export const actions: Actions = {
 		const avatar_url = data.get('avatar_url')?.toString();
 		const role = data.get('role')?.toString();
 
+		const org_role_id = data.get('org_role_id')?.toString();
+		const org_role_notes = data.get('org_role_notes')?.toString();
+		const org_role_active = data.get('org_role_active') !== '0';
+
 		const db = getDb(platform);
-		const { updateMemberProfile } = await import('$lib/server/db');
+		const { updateMemberProfile, getOrganizationalRoles } = await import('$lib/server/db');
+
+		// If org_role_id provided, sync organizational_role title
+		let resolvedOrgRoleTitle = organizational_role || null;
+		if (org_role_id) {
+			const allOrgRoles = await getOrganizationalRoles(db);
+			const matched = allOrgRoles.find((r) => r.id === org_role_id);
+			if (matched) {
+				resolvedOrgRoleTitle = matched.title;
+			}
+		}
 
 		await updateMemberProfile(db, memberId, {
 			...(full_name !== undefined ? { full_name } : {}),
@@ -134,7 +170,7 @@ export const actions: Actions = {
 			phone: phone || null,
 			phone_secondary: phone_secondary || null,
 			profession: profession || null,
-			organizational_role: organizational_role || null,
+			organizational_role: resolvedOrgRoleTitle,
 			role_start_date: role_start_date || null,
 			role_end_date: role_end_date || null,
 			address_street: address_street || null,
@@ -150,9 +186,97 @@ export const actions: Actions = {
 			...(role ? { role } : {})
 		});
 
+		// Sync relational table member_organizational_roles
+		if (db) {
+			if (org_role_id) {
+				await db.prepare(`
+					INSERT INTO member_organizational_roles (id, member_id, role_id, start_date, end_date, is_active, notes, created_at)
+					VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+					ON CONFLICT(id) DO UPDATE SET
+						role_id = excluded.role_id,
+						start_date = excluded.start_date,
+						end_date = excluded.end_date,
+						is_active = excluded.is_active,
+						notes = excluded.notes
+				`).bind(
+					`mor_${memberId}`,
+					memberId,
+					org_role_id,
+					role_start_date || null,
+					role_end_date || null,
+					org_role_active ? 1 : 0,
+					org_role_notes || null,
+					new Date().toISOString()
+				).run();
+			} else {
+				// Mark any existing active role assignment inactive
+				await db.prepare(`
+					UPDATE member_organizational_roles
+					SET is_active = 0, end_date = COALESCE(end_date, DATE('now'))
+					WHERE member_id = ? AND is_active = 1
+				`).bind(memberId).run();
+			}
+		}
+
 		return {
 			success: true,
-			message: `Member profile attributes updated successfully.`
+			message: `Member profile & organizational roles updated successfully.`
+		};
+	},
+
+	upsertOrgRole: async ({ request, locals, platform }) => {
+		if (!locals.user || locals.user.role !== 'admin') {
+			return fail(403, { error: 'Unauthorized' });
+		}
+
+		const formData = await request.formData();
+		const roleId = formData.get('roleId')?.toString();
+		const title = formData.get('title')?.toString();
+		const category = formData.get('category')?.toString() || 'board';
+		const rank_order = Number(formData.get('rank_order')) || 100;
+		const description = formData.get('description')?.toString() || '';
+
+		if (!title?.trim()) {
+			return fail(400, { error: 'Organizational role title is required.' });
+		}
+
+		const db = getDb(platform);
+		const { upsertOrganizationalRole } = await import('$lib/server/db');
+
+		const saved = await upsertOrganizationalRole(db, {
+			id: roleId || undefined,
+			title: title.trim(),
+			category: category.trim(),
+			rank_order,
+			description
+		});
+
+		return {
+			success: true,
+			message: `Organizational role "${saved.title}" saved successfully!`
+		};
+	},
+
+	deleteOrgRole: async ({ request, locals, platform }) => {
+		if (!locals.user || locals.user.role !== 'admin') {
+			return fail(403, { error: 'Unauthorized' });
+		}
+
+		const formData = await request.formData();
+		const roleId = formData.get('roleId')?.toString();
+
+		if (!roleId) {
+			return fail(400, { error: 'Role ID is required to delete.' });
+		}
+
+		const db = getDb(platform);
+		const { deleteOrganizationalRole } = await import('$lib/server/db');
+
+		await deleteOrganizationalRole(db, roleId);
+
+		return {
+			success: true,
+			message: `Organizational role deleted successfully.`
 		};
 	}
 };

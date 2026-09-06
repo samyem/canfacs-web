@@ -63,12 +63,70 @@
 
 	// Pre-fill recipient text by role with full metadata
 	function importAllMembers() {
-		recipientsRaw = JSON.stringify(data.members, null, 2);
+		const expanded: any[] = [];
+		for (const m of data.members) {
+			expanded.push(m);
+			if (m.phone_secondary && m.phone_secondary.includes('@')) {
+				expanded.push({
+					...m,
+					id: `${m.id}_alt`,
+					email: m.phone_secondary,
+					is_secondary: true
+				});
+			}
+		}
+		recipientsRaw = JSON.stringify(expanded, null, 2);
 	}
 
 	function importByRole(targetRole: string) {
 		const filtered = data.members.filter((m: any) => m.role === targetRole);
-		recipientsRaw = JSON.stringify(filtered, null, 2);
+		const expanded: any[] = [];
+		for (const m of filtered) {
+			expanded.push(m);
+			if (m.phone_secondary && m.phone_secondary.includes('@')) {
+				expanded.push({
+					...m,
+					id: `${m.id}_alt`,
+					email: m.phone_secondary,
+					is_secondary: true
+				});
+			}
+		}
+		recipientsRaw = JSON.stringify(expanded, null, 2);
+	}
+
+	function importByOrgCategory(category: string) {
+		const filtered = data.members.filter((m: any) => m.org_category === category);
+		const expanded: any[] = [];
+		for (const m of filtered) {
+			expanded.push(m);
+			if (m.phone_secondary && m.phone_secondary.includes('@')) {
+				expanded.push({
+					...m,
+					id: `${m.id}_alt`,
+					email: m.phone_secondary,
+					is_secondary: true
+				});
+			}
+		}
+		recipientsRaw = JSON.stringify(expanded, null, 2);
+	}
+
+	function importByOrgRoleId(roleId: string) {
+		const filtered = data.members.filter((m: any) => m.org_role_id === roleId);
+		const expanded: any[] = [];
+		for (const m of filtered) {
+			expanded.push(m);
+			if (m.phone_secondary && m.phone_secondary.includes('@')) {
+				expanded.push({
+					...m,
+					id: `${m.id}_alt`,
+					email: m.phone_secondary,
+					is_secondary: true
+				});
+			}
+		}
+		recipientsRaw = JSON.stringify(expanded, null, 2);
 	}
 
 	function importDonors() {
@@ -473,7 +531,7 @@
 
 						<!-- Role Filter Pill Bar -->
 						<div class="flex items-center gap-1.5 flex-wrap pt-1">
-							<span class="text-[10px] uppercase font-bold text-slate-500 mr-1">Select by Role:</span>
+							<span class="text-[10px] uppercase font-bold text-slate-500 mr-1">System Role:</span>
 							<button
 								type="button"
 								onclick={() => importByRole('admin')}
@@ -493,16 +551,46 @@
 								onclick={() => importByRole('member')}
 								class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-750 transition-all"
 							>
-								👤 Regular Members ({data.members.filter((m: any) => m.role === 'member' || !m.role).length})
+								👤 Regular ({data.members.filter((m: any) => m.role === 'member' || !m.role).length})
 							</button>
 							<button
 								type="button"
 								onclick={() => importByRole('partner')}
 								class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 transition-all"
 							>
-								🤝 MOU Partners ({data.members.filter((m: any) => m.role === 'partner').length})
+								🤝 Partners ({data.members.filter((m: any) => m.role === 'partner').length})
 							</button>
 						</div>
+
+						<!-- Organizational Titles Filter Pill Bar -->
+						{#if data.orgRoles && data.orgRoles.length > 0}
+							<div class="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-800/60 mt-1">
+								<span class="text-[10px] uppercase font-bold text-amber-400 mr-1">By Org Role:</span>
+								<button
+									type="button"
+									onclick={() => importByOrgCategory('executive')}
+									class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-600/20 text-amber-300 border border-amber-500/40 hover:bg-amber-600/30 transition-all"
+								>
+									⚡ Executive Committee ({data.members.filter((m: any) => m.org_category === 'executive').length})
+								</button>
+								<button
+									type="button"
+									onclick={() => importByOrgCategory('board')}
+									class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-600/20 text-purple-300 border border-purple-500/40 hover:bg-purple-600/30 transition-all"
+								>
+									🏛️ Sitting Board ({data.members.filter((m: any) => m.org_category === 'board').length})
+								</button>
+								{#each data.orgRoles.slice(0, 4) as or}
+									<button
+										type="button"
+										onclick={() => importByOrgRoleId(or.id)}
+										class="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800/80 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all"
+									>
+										{or.title} ({data.members.filter((m: any) => m.org_role_id === or.id).length})
+									</button>
+								{/each}
+							</div>
+						{/if}
 
 						<p class="text-xs text-slate-400">
 							Paste email addresses, <code>Name &lt;email&gt;</code>, or CSV format <code>Name, email, city, province</code> (one per line):

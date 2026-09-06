@@ -148,3 +148,25 @@ CREATE TABLE IF NOT EXISTS email_templates (
     updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS organizational_roles (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'board', -- 'executive', 'board', 'committee', 'advisory'
+    rank_order INTEGER NOT NULL DEFAULT 100,
+    description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS member_organizational_roles (
+    id TEXT PRIMARY KEY,
+    member_id TEXT NOT NULL,
+    role_id TEXT NOT NULL,
+    start_date TEXT,
+    end_date TEXT,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    notes TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES organizational_roles(id) ON DELETE RESTRICT
+);
+
+

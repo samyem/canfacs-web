@@ -175,7 +175,7 @@
 						>
 							🌐 Community Feed
 						</a>
-						{#if data.user.role === 'admin'}
+						{#if data.user.role === 'admin' || data.user.role === 'bod'}
 							<a
 								href="/members"
 								onclick={() => (isMobileMenuOpen = false)}
@@ -183,6 +183,8 @@
 							>
 								👥 Member Directory
 							</a>
+						{/if}
+						{#if data.user.role === 'admin'}
 							<a
 								href="/admin/members"
 								onclick={() => (isMobileMenuOpen = false)}
@@ -256,7 +258,7 @@
 						<span>🌐</span>
 						<span>Community Feed</span>
 					</a>
-					{#if data.user.role === 'admin'}
+					{#if data.user.role === 'admin' || data.user.role === 'bod'}
 						<a
 							href="/members"
 							class="px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 {data.pathname === '/members'

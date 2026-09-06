@@ -46,7 +46,7 @@
 				<div class="space-y-2">
 					<h2 class="text-xl font-bold text-white">Restricted Access Directory</h2>
 					<p class="text-sm text-slate-300 leading-relaxed">
-						To protect member privacy and personal contact information, the complete society directory is reserved for verified executive officers and administrators.
+						To protect member privacy and personal contact information, the complete society directory is strictly reserved for the <strong>Board of Directors (BOD)</strong> and <strong>Administrators</strong>.
 					</p>
 				</div>
 
@@ -127,8 +127,13 @@
 									{/if}
 									<div>
 										<h3 class="font-bold text-white text-base leading-snug">{member.full_name}</h3>
+										{#if member.organizational_role}
+											<span class="inline-block mt-0.5 px-2 py-0.5 text-[10px] font-bold rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
+												🏛️ {member.organizational_role}
+											</span>
+										{/if}
 										{#if member.profession}
-											<p class="text-xs text-blue-400 font-semibold">{member.profession}</p>
+											<p class="text-xs text-blue-400 font-semibold mt-0.5">{member.profession}</p>
 										{/if}
 										{#if member.city || member.province}
 											<p class="text-[11px] text-slate-400 mt-0.5">📍 {[member.city, member.province].filter(Boolean).join(', ')}</p>

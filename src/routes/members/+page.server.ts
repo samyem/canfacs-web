@@ -7,11 +7,11 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		throw redirect(303, '/login');
 	}
 
-	const isAdmin = locals.user.role === 'admin';
+	const hasFullAccess = locals.user.role === 'admin' || locals.user.role === 'bod';
 	const db = getDb(platform);
 
-	// Only administrators have access to the full membership directory and contact info
-	if (!isAdmin) {
+	// Only Board of Directors (BOD) and Administrators have access to the full membership directory
+	if (!hasFullAccess) {
 		return {
 			user: locals.user,
 			hasAccess: false,
@@ -20,10 +20,18 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 	}
 
 	const approvedMembers = await getAllMembers(db, 'approved');
+	const { getAllMemberOrganizationalRoles } = await import('$lib/server/db');
+	const memberOrgRoles = await getAllMemberOrganizationalRoles(db, true);
 
 	return {
 		user: locals.user,
 		hasAccess: true,
-		members: approvedMembers
+		members: approvedMembers.map((m) => {
+			const activeAssignment = memberOrgRoles.find((mor) => mor.member_id === m.id);
+			return {
+				...m,
+				organizational_role: activeAssignment?.title || m.organizational_role || null
+			};
+		})
 	};
 };

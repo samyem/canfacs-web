@@ -3,15 +3,21 @@
 
 	let { data, form } = $props();
 
-	let activeTab = $state<'pending' | 'approved' | 'admins' | 'bod' | 'partners' | 'all'>('pending');
+	let activeTab = $state<'pending' | 'approved' | 'admins' | 'bod' | 'partners' | 'all' | 'org_roles'>('pending');
 	let searchQuery = $state('');
 	let copiedPassword = $state(false);
 	let editingMember = $state<any | null>(null);
+	let editingOrgRole = $state<{ id?: string; title: string; category: string; rank_order: number; description: string } | null>(null);
 	let isUploadingAvatar = $state(false);
 	let avatarUploadError = $state('');
 
 	function openEditModal(m: any) {
-		editingMember = { ...m };
+		const existingAssigned = data.memberOrgRoles?.find((mor: any) => mor.member_id === m.id && (mor.is_active === 1 || mor.is_active === true));
+		const matchingRole = data.orgRoles?.find((r: any) => r.title.toLowerCase() === (m.organizational_role || '').toLowerCase());
+		editingMember = {
+			...m,
+			selected_org_role_id: existingAssigned?.role_id || matchingRole?.id || ''
+		};
 		avatarUploadError = '';
 	}
 
@@ -211,6 +217,14 @@
 				>
 					All ({data.members.length})
 				</button>
+				<button
+					type="button"
+					onclick={() => (activeTab = 'org_roles')}
+					class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'org_roles' ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-amber-400 hover:text-white'}"
+				>
+					<span>🏷️ Org Roles</span>
+					<span>({data.orgRoles?.length || 0})</span>
+				</button>
 			</div>
 
 			<div class="w-full sm:w-72">
@@ -223,8 +237,97 @@
 			</div>
 		</div>
 
-		<!-- Members List -->
-		{#if filteredMembers.length === 0}
+		<!-- Organizational Roles Management View -->
+		{#if activeTab === 'org_roles'}
+			<div class="space-y-6">
+				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/80 p-6 rounded-3xl border border-slate-800">
+					<div>
+						<h2 class="text-lg font-bold text-white flex items-center gap-2">
+							<span>🏷️ Society Organizational Roles & Governance Structure</span>
+						</h2>
+						<p class="text-xs text-slate-400 mt-1">
+							Define master titles, committee ranks, and categories. Members assigned to these roles will appear in directories and targetable in broadcasts.
+						</p>
+					</div>
+					<button
+						type="button"
+						onclick={() => (editingOrgRole = { title: '', category: 'board', rank_order: 50, description: '' })}
+						class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center gap-1.5 whitespace-nowrap self-start sm:self-auto"
+					>
+						<span>➕</span>
+						<span>Define New Role</span>
+					</button>
+				</div>
+
+				<div class="glass-card rounded-3xl border border-slate-800 overflow-hidden shadow-2xl">
+					<div class="overflow-x-auto">
+						<table class="w-full text-left text-xs text-slate-300">
+							<thead class="bg-slate-900/90 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+								<tr>
+									<th class="p-4">Rank</th>
+									<th class="p-4">Title & ID</th>
+									<th class="p-4">Category</th>
+									<th class="p-4">Description</th>
+									<th class="p-4">Assigned Members</th>
+									<th class="p-4 text-right">Actions</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-slate-800/60">
+								{#each data.orgRoles || [] as roleItem}
+									{@const assignedCount = (data.memberOrgRoles || []).filter((mor: any) => mor.role_id === roleItem.id && (mor.is_active === 1 || mor.is_active === true)).length}
+									<tr class="hover:bg-slate-850/40 transition-colors">
+										<td class="p-4 font-mono font-bold text-amber-400">{roleItem.rank_order}</td>
+										<td class="p-4">
+											<div class="font-bold text-white text-sm">{roleItem.title}</div>
+											<div class="font-mono text-[10px] text-slate-500">{roleItem.id}</div>
+										</td>
+										<td class="p-4">
+											<span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
+												{roleItem.category === 'executive' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : ''}
+												{roleItem.category === 'board' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : ''}
+												{roleItem.category === 'committee' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : ''}
+												{roleItem.category === 'advisory' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : ''}"
+											>
+												{roleItem.category}
+											</span>
+										</td>
+										<td class="p-4 text-slate-400 max-w-xs truncate">{roleItem.description || '—'}</td>
+										<td class="p-4">
+											<span class="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 font-bold text-slate-200">
+												{assignedCount} active
+											</span>
+										</td>
+										<td class="p-4 text-right space-x-2">
+											<button
+												type="button"
+												onclick={() => (editingOrgRole = { ...roleItem, description: roleItem.description || '' })}
+												class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold text-xs transition-colors"
+											>
+												Edit ✏️
+											</button>
+											<form method="POST" action="?/deleteOrgRole" use:enhance class="inline">
+												<input type="hidden" name="roleId" value={roleItem.id} />
+												<button
+													type="submit"
+													onclick={(e) => {
+														if (!confirm(`Are you sure you want to delete the "${roleItem.title}" role?`)) {
+															e.preventDefault();
+														}
+													}}
+													class="px-2.5 py-1 rounded-lg bg-red-950/60 hover:bg-red-900/80 text-red-300 font-semibold text-xs border border-red-800/40 transition-colors"
+												>
+													Delete ✕
+												</button>
+											</form>
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		{:else if filteredMembers.length === 0}
 			<div class="glass-card p-12 rounded-3xl text-center border border-slate-800">
 				<p class="text-slate-400 text-sm">No member applications match the current filter.</p>
 			</div>
@@ -253,7 +356,15 @@
 												<span class="text-[10px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">You</span>
 											{/if}
 										</h3>
-										<p class="text-xs text-slate-400 font-mono">{member.email}</p>
+										<div class="space-y-0.5">
+											<p class="text-xs text-slate-400 font-mono">{member.email}</p>
+											{#if member.phone_secondary && member.phone_secondary.includes('@')}
+												<p class="text-[11px] text-purple-400 font-mono flex items-center gap-1">
+													<span>✉️ Alt:</span>
+													<span>{member.phone_secondary}</span>
+												</p>
+											{/if}
+										</div>
 									</div>
 								</div>
 
@@ -309,8 +420,11 @@
 								{#if member.address_street || member.city || member.province || member.country}
 									<p><strong class="text-slate-400 font-medium">Address:</strong> {[member.address_street, member.city, member.province, member.country].filter(Boolean).join(', ')}</p>
 								{/if}
-								{#if member.phone || member.phone_secondary}
-									<p><strong class="text-slate-400 font-medium">Phone:</strong> {member.phone || ''} {member.phone_secondary ? `(Alt: ${member.phone_secondary})` : ''}</p>
+								{#if member.phone || (member.phone_secondary && !member.phone_secondary.includes('@'))}
+									<p><strong class="text-slate-400 font-medium">Phone:</strong> {member.phone || ''} {member.phone_secondary && !member.phone_secondary.includes('@') ? `(Alt: ${member.phone_secondary})` : ''}</p>
+								{/if}
+								{#if member.phone_secondary && member.phone_secondary.includes('@')}
+									<p><strong class="text-purple-400 font-medium">Alt Email:</strong> {member.phone_secondary}</p>
 								{/if}
 								{#if member.associated_organizations}
 									<p><strong class="text-blue-400 font-medium">Org:</strong> {member.associated_organizations}</p>
@@ -526,14 +640,24 @@
 				<!-- Row 2: Organizational Role & Dates -->
 				<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
 					<div>
-						<label for="mOrgRole" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">Organizational Role</label>
-						<input
-							id="mOrgRole"
-							type="text"
-							name="organizational_role"
-							bind:value={editingMember.organizational_role}
-							placeholder="e.g. Vice President, Senior Advisor"
+						<label for="mOrgRoleId" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">Organizational Title</label>
+						<select
+							id="mOrgRoleId"
+							name="org_role_id"
+							bind:value={editingMember.selected_org_role_id}
 							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+						>
+							<option value="">-- No Official Org Role --</option>
+							{#each data.orgRoles || [] as r}
+								<option value={r.id}>
+									{r.title} ({r.category})
+								</option>
+							{/each}
+						</select>
+						<input
+							type="hidden"
+							name="organizational_role"
+							value={data.orgRoles?.find((r: any) => r.id === editingMember.selected_org_role_id)?.title || editingMember.organizational_role || ''}
 						/>
 					</div>
 					<div>
@@ -695,4 +819,118 @@
 		</div>
 	</div>
 {/if}
+
+<!-- Define / Edit Organizational Role Modal -->
+{#if editingOrgRole}
+	<div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+		<div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl text-slate-100 my-8">
+			<div class="flex items-start justify-between border-b border-slate-800 pb-3">
+				<div>
+					<span class="text-[10px] font-mono uppercase text-amber-400">
+						{editingOrgRole.id ? `ID: ${editingOrgRole.id}` : 'NEW ROLE'}
+					</span>
+					<h3 class="text-lg font-bold text-white mt-0.5">
+						{editingOrgRole.id ? 'Edit Organizational Role' : 'Define New Organizational Role'}
+					</h3>
+					<p class="text-xs text-slate-400">Manage standard titles and ranking in the society governance structure</p>
+				</div>
+				<button
+					type="button"
+					onclick={() => (editingOrgRole = null)}
+					class="text-slate-400 hover:text-white text-lg p-1"
+				>
+					✕
+				</button>
+			</div>
+
+			<form
+				method="POST"
+				action="?/upsertOrgRole"
+				use:enhance={() => {
+					return async ({ update }) => {
+						await update();
+						editingOrgRole = null;
+					};
+				}}
+				class="space-y-4"
+			>
+				{#if editingOrgRole.id}
+					<input type="hidden" name="roleId" value={editingOrgRole.id} />
+				{/if}
+
+				<div>
+					<label for="orgTitle" class="block text-xs font-semibold uppercase text-slate-400 mb-1">Role Title</label>
+					<input
+						id="orgTitle"
+						type="text"
+						name="title"
+						bind:value={editingOrgRole.title}
+						required
+						placeholder="e.g. Vice President, Director of Culture"
+						class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+					/>
+				</div>
+
+				<div class="grid grid-cols-2 gap-3">
+					<div>
+						<label for="orgCategory" class="block text-xs font-semibold uppercase text-slate-400 mb-1">Category</label>
+						<select
+							id="orgCategory"
+							name="category"
+							bind:value={editingOrgRole.category}
+							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+						>
+							<option value="executive">⚡ Executive Committee</option>
+							<option value="board">🏛️ Board of Directors</option>
+							<option value="committee">🤝 Working Committee</option>
+							<option value="advisory">📜 Advisory Council</option>
+						</select>
+					</div>
+
+					<div>
+						<label for="orgRank" class="block text-xs font-semibold uppercase text-slate-400 mb-1">Display Rank Order</label>
+						<input
+							id="orgRank"
+							type="number"
+							name="rank_order"
+							bind:value={editingOrgRole.rank_order}
+							min="1"
+							max="999"
+							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+						/>
+					</div>
+				</div>
+
+				<div>
+					<label for="orgDesc" class="block text-xs font-semibold uppercase text-slate-400 mb-1">Role Description / Mandate</label>
+					<textarea
+						id="orgDesc"
+						name="description"
+						rows="3"
+						bind:value={editingOrgRole.description}
+						placeholder="Describe the mandate, powers, and responsibilities associated with this society office..."
+						class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+					></textarea>
+				</div>
+
+				<div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+					<button
+						type="button"
+						onclick={() => (editingOrgRole = null)}
+						class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300"
+					>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						class="px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg transition-all"
+					>
+						Save Role ✓
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}
+
 

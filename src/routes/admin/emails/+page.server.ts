@@ -8,7 +8,9 @@ import {
 	getEmailLogsByBatch,
 	getEmailTemplates,
 	createEmailBatch,
-	addEmailLog
+	addEmailLog,
+	getOrganizationalRoles,
+	getAllMemberOrganizationalRoles
 } from '$lib/server/db';
 import { sendCustomEmail } from '$lib/server/email';
 import { generateEmailWithGemini } from '$lib/server/gemini';
@@ -66,30 +68,40 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 		process.env.CLOUDFLARE_FROM_EMAIL ||
 		'info@canfacs.org';
 
+	const orgRoles = await getOrganizationalRoles(db);
+	const memberOrgRoles = await getAllMemberOrganizationalRoles(db, true);
+
 	return {
 		templates,
-		members: members.map((m) => ({
-			id: m.id,
-			name: m.full_name,
-			salutation: m.salutation || '',
-			email: m.email,
-			phone: m.phone || '',
-			phone_secondary: m.phone_secondary || '',
-			profession: m.profession || '',
-			organizational_role: m.organizational_role || '',
-			role_start_date: m.role_start_date || '',
-			role_end_date: m.role_end_date || '',
-			address_street: m.address_street || '',
-			city: m.city || '',
-			province: m.province || '',
-			country: m.country || 'Canada',
-			postal_code: m.postal_code || '',
-			facebook_id: m.facebook_id || '',
-			instagram_id: m.instagram_id || '',
-			associated_organizations: m.associated_organizations || '',
-			google_login_enabled: m.google_login_enabled !== 0 && m.google_login_enabled !== false,
-			role: m.role
-		})),
+		members: members.map((m) => {
+			const matchedOrgRole = memberOrgRoles.find((mor) => mor.member_id === m.id);
+			return {
+				id: m.id,
+				name: m.full_name,
+				salutation: m.salutation || '',
+				email: m.email,
+				phone: m.phone || '',
+				phone_secondary: m.phone_secondary || '',
+				profession: m.profession || '',
+				organizational_role: matchedOrgRole?.title || m.organizational_role || '',
+				org_role_id: matchedOrgRole?.role_id || '',
+				org_category: matchedOrgRole?.category || '',
+				role_start_date: m.role_start_date || '',
+				role_end_date: m.role_end_date || '',
+				address_street: m.address_street || '',
+				city: m.city || '',
+				province: m.province || '',
+				country: m.country || 'Canada',
+				postal_code: m.postal_code || '',
+				facebook_id: m.facebook_id || '',
+				instagram_id: m.instagram_id || '',
+				associated_organizations: m.associated_organizations || '',
+				google_login_enabled: m.google_login_enabled !== 0 && m.google_login_enabled !== false,
+				role: m.role
+			};
+		}),
+		orgRoles,
+		memberOrgRoles,
 		donors,
 		batches,
 		inspectBatchId,
@@ -255,6 +267,28 @@ export const actions: Actions = {
 		} catch (e: any) {
 			return fail(400, { error: `Failed to parse recipients list: ${e.message}` });
 		}
+
+		// Expand any recipients that have secondary emails (e.g. from repeat TSV emails in phone_secondary)
+		const expandedRecipients: typeof recipientsList = [];
+		for (const r of recipientsList) {
+			if (r.email && r.email.includes('@')) {
+				expandedRecipients.push(r);
+			}
+			// If phone_secondary contains an alternate email address, queue it too
+			if (r.phone_secondary && typeof r.phone_secondary === 'string' && r.phone_secondary.includes('@')) {
+				const altEmails = r.phone_secondary.split(/[\s,;]+/).filter((em: string) => em.includes('@'));
+				for (const altEm of altEmails) {
+					const cleanAlt = altEm.toLowerCase().trim();
+					if (!expandedRecipients.some((item) => item.email.toLowerCase() === cleanAlt)) {
+						expandedRecipients.push({
+							...r,
+							email: cleanAlt
+						});
+					}
+				}
+			}
+		}
+		recipientsList = expandedRecipients;
 
 		// Filter invalid
 		recipientsList = recipientsList.filter((r) => r.email && r.email.includes('@'));
