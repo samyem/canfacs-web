@@ -35,4 +35,14 @@ describe('Email Templates & Dynamic Placeholders Unit Tests', () => {
 		expect(wrapped).toContain('Welcome Dr. Meghraj Gnawali to the Board!');
 		expect(wrapped).toContain('CANFACS');
 	});
+
+	it('converts plain text newlines into formatted paragraphs and breaks', () => {
+		const templateHtml = '<div>{{content}}</div>';
+		const plainText = 'Dear {{name}},\n\nThis is paragraph 1.\nLine break here.\n\nBest wishes,\nExecutive';
+		const data = { name: 'Prakash Thapa' };
+
+		const wrapped = wrapInTemplate(templateHtml, plainText, data);
+		expect(wrapped).toContain('<p style="margin: 0 0 16px; line-height: 1.6;">Dear Prakash Thapa,</p>');
+		expect(wrapped).toContain('This is paragraph 1.<br />Line break here.');
+	});
 });

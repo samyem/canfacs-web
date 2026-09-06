@@ -182,6 +182,28 @@ Website: https://canfacs.org
 Email: info@canfacs.org
 `;
 
+	// Priority 1: Native Cloudflare Worker Email Binding (env.EMAIL)
+	if (env?.EMAIL && typeof env.EMAIL.send === 'function') {
+		try {
+			console.log('[CANFACS Email] Dispatching donation receipt via native Cloudflare EMAIL binding to:', data.to);
+			await env.EMAIL.send({
+				to: data.to.trim(),
+				from: fromAddress.trim(),
+				subject: subject.trim(),
+				html,
+				text
+			});
+			console.log(`[CANFACS Email Sent] Successfully sent receipt to ${data.to}`);
+			return { success: true, delivered: true };
+		} catch (bindingErr: any) {
+			console.error('[CANFACS Email Binding Error]', bindingErr);
+			return {
+				success: false,
+				error: bindingErr.message || 'Error dispatching donation receipt through native Cloudflare binding'
+			};
+		}
+	}
+
 	try {
 		const res = await fetch(
 			`https://api.cloudflare.com/client/v4/accounts/${accountId}/email/sending/send`,
@@ -192,10 +214,9 @@ Email: info@canfacs.org
 					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify({
-					account_id: accountId,
-					from: fromAddress,
-					to: data.to,
-					subject,
+					from: fromAddress.trim(),
+					to: data.to.trim(),
+					subject: subject.trim(),
 					html,
 					text
 				})
@@ -233,31 +254,14 @@ export async function sendCustomEmail(
 	data: CustomEmailData,
 	env?: Record<string, any>
 ): Promise<{ success: boolean; error?: string; delivered?: boolean }> {
-	const apiToken = env?.CLOUDFLARE_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN;
-	const accountId =
-		env?.CLOUDFLARE_ACCOUNT_ID ||
-		process.env.CLOUDFLARE_ACCOUNT_ID ||
-		'799a8a7bf560864dc5eec876d6a91ebf';
 	const fromAddress =
 		data.fromAddress ||
 		env?.CLOUDFLARE_FROM_EMAIL ||
 		process.env.CLOUDFLARE_FROM_EMAIL ||
-		'welcome@canfacs.org';
+		'info@canfacs.org';
 
 	if (!data.to || !data.to.includes('@')) {
 		return { success: false, error: 'Recipient email address missing or invalid' };
-	}
-
-	if (!apiToken) {
-		console.warn(
-			`[CANFACS Email Simulation] CLOUDFLARE_API_TOKEN not set. Simulating delivery to ${data.to} from ${fromAddress}`
-		);
-		// Local development simulation
-		return {
-			success: true,
-			delivered: true,
-			error: 'CLOUDFLARE_API_TOKEN not configured; email simulated locally.'
-		};
 	}
 
 	// Plain text fallback if not supplied
@@ -269,6 +273,65 @@ export async function sendCustomEmail(
 			.replace(/\s{2,}/g, ' ')
 			.trim();
 
+	// Priority 1: Native Cloudflare Worker Email Binding (env.EMAIL)
+	if (env?.EMAIL && typeof env.EMAIL.send === 'function') {
+		try {
+			console.log('[CANFACS Email] Dispatching via native Cloudflare EMAIL binding to:', data.to);
+			const response = await env.EMAIL.send({
+				to: data.to.trim(),
+				from: fromAddress.trim(),
+				subject: data.subject.trim(),
+				html: data.html,
+				text: textContent
+			});
+			console.log('[CANFACS Email] Native dispatch successful:', response);
+			return { success: true, delivered: true };
+		} catch (bindingErr: any) {
+			console.error('[CANFACS Email Binding Error]', bindingErr);
+			return {
+				success: false,
+				error: bindingErr.message || 'Error dispatching email through native Cloudflare binding'
+			};
+		}
+	}
+
+	// Priority 2: Cloudflare Email Sending REST API fallback
+	const apiToken = env?.CLOUDFLARE_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN;
+	const accountId =
+		env?.CLOUDFLARE_ACCOUNT_ID ||
+		process.env.CLOUDFLARE_ACCOUNT_ID ||
+		'799a8a7bf560864dc5eec876d6a91ebf';
+
+	if (!apiToken) {
+		console.warn(
+			`[CANFACS Email Simulation] CLOUDFLARE_API_TOKEN and env.EMAIL binding not set. Simulating delivery to ${data.to} from ${fromAddress}`
+		);
+		return {
+			success: true,
+			delivered: true,
+			error: 'CLOUDFLARE_API_TOKEN not configured; email simulated locally.'
+		};
+	}
+
+	// Note: REST API payload for /accounts/{account_id}/email/sending/send
+	// account_id MUST NOT be in the body (it is only in the path)
+	const payload = {
+		from: fromAddress.trim(),
+		to: data.to.trim(),
+		subject: data.subject.trim(),
+		html: data.html,
+		text: textContent
+	};
+
+	console.log('[CANFACS Email Attempting REST Send]', {
+		endpoint: `https://api.cloudflare.com/client/v4/accounts/${accountId}/email/sending/send`,
+		from: payload.from,
+		to: payload.to,
+		subject: payload.subject,
+		hasHtml: Boolean(payload.html),
+		hasText: Boolean(payload.text)
+	});
+
 	try {
 		const res = await fetch(
 			`https://api.cloudflare.com/client/v4/accounts/${accountId}/email/sending/send`,
@@ -278,20 +341,13 @@ export async function sendCustomEmail(
 					Authorization: `Bearer ${apiToken}`,
 					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify({
-					account_id: accountId,
-					from: fromAddress,
-					to: data.to,
-					subject: data.subject,
-					html: data.html,
-					text: textContent
-				})
+				body: JSON.stringify(payload)
 			}
 		);
 
 		const result: any = await res.json();
 		if (!res.ok || result.success === false) {
-			console.error('[CANFACS Email Error]', JSON.stringify(result, null, 2));
+			console.error('[CANFACS Email Error]', JSON.stringify({ result, sentPayloadMeta: { from: payload.from, to: payload.to, subject: payload.subject } }, null, 2));
 			const firstError = result.errors?.[0];
 			const errorMsg = firstError?.message || (typeof firstError === 'string' ? firstError : null) || result.messages?.[0]?.message || `Cloudflare HTTP ${res.status}: Failed to send email`;
 			return {

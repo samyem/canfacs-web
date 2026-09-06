@@ -51,6 +51,7 @@
 
 	// Recipients state
 	let recipientsRaw = $state('');
+	let recipientViewMode = $state<'table' | 'cards' | 'raw'>('table');
 	let testRecipientEmail = $state('info@canfacs.org');
 	let sendingTest = $state(false);
 	let sendingBatch = $state(false);
@@ -138,6 +139,42 @@
 		recipientsRaw = `${data.adminEmail}\n${recipientsRaw}`.trim();
 	}
 
+	// Remove single recipient from active list
+	function removeRecipient(emailToRemove: string) {
+		try {
+			if (recipientsRaw.trim().startsWith('[')) {
+				const list = JSON.parse(recipientsRaw);
+				const updated = list.filter((r: any) => r.email?.toLowerCase() !== emailToRemove.toLowerCase());
+				recipientsRaw = JSON.stringify(updated, null, 2);
+				return;
+			}
+		} catch (e) {}
+
+		const lines = recipientsRaw.split('\n').filter((l) => !l.toLowerCase().includes(emailToRemove.toLowerCase()));
+		recipientsRaw = lines.join('\n');
+	}
+
+	// Quick formatting toolbar helpers
+	function applyFormatting(prefix: string, suffix = '') {
+		const textarea = document.getElementById('bodyContent') as HTMLTextAreaElement | null;
+		if (!textarea) {
+			bodyHtml = `${bodyHtml}${prefix}${suffix}`;
+			return;
+		}
+
+		const start = textarea.selectionStart;
+		const end = textarea.selectionEnd;
+		const selected = bodyHtml.substring(start, end);
+		const before = bodyHtml.substring(0, start);
+		const after = bodyHtml.substring(end);
+
+		bodyHtml = `${before}${prefix}${selected || 'text'}${suffix}${after}`;
+		setTimeout(() => {
+			textarea.focus();
+			textarea.setSelectionRange(start + prefix.length, start + prefix.length + (selected.length || 4));
+		}, 0);
+	}
+
 	// Preset AI prompts
 	const AI_PRESETS = [
 		{
@@ -191,13 +228,62 @@
 		}
 	});
 
-	// Derive recipient count
-	const parsedRecipientsCount = $derived(
-		recipientsRaw
-			.split('\n')
-			.map((l) => l.trim())
-			.filter((l) => l.includes('@')).length
-	);
+	// Derive parsed recipients list for non-technical users (table & cards)
+	const parsedRecipientsList = $derived.by(() => {
+		if (!recipientsRaw.trim()) return [];
+		try {
+			if (recipientsRaw.trim().startsWith('[')) {
+				const list = JSON.parse(recipientsRaw);
+				if (Array.isArray(list)) {
+					return list
+						.filter((r) => r && r.email && r.email.includes('@'))
+						.map((r) => ({
+							name: r.name || r.full_name || 'Member',
+							salutation: r.salutation || '',
+							email: r.email,
+							role: r.role || '',
+							org_role: r.organizational_role || r.org_role_title || '',
+							city: r.city || '',
+							province: r.province || ''
+						}));
+				}
+			}
+		} catch (e) {}
+
+		// CSV / Line delimited fallback
+		const lines = recipientsRaw.split('\n');
+		const results: any[] = [];
+		for (const line of lines) {
+			const trimmed = line.trim();
+			if (!trimmed) continue;
+			const angleMatch = trimmed.match(/^([^<]+)<([^>]+)>$/);
+			if (angleMatch) {
+				results.push({
+					name: angleMatch[1].trim(),
+					email: angleMatch[2].trim().toLowerCase()
+				});
+			} else if (trimmed.includes(',')) {
+				const parts = trimmed.split(',').map((p) => p.trim());
+				const emailIdx = parts.findIndex((p) => p.includes('@'));
+				if (emailIdx !== -1) {
+					results.push({
+						name: parts[0] !== parts[emailIdx] ? parts[0] : 'Member',
+						email: parts[emailIdx].toLowerCase(),
+						city: parts[2] || '',
+						province: parts[3] || ''
+					});
+				}
+			} else if (trimmed.includes('@')) {
+				results.push({
+					name: trimmed.split('@')[0],
+					email: trimmed.toLowerCase()
+				});
+			}
+		}
+		return results;
+	});
+
+	const parsedRecipientsCount = $derived(parsedRecipientsList.length);
 
 	// Find active template
 	const currentTemplate = $derived(
@@ -220,11 +306,21 @@
 			associated_organizations: 'NRN Canada'
 		};
 
-		let content = bodyHtml || `<p style="color: #94a3b8; font-style: italic;">Enter email body or use AI Generator to create draft...</p>`;
+		let rawContent = bodyHtml || `<p style="color: #94a3b8; font-style: italic;">Enter email body or use AI Generator to create draft...</p>`;
 		
 		// Interpolate sample data
 		for (const [k, v] of Object.entries(sampleData)) {
-			content = content.replaceAll(`{{${k}}}`, v);
+			rawContent = rawContent.replaceAll(`{{${k}}}`, v);
+		}
+
+		// Convert plain text line breaks to paragraphs for preview if needed
+		let content = rawContent;
+		const hasBlockTags = /<(p|div|table|h[1-6]|ul|ol|blockquote)[^>]*>/i.test(rawContent.trim());
+		if (!hasBlockTags && rawContent.trim()) {
+			content = rawContent.trim()
+				.split(/\n{2,}/)
+				.map((p) => `<p style="margin: 0 0 16px; line-height: 1.6;">${p.replace(/\n/g, '<br />')}</p>`)
+				.join('\n');
 		}
 
 		if (currentTemplate && currentTemplate.html_content) {
@@ -472,12 +568,15 @@
 
 					<!-- Template & Dynamic Placeholders Bar -->
 					<div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl">
-						<h2 class="font-bold text-sm text-white flex items-center gap-1.5">
-							<span>🏷️</span>
-							<span>Dynamic Template Placeholders</span>
-						</h2>
+						<div class="flex items-center justify-between">
+							<h2 class="font-bold text-sm text-white flex items-center gap-1.5">
+								<span>🏷️</span>
+								<span>Personalization Tags (Click to Insert)</span>
+							</h2>
+							<span class="text-[11px] text-slate-400">Values fill automatically per recipient</span>
+						</div>
 						<p class="text-xs text-slate-400">
-							Click any tag below to insert it into your email body. Values are populated automatically for every recipient:
+							Click any tag button below to insert that personalization field into your email text:
 						</p>
 
 						<div class="flex flex-wrap gap-2">
@@ -485,12 +584,17 @@
 								<button
 									type="button"
 									onclick={() => insertPlaceholder(ph.token)}
-									class="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-red-500/60 text-xs font-mono text-slate-200 transition-all flex items-center gap-1.5 group"
+									class="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-700/80 hover:border-amber-400/80 text-xs font-medium text-slate-200 transition-all flex items-center gap-2 shadow-sm group cursor-pointer"
+									title="Click to insert {ph.label} (e.g. {ph.example})"
 								>
-									<span class="text-red-400">{ph.token}</span>
-									<span class="text-[10px] text-slate-500 group-hover:text-slate-400">({ph.label})</span>
+									<span class="px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-semibold text-[10px] group-hover:bg-amber-500 group-hover:text-slate-950 transition-colors">
+										{ph.label}
+									</span>
+									<span class="text-[10px] text-slate-400 group-hover:text-slate-300 italic">
+										e.g. {ph.example}
+									</span>
 									{#if copiedTag === ph.token}
-										<span class="text-emerald-400 text-[10px]">✓</span>
+										<span class="text-emerald-400 text-xs font-bold animate-bounce">✓ Added</span>
 									{/if}
 								</button>
 							{/each}
@@ -592,16 +696,141 @@
 							</div>
 						{/if}
 
-						<p class="text-xs text-slate-400">
-							Paste email addresses, <code>Name &lt;email&gt;</code>, or CSV format <code>Name, email, city, province</code> (one per line):
-						</p>
+						<!-- View Mode Switcher -->
+						<div class="flex items-center justify-between border-t border-slate-800/80 pt-3">
+							<span class="text-xs font-semibold text-slate-300">
+								Target Recipients List ({parsedRecipientsCount})
+							</span>
+							<div class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+								<button
+									type="button"
+									onclick={() => (recipientViewMode = 'table')}
+									class="px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 {recipientViewMode === 'table' ? 'bg-slate-800 text-white shadow' : 'text-slate-400 hover:text-white'}"
+								>
+									<span>📋</span>
+									<span>Table</span>
+								</button>
+								<button
+									type="button"
+									onclick={() => (recipientViewMode = 'cards')}
+									class="px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 {recipientViewMode === 'cards' ? 'bg-slate-800 text-white shadow' : 'text-slate-400 hover:text-white'}"
+								>
+									<span>🗂️</span>
+									<span>Cards</span>
+								</button>
+								<button
+									type="button"
+									onclick={() => (recipientViewMode = 'raw')}
+									class="px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 {recipientViewMode === 'raw' ? 'bg-slate-800 text-white shadow' : 'text-slate-400 hover:text-white'}"
+								>
+									<span>✏️</span>
+									<span>Manual</span>
+								</button>
+							</div>
+						</div>
 
-						<textarea
-							rows="5"
-							bind:value={recipientsRaw}
-							placeholder="Prakash Thapa, prakash@example.com, Vancouver, BC&#10;Bina Shrestha, bina@example.com, Toronto, ON"
-							class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-red-500 transition-colors"
-						></textarea>
+						<!-- Table View for Non-Technical Users -->
+						{#if recipientViewMode === 'table'}
+							{#if parsedRecipientsList.length === 0}
+								<div class="p-8 bg-slate-950/60 rounded-2xl border border-slate-800 text-center space-y-2">
+									<span class="text-2xl">👥</span>
+									<p class="text-xs text-slate-400">No recipients selected yet.</p>
+									<p class="text-[11px] text-slate-500">Click <strong>All</strong>, <strong>👑 Admins</strong>, <strong>🏛️ BOD</strong>, or <strong>Donors</strong> above to load contacts.</p>
+								</div>
+							{:else}
+								<div class="max-h-64 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-950/80 shadow-inner">
+									<table class="w-full text-left text-xs text-slate-300">
+										<thead class="bg-slate-900 text-[10px] uppercase tracking-wider text-slate-400 sticky top-0 border-b border-slate-800">
+											<tr>
+												<th class="py-2.5 px-3">Name</th>
+												<th class="py-2.5 px-3">Email</th>
+												<th class="py-2.5 px-3">Role / Office</th>
+												<th class="py-2.5 px-2 text-right">Remove</th>
+											</tr>
+										</thead>
+										<tbody class="divide-y divide-slate-800/60">
+											{#each parsedRecipientsList as r}
+												<tr class="hover:bg-slate-900/60 transition-colors">
+													<td class="py-2 px-3">
+														<span class="font-medium text-white">{r.salutation ? `${r.salutation} ` : ''}{r.name}</span>
+													</td>
+													<td class="py-2 px-3 font-mono text-[11px] text-slate-300">
+														{r.email}
+													</td>
+													<td class="py-2 px-3">
+														{#if r.org_role}
+															<span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30">
+																{r.org_role}
+															</span>
+														{:else if r.role}
+															<span class="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30">
+																{r.role}
+															</span>
+														{:else}
+															<span class="text-slate-500 text-[10px]">—</span>
+														{/if}
+													</td>
+													<td class="py-2 px-2 text-right">
+														<button
+															type="button"
+															onclick={() => removeRecipient(r.email)}
+															class="text-red-400 hover:text-red-300 px-2 py-0.5 rounded hover:bg-red-950/50 text-xs font-bold"
+															title="Remove from batch"
+														>
+															✕
+														</button>
+													</td>
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								</div>
+							{/if}
+						{:else if recipientViewMode === 'cards'}
+							{#if parsedRecipientsList.length === 0}
+								<div class="p-8 bg-slate-950/60 rounded-2xl border border-slate-800 text-center space-y-2">
+									<span class="text-2xl">🗂️</span>
+									<p class="text-xs text-slate-400">No recipients selected yet.</p>
+								</div>
+							{:else}
+								<div class="max-h-64 overflow-y-auto grid grid-cols-1 gap-2 pr-1">
+									{#each parsedRecipientsList as r}
+										<div class="p-2.5 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
+											<div>
+												<div class="font-bold text-xs text-white">
+													{r.salutation ? `${r.salutation} ` : ''}{r.name}
+												</div>
+												<div class="text-[11px] font-mono text-slate-400">{r.email}</div>
+												{#if r.org_role || r.city}
+													<div class="text-[10px] text-amber-400 mt-0.5">
+														{r.org_role || ''} {r.city ? `• ${r.city}` : ''}
+													</div>
+												{/if}
+											</div>
+											<button
+												type="button"
+												onclick={() => removeRecipient(r.email)}
+												class="text-red-400 hover:text-red-300 p-1.5 rounded-lg hover:bg-red-950/50 text-xs"
+												title="Remove"
+											>
+												✕
+											</button>
+										</div>
+									{/each}
+								</div>
+							{/if}
+						{:else}
+							<!-- Raw Textarea for Advanced Paste -->
+							<textarea
+								rows="5"
+								bind:value={recipientsRaw}
+								placeholder="Prakash Thapa, prakash@example.com, Vancouver, BC&#10;Bina Shrestha, bina@example.com, Toronto, ON"
+								class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-red-500 transition-colors"
+							></textarea>
+							<p class="text-[10px] text-slate-500">
+								Accepts <code>Name &lt;email&gt;</code>, CSV <code>Name, email, city</code>, or JSON array.
+							</p>
+						{/if}
 					</div>
 				</div>
 
@@ -666,23 +895,110 @@
 							</div>
 						</div>
 
-						<!-- Email Body Editor -->
-						<div>
-							<div class="flex items-center justify-between mb-1.5">
-								<label for="bodyContent" class="text-xs font-semibold uppercase tracking-wider text-slate-400">
-									Email Body Content (HTML or Plain Text)
+						<!-- Email Body Editor with Rich Formatting Toolbar -->
+						<div class="space-y-2">
+							<div class="flex items-center justify-between">
+								<label for="bodyContent" class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+									<span>✍️</span>
+									<span>Email Message (Type with Normal Line Breaks)</span>
 								</label>
-								<span class="text-[11px] text-slate-500 font-mono">
-									Injected into chosen template
+								<span class="text-[11px] text-slate-400">
+									Line breaks & paragraphs format automatically
 								</span>
 							</div>
+
+							<!-- Formatting Toolbar -->
+							<div class="flex items-center gap-1 p-1.5 bg-slate-950 rounded-2xl border border-slate-800 flex-wrap text-xs">
+								<button
+									type="button"
+									onclick={() => applyFormatting('<b>', '</b>')}
+									class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold border border-slate-800 transition-colors"
+									title="Bold Text"
+								>
+									B
+								</button>
+								<button
+									type="button"
+									onclick={() => applyFormatting('<i>', '</i>')}
+									class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 italic font-serif border border-slate-800 transition-colors"
+									title="Italic Text"
+								>
+									I
+								</button>
+								<button
+									type="button"
+									onclick={() => applyFormatting('<u>', '</u>')}
+									class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 underline border border-slate-800 transition-colors"
+									title="Underline Text"
+								>
+									U
+								</button>
+
+								<div class="h-4 w-px bg-slate-800 mx-1"></div>
+
+								<button
+									type="button"
+									onclick={() => applyFormatting('<h3 style="color: #ffffff; margin-top: 20px;">', '</h3>')}
+									class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold border border-slate-800 transition-colors"
+									title="Section Heading"
+								>
+									H3 Heading
+								</button>
+								<button
+									type="button"
+									onclick={() => applyFormatting('<ul style="margin: 12px 0; padding-left: 20px;">\n  <li>', '</li>\n</ul>')}
+									class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition-colors"
+									title="Bullet List"
+								>
+									• Bullet List
+								</button>
+								<button
+									type="button"
+									onclick={() => applyFormatting('<a href="https://canfacs.org" style="color: #38bdf8; text-decoration: underline;">', '</a>')}
+									class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-cyan-400 border border-slate-800 transition-colors"
+									title="Web Link"
+								>
+									🔗 Link
+								</button>
+								<button
+									type="button"
+									onclick={() => applyFormatting('<div style="text-align: center; margin: 24px 0;"><a href="https://canfacs.org" style="display: inline-block; background: #dc2626; color: #ffffff; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none;">', '</a></div>')}
+									class="px-2.5 py-1 rounded-lg bg-red-950/70 hover:bg-red-900 text-red-300 font-semibold border border-red-800/50 transition-colors"
+									title="Call-to-action Button"
+								>
+									🔴 Button
+								</button>
+
+								<div class="h-4 w-px bg-slate-800 mx-1"></div>
+
+								<button
+									type="button"
+									onclick={() => applyFormatting('<br>\n')}
+									class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-800 text-[11px]"
+									title="Insert Line Break"
+								>
+									↵ Break
+								</button>
+								<button
+									type="button"
+									onclick={() => (bodyHtml = '')}
+									class="ml-auto px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-500 hover:text-red-400 text-[11px]"
+									title="Clear text"
+								>
+									Clear ✕
+								</button>
+							</div>
+
 							<textarea
 								id="bodyContent"
-								rows="8"
+								rows="9"
 								bind:value={bodyHtml}
-								placeholder={`<p>Dear {{name}},</p><p>We are delighted to invite you...</p>`}
-								class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs font-mono text-slate-200 focus:outline-none focus:border-red-500 transition-colors leading-relaxed"
+								placeholder="Dear [Salutation] [Name],&#10;&#10;We are pleased to invite you to our upcoming CANFACS gathering.&#10;&#10;Please join us with your family!&#10;&#10;Warm regards,&#10;CANFACS Executive Committee"
+								class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs font-sans text-slate-100 focus:outline-none focus:border-red-500 transition-colors leading-relaxed tracking-normal"
 							></textarea>
+							<p class="text-[11px] text-slate-400 italic">
+								💡 Type normally with Enter for new paragraphs. Any text or line breaks will be preserved cleanly in the email.
+							</p>
 						</div>
 
 						<!-- Live Preview of Merged Message -->

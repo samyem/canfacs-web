@@ -181,6 +181,30 @@ export function interpolatePlaceholders(
 }
 
 /**
+ * Formats plain text or mixed HTML into clean paragraphs and line breaks
+ * If content does not contain HTML block tags (<p>, <div>, <h1>-<h6>, <ul>, <ol>, <br>),
+ * convert newlines to clean <p> and <br> tags.
+ */
+export function formatBodyContent(rawContent: string): string {
+	if (!rawContent) return '';
+	const trimmed = rawContent.trim();
+	// Check if already full HTML block structure
+	const hasBlockTags = /<(p|div|table|h[1-6]|ul|ol|blockquote)[^>]*>/i.test(trimmed);
+	if (hasBlockTags) {
+		return trimmed;
+	}
+
+	// Split by double line breaks (paragraphs) and single line breaks
+	return trimmed
+		.split(/\n{2,}/)
+		.map((paragraph) => {
+			const withLineBreaks = paragraph.replace(/\n/g, '<br />');
+			return `<p style="margin: 0 0 16px; line-height: 1.6;">${withLineBreaks}</p>`;
+		})
+		.join('\n');
+}
+
+/**
  * Wraps body content into master template
  */
 export function wrapInTemplate(
@@ -188,9 +212,10 @@ export function wrapInTemplate(
 	innerContent: string,
 	data: Record<string, any> = {}
 ): string {
+	const formattedInner = formatBodyContent(innerContent);
 	let combined = templateHtml.includes('{{content}}')
-		? templateHtml.replace('{{content}}', innerContent)
-		: `${innerContent}\n<br>\n${templateHtml}`;
+		? templateHtml.replace('{{content}}', formattedInner)
+		: `${formattedInner}\n<br>\n${templateHtml}`;
 	
 	return interpolatePlaceholders(combined, data);
 }
