@@ -66,7 +66,7 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 	const fromEmail =
 		platform?.env?.CLOUDFLARE_FROM_EMAIL ||
 		process.env.CLOUDFLARE_FROM_EMAIL ||
-		'welcome@canfacs.org';
+		'info@canfacs.org';
 
 	const orgRoles = await getOrganizationalRoles(db);
 	const memberOrgRoles = await getAllMemberOrganizationalRoles(db, true);

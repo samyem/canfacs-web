@@ -9,17 +9,28 @@
 	// Email Composition Form State
 	let batchLabel = $state(`Announcement - ${new Date().toLocaleDateString('en-CA')}`);
 	let selectedTemplateId = $state('');
-	let fromEmail = $state('welcome@canfacs.org');
+	let fromEmail = $state(data.fromEmail || 'info@canfacs.org');
 	let subject = $state('');
-	let bodyHtml = $state('');
+	// bodyText = what the user types (plain text)
+	// bodyHtml = derived HTML for preview & sending
+	let bodyText = $state('');
+	let bodyHtml = $derived.by(() => {
+		const t = bodyText.trim();
+		if (!t) return '';
+		// If already wrapped in block html tags, pass through
+		if (/^<(p|div|h[1-6]|ul|ol|table|section)/i.test(t)) return t;
+		// Convert plain paragraphs separated by double newlines
+		return t
+			.split(/\n{2,}/)
+			.map(para => `<p style="margin:0 0 16px;line-height:1.7;">${para.replace(/\n/g, '<br />')}</p>`)
+			.join('\n');
+	});
+	let aiDraftLoaded = $state(false); // true after AI fills the editor
 
 	// Initialize props into state
 	$effect(() => {
 		if (!selectedTemplateId && data.templates?.[0]?.id) {
 			selectedTemplateId = data.templates[0].id;
-		}
-		if (data.fromEmail) {
-			fromEmail = data.fromEmail;
 		}
 		if (data.adminEmail) {
 			testRecipientEmail = data.adminEmail;
@@ -58,6 +69,40 @@
 	let previewDevice = $state<'desktop' | 'mobile'>('desktop');
 	let showConfirmationModal = $state(false);
 	let copiedTag = $state('');
+
+	// Add Recipient manually dialog state
+	let showAddRecipientDialog = $state(false);
+	let manualName = $state('');
+	let manualEmail = $state('');
+	let manualSalutation = $state('');
+	let manualOrg = $state('');
+
+	function addRecipientManually() {
+		if (!manualEmail || !manualEmail.includes('@')) return;
+		const newEntry = {
+			name: manualName.trim() || manualEmail.split('@')[0],
+			salutation: manualSalutation.trim(),
+			email: manualEmail.trim().toLowerCase(),
+			associated_organizations: manualOrg.trim(),
+			role: 'partner'
+		};
+		try {
+			if (recipientsRaw.trim().startsWith('[')) {
+				const existing = JSON.parse(recipientsRaw);
+				existing.push(newEntry);
+				recipientsRaw = JSON.stringify(existing, null, 2);
+			} else {
+				recipientsRaw = JSON.stringify([...parsedRecipientsList.map(r => ({ name: r.name, email: r.email, salutation: r.salutation, role: r.role })), newEntry], null, 2);
+			}
+		} catch {
+			recipientsRaw = JSON.stringify([newEntry], null, 2);
+		}
+		manualName = '';
+		manualEmail = '';
+		manualSalutation = '';
+		manualOrg = '';
+		showAddRecipientDialog = false;
+	}
 
 	// Selected audit batch for log review
 	let activeBatchId = $state<string | null>(null);
@@ -202,17 +247,17 @@
 	function applyFormatting(prefix: string, suffix = '') {
 		const textarea = document.getElementById('bodyContent') as HTMLTextAreaElement | null;
 		if (!textarea) {
-			bodyHtml = `${bodyHtml}${prefix}${suffix}`;
+			bodyText = `${bodyText}${prefix}${suffix}`;
 			return;
 		}
 
 		const start = textarea.selectionStart;
 		const end = textarea.selectionEnd;
-		const selected = bodyHtml.substring(start, end);
-		const before = bodyHtml.substring(0, start);
-		const after = bodyHtml.substring(end);
+		const selected = bodyText.substring(start, end);
+		const before = bodyText.substring(0, start);
+		const after = bodyText.substring(end);
 
-		bodyHtml = `${before}${prefix}${selected || 'text'}${suffix}${after}`;
+		bodyText = `${before}${prefix}${selected || 'text'}${suffix}${after}`;
 		setTimeout(() => {
 			textarea.focus();
 			textarea.setSelectionRange(start + prefix.length, start + prefix.length + (selected.length || 4));
@@ -255,22 +300,43 @@
 
 	// Insert placeholder token into active cursor / text
 	function insertPlaceholder(token: string) {
-		bodyHtml = bodyHtml ? `${bodyHtml} ${token}` : token;
+		bodyText = bodyText ? `${bodyText} ${token}` : token;
 		copiedTag = token;
 		setTimeout(() => (copiedTag = ''), 2000);
 	}
 
-	// Watch AI response
+	// Watch AI response — AI produces HTML, strip to readable plain text for composer
 	$effect(() => {
 		if (form?.aiResult) {
 			if (form.aiResult.subject) subject = form.aiResult.subject;
-			if (form.aiResult.bodyHtml) bodyHtml = form.aiResult.bodyHtml;
+			if (form.aiResult.bodyHtml) {
+				// Strip HTML tags, convert to plain text for the composer textarea
+				bodyText = form.aiResult.bodyHtml
+					.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+					.replace(/<br\s*\/?>/gi, '\n')
+					.replace(/<\/p>/gi, '\n\n')
+					.replace(/<\/h[1-6]>/gi, '\n\n')
+					.replace(/<li[^>]*>/gi, '• ')
+					.replace(/<[^>]+>/g, '')
+					.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ')
+					.replace(/\n{3,}/g, '\n\n')
+					.trim();
+				aiDraftLoaded = true;
+			}
+			// Merge AI suggestions into existing placeholders (don't replace defaults)
 			if (form.aiResult.suggestedPlaceholders?.length) {
-				suggestedPlaceholders = form.aiResult.suggestedPlaceholders;
+				const existingTokens = new Set(suggestedPlaceholders.map((p: any) => p.token));
+				const newOnes = form.aiResult.suggestedPlaceholders.filter(
+					(p: any) => !existingTokens.has(p.token)
+				);
+				if (newOnes.length) suggestedPlaceholders = [...suggestedPlaceholders, ...newOnes];
 			}
 			if (form.aiResult.summary) aiSummary = form.aiResult.summary;
 		}
 	});
+
+	// Final HTML for preview and submission (bodyHtml is derived from bodyText)
+	const finalBodyHtml = $derived(bodyHtml);
 
 	// Derive parsed recipients list for non-technical users (table & cards)
 	const parsedRecipientsList = $derived.by(() => {
@@ -350,7 +416,7 @@
 			associated_organizations: 'NRN Canada'
 		};
 
-		let rawContent = bodyHtml || `<p style="color: #94a3b8; font-style: italic;">Enter email body or use AI Generator to create draft...</p>`;
+		let rawContent = finalBodyHtml || `<p style="color: #94a3b8; font-style: italic;">Enter email body or use AI Generator to create draft...</p>`;
 		
 		// Interpolate sample data
 		for (const [k, v] of Object.entries(sampleData)) {
@@ -673,6 +739,14 @@
 									class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-red-950 text-red-300 border border-red-800/60 hover:bg-red-900 transition-colors"
 								>
 									+ Me
+								</button>
+								<button
+									type="button"
+									onclick={() => (showAddRecipientDialog = true)}
+									class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-950 text-emerald-300 border border-emerald-700/50 hover:bg-emerald-900 transition-colors flex items-center gap-1"
+									title="Add a person manually by name and email"
+								>
+									+ Person
 								</button>
 							</div>
 						</div>
@@ -1051,7 +1125,7 @@
 								</button>
 								<button
 									type="button"
-									onclick={() => (bodyHtml = '')}
+									onclick={() => { bodyText = ''; aiDraftLoaded = false; }}
 									class="ml-auto px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-500 hover:text-red-400 text-[11px]"
 									title="Clear text"
 								>
@@ -1062,12 +1136,15 @@
 							<textarea
 								id="bodyContent"
 								rows="9"
-								bind:value={bodyHtml}
-								placeholder="Dear [Salutation] [Name],&#10;&#10;We are pleased to invite you to our upcoming CANFACS gathering.&#10;&#10;Please join us with your family!&#10;&#10;Warm regards,&#10;CANFACS Executive Committee"
-								class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs font-sans text-slate-100 focus:outline-none focus:border-red-500 transition-colors leading-relaxed tracking-normal"
+								bind:value={bodyText}
+								placeholder="Dear {'{'}{'{'}}salutation{'}'}{'}'} {'{'}{'{'}}name{'}'}{'}'},&#10;&#10;We are pleased to invite you to our upcoming CANFACS gathering.&#10;&#10;Please join us with your family!&#10;&#10;Warm regards,&#10;CANFACS Executive Committee"
+								class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-sm font-sans text-slate-100 focus:outline-none focus:border-red-500 transition-colors leading-relaxed tracking-normal"
 							></textarea>
 							<p class="text-[11px] text-slate-400 italic">
-								💡 Type normally with Enter for new paragraphs. Any text or line breaks will be preserved cleanly in the email.
+								💡 Type your email in plain English. Press Enter twice for a new paragraph. Use the toolbar buttons above for formatting.
+								{#if aiDraftLoaded}
+									<span class="ml-2 px-2 py-0.5 rounded-full bg-violet-950 text-violet-300 border border-violet-700/40 text-[10px] font-semibold">✨ AI draft loaded — edit above to customize</span>
+								{/if}
 							</p>
 						</div>
 
@@ -1124,7 +1201,7 @@
 							>
 								<input type="hidden" name="test_recipient" value={testRecipientEmail} />
 								<input type="hidden" name="subject" value={subject} />
-								<input type="hidden" name="content_html" value={bodyHtml} />
+								<input type="hidden" name="content_html" value={finalBodyHtml} />
 								<input type="hidden" name="template_id" value={selectedTemplateId} />
 								<input type="hidden" name="from_email" value={fromEmail} />
 
@@ -1147,7 +1224,7 @@
 							<button
 								type="button"
 								onclick={() => (showConfirmationModal = true)}
-								disabled={parsedRecipientsCount === 0 || !subject.trim() || !bodyHtml.trim()}
+								disabled={parsedRecipientsCount === 0 || !subject.trim() || !finalBodyHtml.trim()}
 								class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs shadow-lg shadow-red-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
 							>
 								<span>🚀</span>
@@ -1345,7 +1422,7 @@
 			>
 				<input type="hidden" name="batch_label" value={batchLabel} />
 				<input type="hidden" name="subject" value={subject} />
-				<input type="hidden" name="content_html" value={bodyHtml} />
+				<input type="hidden" name="content_html" value={finalBodyHtml} />
 				<input type="hidden" name="template_id" value={selectedTemplateId} />
 				<input type="hidden" name="from_email" value={fromEmail} />
 				<input type="hidden" name="recipients_data" value={recipientsRaw} />
@@ -1364,6 +1441,113 @@
 					<span>🚀 Confirm & Send to {parsedRecipientsCount} Recipients</span>
 				</button>
 			</form>
+		</div>
+	</div>
+{/if}
+
+{#if showAddRecipientDialog}
+	<!-- Add Recipient Manually Dialog -->
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center p-4"
+		role="dialog"
+		aria-modal="true"
+		aria-label="Add recipient manually"
+	>
+		<!-- Backdrop -->
+		<button
+			class="absolute inset-0 bg-black/70 backdrop-blur-sm cursor-default"
+			type="button"
+			onclick={() => (showAddRecipientDialog = false)}
+			aria-label="Close dialog"
+		></button>
+
+		<!-- Dialog Panel -->
+		<div class="relative w-full max-w-sm bg-slate-900 border border-emerald-800/40 rounded-3xl shadow-2xl shadow-emerald-900/30 p-7 space-y-5">
+			<div class="flex items-center justify-between">
+				<h2 class="text-base font-extrabold text-white flex items-center gap-2">
+					<span>👤</span>
+					<span>Add Recipient</span>
+				</h2>
+				<button
+					type="button"
+					onclick={() => (showAddRecipientDialog = false)}
+					class="text-slate-400 hover:text-white text-lg leading-none transition-colors"
+				>✕</button>
+			</div>
+
+			<div class="space-y-3">
+				<div class="grid grid-cols-3 gap-2">
+					<div>
+						<label for="manualSalutation" class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Title</label>
+						<select
+							id="manualSalutation"
+							bind:value={manualSalutation}
+							class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 transition-colors"
+						>
+							<option value="">—</option>
+							<option value="Mr.">Mr.</option>
+							<option value="Ms.">Ms.</option>
+							<option value="Mrs.">Mrs.</option>
+							<option value="Dr.">Dr.</option>
+							<option value="Prof.">Prof.</option>
+							<option value="H.E.">H.E.</option>
+						</select>
+					</div>
+					<div class="col-span-2">
+						<label for="manualName" class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Full Name</label>
+						<input
+							id="manualName"
+							type="text"
+							bind:value={manualName}
+							placeholder="e.g. Ramesh Thapa"
+							class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition-colors"
+						/>
+					</div>
+				</div>
+
+				<div>
+					<label for="manualEmail" class="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+						Email Address <span class="text-red-400">*</span>
+					</label>
+					<input
+						id="manualEmail"
+						type="email"
+						bind:value={manualEmail}
+						placeholder="e.g. ramesh@example.com"
+						class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition-colors"
+						required
+					/>
+				</div>
+
+				<div>
+					<label for="manualOrg" class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Organization (optional)</label>
+					<input
+						id="manualOrg"
+						type="text"
+						bind:value={manualOrg}
+						placeholder="e.g. NRN Canada"
+						class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition-colors"
+					/>
+				</div>
+			</div>
+
+			<div class="flex items-center gap-3 pt-1">
+				<button
+					type="button"
+					onclick={() => (showAddRecipientDialog = false)}
+					class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition-colors"
+				>
+					Cancel
+				</button>
+				<button
+					type="button"
+					onclick={addRecipientManually}
+					disabled={!manualEmail || !manualEmail.includes('@')}
+					class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-900/30 transition-all disabled:opacity-40"
+				>
+					✓ Add to Recipients
+				</button>
+			</div>
 		</div>
 	</div>
 {/if}
