@@ -62,6 +62,41 @@ export interface DonationRow {
 	created_at: string;
 }
 
+export interface EmailBatchRow {
+	id: string;
+	label: string;
+	subject: string;
+	template_id: string | null;
+	from_email: string;
+	sender_admin_id: string;
+	total_recipients: number;
+	success_count: number;
+	failure_count: number;
+	status: 'processing' | 'completed' | 'failed';
+	created_at: string;
+}
+
+export interface EmailLogRow {
+	id: string;
+	batch_id: string;
+	recipient_email: string;
+	recipient_name: string | null;
+	status: 'sent' | 'failed';
+	error_message: string | null;
+	sent_at: string;
+}
+
+export interface EmailTemplateRow {
+	id: string;
+	name: string;
+	description: string | null;
+	subject_default: string | null;
+	r2_key: string | null;
+	html_content: string;
+	created_at: string;
+	updated_at: string;
+}
+
 export interface DisbursementRow {
 	id: string;
 	campaign_id: string;
@@ -92,6 +127,9 @@ let memoryCampaigns: CampaignRow[] = [];
 let memoryDonations: DonationRow[] = [];
 let memoryDisbursements: DisbursementRow[] = [];
 let memoryAllocations: DisbursementAllocationRow[] = [];
+let memoryEmailBatches: EmailBatchRow[] = [];
+let memoryEmailLogs: EmailLogRow[] = [];
+let memoryEmailTemplates: EmailTemplateRow[] = [];
 
 async function ensureLocalDefaultAdmin() {
 	if (localStoreInitialized) return;
@@ -1102,3 +1140,302 @@ export async function deleteDisbursement(db: any, id: string): Promise<void> {
 		memoryAllocations = memoryAllocations.filter((a) => a.disbursement_id !== id);
 	}
 };
+
+// -------------------------------------------------------------
+// Email Batches, Email Logs, and Email Templates
+// -------------------------------------------------------------
+
+async function ensureEmailTables(db: any) {
+	if (!db) return;
+	await db.prepare(`
+		CREATE TABLE IF NOT EXISTS email_batches (
+			id TEXT PRIMARY KEY,
+			label TEXT NOT NULL,
+			subject TEXT NOT NULL,
+			template_id TEXT,
+			from_email TEXT NOT NULL,
+			sender_admin_id TEXT NOT NULL,
+			total_recipients INTEGER NOT NULL DEFAULT 0,
+			success_count INTEGER NOT NULL DEFAULT 0,
+			failure_count INTEGER NOT NULL DEFAULT 0,
+			status TEXT NOT NULL DEFAULT 'completed',
+			created_at TEXT NOT NULL
+		);
+	`).run();
+
+	await db.prepare(`
+		CREATE TABLE IF NOT EXISTS email_logs (
+			id TEXT PRIMARY KEY,
+			batch_id TEXT NOT NULL,
+			recipient_email TEXT NOT NULL,
+			recipient_name TEXT,
+			status TEXT NOT NULL,
+			error_message TEXT,
+			sent_at TEXT NOT NULL,
+			FOREIGN KEY (batch_id) REFERENCES email_batches(id) ON DELETE CASCADE
+		);
+	`).run();
+
+	await db.prepare(`
+		CREATE TABLE IF NOT EXISTS email_templates (
+			id TEXT PRIMARY KEY,
+			name TEXT NOT NULL,
+			description TEXT,
+			subject_default TEXT,
+			r2_key TEXT,
+			html_content TEXT,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL
+		);
+	`).run();
+}
+
+export async function createEmailBatch(
+	db: any,
+	data: {
+		label: string;
+		subject: string;
+		template_id?: string | null;
+		from_email: string;
+		sender_admin_id: string;
+		total_recipients: number;
+		success_count: number;
+		failure_count: number;
+		status?: 'processing' | 'completed' | 'failed';
+	}
+): Promise<EmailBatchRow> {
+	await ensureLocalDefaultAdmin();
+	const id = 'batch_' + crypto.randomUUID().slice(0, 10);
+	const now = new Date().toISOString();
+	const newBatch: EmailBatchRow = {
+		id,
+		label: data.label.trim(),
+		subject: data.subject.trim(),
+		template_id: data.template_id || null,
+		from_email: data.from_email.trim(),
+		sender_admin_id: data.sender_admin_id,
+		total_recipients: data.total_recipients,
+		success_count: data.success_count,
+		failure_count: data.failure_count,
+		status: data.status || 'completed',
+		created_at: now
+	};
+
+	if (db) {
+		await ensureEmailTables(db);
+		await db.prepare(`
+			INSERT INTO email_batches (id, label, subject, template_id, from_email, sender_admin_id, total_recipients, success_count, failure_count, status, created_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`).bind(
+			newBatch.id,
+			newBatch.label,
+			newBatch.subject,
+			newBatch.template_id,
+			newBatch.from_email,
+			newBatch.sender_admin_id,
+			newBatch.total_recipients,
+			newBatch.success_count,
+			newBatch.failure_count,
+			newBatch.status,
+			newBatch.created_at
+		).run();
+	} else {
+		memoryEmailBatches.unshift(newBatch);
+	}
+
+	return newBatch;
+}
+
+export async function addEmailLog(
+	db: any,
+	log: {
+		batch_id: string;
+		recipient_email: string;
+		recipient_name?: string | null;
+		status: 'sent' | 'failed';
+		error_message?: string | null;
+	}
+): Promise<EmailLogRow> {
+	await ensureLocalDefaultAdmin();
+	const id = 'elog_' + crypto.randomUUID().slice(0, 10);
+	const now = new Date().toISOString();
+	const newLog: EmailLogRow = {
+		id,
+		batch_id: log.batch_id,
+		recipient_email: log.recipient_email.trim().toLowerCase(),
+		recipient_name: log.recipient_name || null,
+		status: log.status,
+		error_message: log.error_message || null,
+		sent_at: now
+	};
+
+	if (db) {
+		await ensureEmailTables(db);
+		await db.prepare(`
+			INSERT INTO email_logs (id, batch_id, recipient_email, recipient_name, status, error_message, sent_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?)
+		`).bind(
+			newLog.id,
+			newLog.batch_id,
+			newLog.recipient_email,
+			newLog.recipient_name,
+			newLog.status,
+			newLog.error_message,
+			newLog.sent_at
+		).run();
+	} else {
+		memoryEmailLogs.unshift(newLog);
+	}
+
+	return newLog;
+}
+
+export async function getEmailBatches(db: any): Promise<EmailBatchRow[]> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureEmailTables(db);
+		const res = await db.prepare(`SELECT * FROM email_batches ORDER BY created_at DESC`).all();
+		return (res.results || []) as EmailBatchRow[];
+	}
+	return [...memoryEmailBatches].sort(
+		(a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+	);
+}
+
+export async function getEmailLogsByBatch(db: any, batchId: string): Promise<EmailLogRow[]> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureEmailTables(db);
+		const res = await db.prepare(`SELECT * FROM email_logs WHERE batch_id = ? ORDER BY sent_at DESC`).bind(batchId).all();
+		return (res.results || []) as EmailLogRow[];
+	}
+	return memoryEmailLogs.filter((l) => l.batch_id === batchId);
+}
+
+export async function getEmailTemplates(db: any): Promise<EmailTemplateRow[]> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureEmailTables(db);
+		const res = await db.prepare(`SELECT * FROM email_templates ORDER BY created_at ASC`).all();
+		return (res.results || []) as EmailTemplateRow[];
+	}
+	return [...memoryEmailTemplates];
+}
+
+export async function getEmailTemplateById(db: any, id: string): Promise<EmailTemplateRow | null> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureEmailTables(db);
+		const res = await db.prepare(`SELECT * FROM email_templates WHERE id = ?`).bind(id).first();
+		return (res as EmailTemplateRow) || null;
+	}
+	return memoryEmailTemplates.find((t) => t.id === id) || null;
+}
+
+export async function upsertEmailTemplate(
+	db: any,
+	template: {
+		id?: string;
+		name: string;
+		description?: string | null;
+		subject_default?: string | null;
+		r2_key?: string | null;
+		html_content: string;
+	}
+): Promise<EmailTemplateRow> {
+	await ensureLocalDefaultAdmin();
+	const now = new Date().toISOString();
+	const id = template.id || 'tmpl_' + crypto.randomUUID().slice(0, 8);
+
+	if (db) {
+		await ensureEmailTables(db);
+		const existing = await getEmailTemplateById(db, id);
+		if (existing) {
+			await db.prepare(`
+				UPDATE email_templates
+				SET name = ?, description = ?, subject_default = ?, r2_key = ?, html_content = ?, updated_at = ?
+				WHERE id = ?
+			`).bind(
+				template.name.trim(),
+				template.description || null,
+				template.subject_default || null,
+				template.r2_key || null,
+				template.html_content,
+				now,
+				id
+			).run();
+			return {
+				...existing,
+				name: template.name.trim(),
+				description: template.description || null,
+				subject_default: template.subject_default || null,
+				r2_key: template.r2_key || null,
+				html_content: template.html_content,
+				updated_at: now
+			};
+		} else {
+			const newRow: EmailTemplateRow = {
+				id,
+				name: template.name.trim(),
+				description: template.description || null,
+				subject_default: template.subject_default || null,
+				r2_key: template.r2_key || null,
+				html_content: template.html_content,
+				created_at: now,
+				updated_at: now
+			};
+			await db.prepare(`
+				INSERT INTO email_templates (id, name, description, subject_default, r2_key, html_content, created_at, updated_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			`).bind(
+				newRow.id,
+				newRow.name,
+				newRow.description,
+				newRow.subject_default,
+				newRow.r2_key,
+				newRow.html_content,
+				newRow.created_at,
+				newRow.updated_at
+			).run();
+			return newRow;
+		}
+	} else {
+		const idx = memoryEmailTemplates.findIndex((t) => t.id === id);
+		if (idx !== -1) {
+			memoryEmailTemplates[idx] = {
+				...memoryEmailTemplates[idx],
+				name: template.name.trim(),
+				description: template.description || null,
+				subject_default: template.subject_default || null,
+				r2_key: template.r2_key || null,
+				html_content: template.html_content,
+				updated_at: now
+			};
+			return memoryEmailTemplates[idx];
+		} else {
+			const newRow: EmailTemplateRow = {
+				id,
+				name: template.name.trim(),
+				description: template.description || null,
+				subject_default: template.subject_default || null,
+				r2_key: template.r2_key || null,
+				html_content: template.html_content,
+				created_at: now,
+				updated_at: now
+			};
+			memoryEmailTemplates.push(newRow);
+			return newRow;
+		}
+	}
+}
+
+export async function deleteEmailTemplate(db: any, id: string): Promise<void> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureEmailTables(db);
+		await db.prepare(`DELETE FROM email_templates WHERE id = ?`).bind(id).run();
+	} else {
+		memoryEmailTemplates = memoryEmailTemplates.filter((t) => t.id !== id);
+	}
+}
+

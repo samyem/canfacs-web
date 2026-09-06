@@ -189,6 +189,13 @@
 							>
 								💰 Fundraising & Disbursements
 							</a>
+							<a
+								href="/admin/emails"
+								onclick={() => (isMobileMenuOpen = false)}
+								class="block px-4 py-2 rounded-lg text-sm font-semibold text-red-400 hover:bg-slate-800"
+							>
+								✉️ Email Dispatcher
+							</a>
 						{/if}
 					</div>
 
@@ -278,6 +285,15 @@
 						>
 							<span>💰</span>
 							<span>Fundraising</span>
+						</a>
+						<a
+							href="/admin/emails"
+							class="px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 {data.pathname.startsWith('/admin/emails')
+								? 'bg-red-600 text-white font-bold shadow-md shadow-red-600/20'
+								: 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'}"
+						>
+							<span>✉️</span>
+							<span>Email Dispatch</span>
 						</a>
 					</div>
 				{/if}

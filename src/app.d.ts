@@ -24,6 +24,7 @@ declare global {
 				CLOUDFLARE_FROM_EMAIL?: string;
 				GOOGLE_CLIENT_ID?: string;
 				GOOGLE_CLIENT_SECRET?: string;
+				GEMINI_API_KEY?: string;
 			};
 			ctx: ExecutionContext;
 			caches: CacheStorage;

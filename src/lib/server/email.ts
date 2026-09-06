@@ -218,3 +218,88 @@ Email: info@canfacs.org
 		return { success: false, error: err.message || 'Unknown network error sending email' };
 	}
 }
+
+export interface CustomEmailData {
+	to: string;
+	subject: string;
+	html: string;
+	text?: string;
+	fromAddress?: string;
+}
+
+export async function sendCustomEmail(
+	data: CustomEmailData,
+	env?: Record<string, any>
+): Promise<{ success: boolean; error?: string; delivered?: boolean }> {
+	const apiToken = env?.CLOUDFLARE_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN;
+	const accountId =
+		env?.CLOUDFLARE_ACCOUNT_ID ||
+		process.env.CLOUDFLARE_ACCOUNT_ID ||
+		'799a8a7bf560864dc5eec876d6a91ebf';
+	const fromAddress =
+		data.fromAddress ||
+		env?.CLOUDFLARE_FROM_EMAIL ||
+		process.env.CLOUDFLARE_FROM_EMAIL ||
+		'info@canfacs.org';
+
+	if (!data.to || !data.to.includes('@')) {
+		return { success: false, error: 'Recipient email address missing or invalid' };
+	}
+
+	if (!apiToken) {
+		console.warn(
+			`[CANFACS Email Simulation] CLOUDFLARE_API_TOKEN not set. Simulating delivery to ${data.to} from ${fromAddress}`
+		);
+		// Local development simulation
+		return {
+			success: true,
+			delivered: true,
+			error: 'CLOUDFLARE_API_TOKEN not configured; email simulated locally.'
+		};
+	}
+
+	// Plain text fallback if not supplied
+	const textContent =
+		data.text ||
+		data.html
+			.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+			.replace(/<[^>]+>/g, ' ')
+			.replace(/\s{2,}/g, ' ')
+			.trim();
+
+	try {
+		const res = await fetch(
+			`https://api.cloudflare.com/client/v4/accounts/${accountId}/email/sending/send`,
+			{
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${apiToken}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					account_id: accountId,
+					from: fromAddress,
+					to: data.to,
+					subject: data.subject,
+					html: data.html,
+					text: textContent
+				})
+			}
+		);
+
+		const result: any = await res.json();
+		if (!res.ok || result.success === false) {
+			console.error('[CANFACS Email Error]', result);
+			return {
+				success: false,
+				error: result.errors?.[0]?.message || 'Failed to send email via Cloudflare'
+			};
+		}
+
+		return { success: true, delivered: true };
+	} catch (err: any) {
+		console.error('[CANFACS Email Exception]', err);
+		return { success: false, error: err.message || 'Network error communicating with Cloudflare' };
+	}
+}
+
