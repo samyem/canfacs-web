@@ -25,7 +25,7 @@ export async function sendDonationConfirmationEmail(
 		process.env.CLOUDFLARE_ACCOUNT_ID ||
 		'799a8a7bf560864dc5eec876d6a91ebf';
 	const fromAddress =
-		env?.CLOUDFLARE_FROM_EMAIL || process.env.CLOUDFLARE_FROM_EMAIL || 'welcome@canfacs.org';
+		env?.CLOUDFLARE_FROM_EMAIL || process.env.CLOUDFLARE_FROM_EMAIL || 'info@canfacs.org';
 
 	if (!data.to || !data.to.includes('@')) {
 		return { success: false, error: 'Recipient email address missing or invalid' };
@@ -287,10 +287,18 @@ export async function sendCustomEmail(
 			console.log('[CANFACS Email] Native dispatch successful:', response);
 			return { success: true, delivered: true };
 		} catch (bindingErr: any) {
-			console.error('[CANFACS Email Binding Error]', bindingErr);
+			// Log full error details to diagnose Cloudflare binding rejections
+			console.error('[CANFACS Email Binding Error]', {
+				message: bindingErr?.message,
+				code: bindingErr?.code,
+				name: bindingErr?.name,
+				stack: bindingErr?.stack,
+				fromAddress,
+				to: data.to
+			});
 			return {
 				success: false,
-				error: bindingErr.message || 'Error dispatching email through native Cloudflare binding'
+				error: `Binding error (from: ${fromAddress}): ${bindingErr?.message || 'Unknown error from Cloudflare EMAIL binding'}`
 			};
 		}
 	}
