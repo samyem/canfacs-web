@@ -12,6 +12,30 @@
 	let editingOrgRole = $state<{ id?: string; title: string; category: string; rank_order: number; description: string } | null>(null);
 	let isUploadingAvatar = $state(false);
 	let avatarUploadError = $state('');
+	let isRoleDropdownOpen = $state(false);
+	let isCreatingMember = $state(false);
+
+	function openCreateModal() {
+		editingMember = {
+			id: '',
+			email: '',
+			full_name: '',
+			salutation: 'Mr.',
+			role: 'member',
+			selected_org_role_id: '',
+			profession: '',
+			phone: '',
+			phone_secondary: '',
+			city: 'Vancouver',
+			province: 'BC',
+			country: 'Canada',
+			bio: '',
+			avatar_url: '',
+			google_login_enabled: 1
+		};
+		isCreatingMember = true;
+		avatarUploadError = '';
+	}
 
 	$effect(() => {
 		const editId = page.url.searchParams.get('edit');
@@ -30,11 +54,13 @@
 			...m,
 			selected_org_role_id: existingAssigned?.role_id || matchingRole?.id || ''
 		};
+		isCreatingMember = false;
 		avatarUploadError = '';
 	}
 
 	function closeEditModal() {
 		editingMember = null;
+		isCreatingMember = false;
 		avatarUploadError = '';
 	}
 
@@ -132,7 +158,16 @@
 				</p>
 			</div>
 
-			<div class="flex items-center gap-3">
+			<div class="flex items-center gap-3 flex-wrap">
+				<button
+					type="button"
+					onclick={openCreateModal}
+					class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2"
+				>
+					<span class="text-sm font-black">＋</span>
+					<span>Add New Member</span>
+				</button>
+
 				<span class="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300">
 					⏳ Pending: <span class="text-amber-400 font-bold ml-1">{pendingMembers.length}</span>
 				</span>
@@ -185,69 +220,115 @@
 
 		<!-- Tabs & Search -->
 		<div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-			<div class="flex items-center gap-2 p-1.5 bg-slate-900 rounded-2xl border border-slate-800 w-full sm:w-auto overflow-x-auto">
+			<div class="flex items-center gap-2 p-1.5 bg-slate-900 rounded-2xl border border-slate-800 w-full sm:w-auto flex-wrap">
+				<!-- Status Tabs -->
 				<button
 					type="button"
 					onclick={() => (activeTab = 'pending')}
-					class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'pending' ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}"
+					class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'pending' ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}"
 				>
 					<span>⏳ Pending</span>
-					<span>({pendingMembers.length})</span>
+					<span class="px-1.5 py-0.2 rounded-md bg-slate-950/40 text-[10px]">{pendingMembers.length}</span>
 				</button>
+
 				<button
 					type="button"
 					onclick={() => (activeTab = 'approved')}
-					class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'approved' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}"
+					class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'approved' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}"
 				>
 					<span>✅ Approved</span>
-					<span>({approvedMembers.length})</span>
+					<span class="px-1.5 py-0.2 rounded-md bg-slate-950/40 text-[10px]">{approvedMembers.length}</span>
 				</button>
-				<button
-					type="button"
-					onclick={() => (activeTab = 'admins')}
-					class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'admins' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}"
-				>
-					<span>👑 Admins</span>
-					<span>({adminMembers.length})</span>
-				</button>
-				<button
-					type="button"
-					onclick={() => (activeTab = 'bod')}
-					class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'bod' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}"
-				>
-					<span>🏛️ BOD</span>
-					<span>({bodMembers.length})</span>
-				</button>
-				<button
-					type="button"
-					onclick={() => (activeTab = 'advisory')}
-					class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'advisory' ? 'bg-indigo-600 text-white shadow-lg' : 'text-indigo-400 hover:text-white'}"
-				>
-					<span>🎓 Advisory</span>
-					<span>({advisoryMembers.length})</span>
-				</button>
-				<button
-					type="button"
-					onclick={() => (activeTab = 'partners')}
-					class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'partners' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}"
-				>
-					<span>🤝 Partners</span>
-					<span>({partnerMembers.length})</span>
-				</button>
+
+				<!-- Compact "By Role" Filter Dropdown -->
+				<div class="relative">
+					<button
+						type="button"
+						onclick={() => (isRoleDropdownOpen = !isRoleDropdownOpen)}
+						class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 border {['admins', 'bod', 'advisory', 'partners'].includes(activeTab) ? 'bg-blue-600 text-white border-blue-500 shadow-md' : 'bg-slate-950 text-slate-300 border-slate-800 hover:text-white'}"
+					>
+						<span>🎭</span>
+						<span>
+							{#if activeTab === 'admins'}
+								👑 Admins ({adminMembers.length})
+							{:else if activeTab === 'bod'}
+								🏛️ BOD ({bodMembers.length})
+							{:else if activeTab === 'advisory'}
+								🎓 Advisory ({advisoryMembers.length})
+							{:else if activeTab === 'partners'}
+								🤝 Partners ({partnerMembers.length})
+							{:else}
+								Filter by Role ▾
+							{/if}
+						</span>
+					</button>
+
+					{#if isRoleDropdownOpen}
+						<!-- Click outside backdrop -->
+						<button
+							type="button"
+							tabindex="-1"
+							onclick={() => (isRoleDropdownOpen = false)}
+							class="fixed inset-0 z-20 cursor-default"
+							aria-label="Close role menu"
+						></button>
+
+						<div class="absolute left-0 mt-2 w-56 rounded-2xl bg-slate-900 border border-slate-800 p-2 shadow-2xl z-30 space-y-1 text-xs">
+							<div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Select Member Role</div>
+
+							<button
+								type="button"
+								onclick={() => { activeTab = 'bod'; isRoleDropdownOpen = false; }}
+								class="w-full text-left px-3 py-2 rounded-xl flex items-center justify-between transition-colors {activeTab === 'bod' ? 'bg-purple-600 text-white font-bold' : 'text-purple-300 hover:bg-slate-800'}"
+							>
+								<span>🏛️ Board of Directors</span>
+								<span class="text-[10px] opacity-80 font-mono">({bodMembers.length})</span>
+							</button>
+
+							<button
+								type="button"
+								onclick={() => { activeTab = 'advisory'; isRoleDropdownOpen = false; }}
+								class="w-full text-left px-3 py-2 rounded-xl flex items-center justify-between transition-colors {activeTab === 'advisory' ? 'bg-indigo-600 text-white font-bold' : 'text-indigo-300 hover:bg-slate-800'}"
+							>
+								<span>🎓 Advisory Board</span>
+								<span class="text-[10px] opacity-80 font-mono">({advisoryMembers.length})</span>
+							</button>
+
+							<button
+								type="button"
+								onclick={() => { activeTab = 'admins'; isRoleDropdownOpen = false; }}
+								class="w-full text-left px-3 py-2 rounded-xl flex items-center justify-between transition-colors {activeTab === 'admins' ? 'bg-amber-600 text-white font-bold' : 'text-amber-300 hover:bg-slate-800'}"
+							>
+								<span>👑 Administrators</span>
+								<span class="text-[10px] opacity-80 font-mono">({adminMembers.length})</span>
+							</button>
+
+							<button
+								type="button"
+								onclick={() => { activeTab = 'partners'; isRoleDropdownOpen = false; }}
+								class="w-full text-left px-3 py-2 rounded-xl flex items-center justify-between transition-colors {activeTab === 'partners' ? 'bg-blue-600 text-white font-bold' : 'text-blue-300 hover:bg-slate-800'}"
+							>
+								<span>🤝 MOU Partners</span>
+								<span class="text-[10px] opacity-80 font-mono">({partnerMembers.length})</span>
+							</button>
+						</div>
+					{/if}
+				</div>
+
 				<button
 					type="button"
 					onclick={() => (activeTab = 'all')}
-					class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap {activeTab === 'all' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}"
+					class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap {activeTab === 'all' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}"
 				>
 					All ({data.members.length})
 				</button>
+
 				<button
 					type="button"
 					onclick={() => (activeTab = 'org_roles')}
-					class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'org_roles' ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-amber-400 hover:text-white'}"
+					class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'org_roles' ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-amber-400 hover:text-white'}"
 				>
-					<span>🏷️ Org Roles</span>
-					<span>({data.orgRoles?.length || 0})</span>
+					<span>🏷️ Org Roles ({data.orgRoles?.length || 0})</span>
 				</button>
 			</div>
 
@@ -544,9 +625,15 @@
 		<div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 space-y-5 shadow-2xl text-slate-100 my-8">
 			<div class="flex items-start justify-between border-b border-slate-800 pb-3">
 				<div>
-					<span class="text-[10px] font-mono uppercase text-amber-400">ID: {editingMember.id}</span>
-					<h3 class="text-lg font-bold text-white mt-0.5">Edit Member Attributes</h3>
-					<p class="text-xs text-slate-400">{editingMember.email}</p>
+					<span class="text-[10px] font-mono uppercase text-amber-400">
+						{isCreatingMember ? 'NEW MEMBER REGISTRATION' : `ID: ${editingMember.id}`}
+					</span>
+					<h3 class="text-lg font-bold text-white mt-0.5">
+						{isCreatingMember ? 'Add New Member to Directory' : 'Edit Member Attributes'}
+					</h3>
+					<p class="text-xs text-slate-400">
+						{isCreatingMember ? 'Creates an approved member profile with auto-generated credentials.' : editingMember.email}
+					</p>
 				</div>
 				<button
 					type="button"
@@ -559,7 +646,7 @@
 
 			<form
 				method="POST"
-				action="?/updateProfile"
+				action={isCreatingMember ? '?/createMember' : '?/updateProfile'}
 				use:enhance={() => {
 					return async ({ update }) => {
 						await update();
@@ -616,9 +703,9 @@
 								class="text-[11px] text-slate-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer w-full sm:w-auto"
 							/>
 							<input
-								type="url"
+								type="text"
 								bind:value={editingMember.avatar_url}
-								placeholder="Or paste external social photo URL..."
+								placeholder="Image path (/team/...) or photo URL (https://...)"
 								class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-[11px] text-slate-300 focus:outline-none focus:border-amber-500"
 							/>
 						</div>
@@ -627,6 +714,24 @@
 						{/if}
 					</div>
 				</div>
+
+				{#if isCreatingMember}
+					<div>
+						<label for="mEmail" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">
+							Email Address <span class="text-red-400">*</span>
+						</label>
+						<input
+							id="mEmail"
+							type="email"
+							name="email"
+							bind:value={editingMember.email}
+							required
+							placeholder="e.g. member@canfacs.org or member@gmail.com"
+							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+						/>
+					</div>
+				{/if}
+
 				<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
 					<div>
 						<label for="mSalutation" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">Salutation</label>
@@ -640,13 +745,14 @@
 						/>
 					</div>
 					<div>
-						<label for="mFullName" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">Full Name</label>
+						<label for="mFullName" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">Full Name <span class="text-red-400">*</span></label>
 						<input
 							id="mFullName"
 							type="text"
 							name="full_name"
 							bind:value={editingMember.full_name}
 							required
+							placeholder="e.g. Dr. Jane Doe"
 							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
 						/>
 					</div>
@@ -840,9 +946,9 @@
 					</button>
 					<button
 						type="submit"
-						class="px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg transition-all"
+						class="px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg transition-all flex items-center gap-1.5"
 					>
-						Save Attributes ✓
+						<span>{isCreatingMember ? 'Create & Approve Member ✓' : 'Save Attributes ✓'}</span>
 					</button>
 				</div>
 			</form>

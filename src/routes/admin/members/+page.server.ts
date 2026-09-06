@@ -279,5 +279,76 @@ export const actions: Actions = {
 			success: true,
 			message: `Organizational role deleted successfully.`
 		};
+	},
+
+	createMember: async ({ request, locals, platform }) => {
+		if (!locals.user || locals.user.role !== 'admin') {
+			return fail(403, { error: 'Unauthorized' });
+		}
+
+		const data = await request.formData();
+		const email = data.get('email')?.toString().trim().toLowerCase();
+		const full_name = data.get('full_name')?.toString().trim();
+		const salutation = data.get('salutation')?.toString().trim() || null;
+		const role = (data.get('role')?.toString() || 'member') as any;
+		const org_role_id = data.get('org_role_id')?.toString() || null;
+		const profession = data.get('profession')?.toString().trim() || null;
+		const phone = data.get('phone')?.toString().trim() || null;
+		const city = data.get('city')?.toString().trim() || null;
+		const province = data.get('province')?.toString().trim() || null;
+		const country = data.get('country')?.toString().trim() || 'Canada';
+		const bio = data.get('bio')?.toString().trim() || null;
+		const avatar_url = data.get('avatar_url')?.toString().trim() || null;
+
+		if (!email || !full_name) {
+			return fail(400, { error: 'Full name and email address are required.' });
+		}
+
+		const db = getDb(platform);
+		const { getMemberByEmail, updateMemberProfile, getOrganizationalRoles } = await import('$lib/server/db');
+		const existing = await getMemberByEmail(db, email);
+		if (existing) {
+			return fail(400, { error: `A member with email "${email}" already exists.` });
+		}
+
+		const tempPassword = generateTempPassword();
+		const passwordHash = await hashPassword(tempPassword);
+		const id = 'mem_' + crypto.randomUUID().slice(0, 10);
+		const now = new Date().toISOString();
+
+		let resolvedOrgRoleTitle: string | null = null;
+		if (org_role_id) {
+			const allOrgRoles = await getOrganizationalRoles(db);
+			const matched = allOrgRoles.find((r) => r.id === org_role_id);
+			if (matched) resolvedOrgRoleTitle = matched.title;
+		}
+
+		if (db) {
+			await db.prepare(`
+				INSERT INTO members (
+					id, email, password_hash, full_name, salutation, phone, profession,
+					organizational_role, city, province, country, bio, avatar_url,
+					status, role, google_login_enabled, created_at, approved_at
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', ?, 1, ?, ?)
+			`).bind(
+				id, email, passwordHash, full_name, salutation, phone, profession,
+				resolvedOrgRoleTitle, city, province, country, bio, avatar_url,
+				role, now, now
+			).run();
+
+			if (org_role_id) {
+				await db.prepare(`
+					INSERT INTO member_organizational_roles (id, member_id, role_id, is_active, created_at)
+					VALUES (?, ?, ?, 1, ?)
+				`).bind(`mor_${id}`, id, org_role_id, now).run();
+			}
+		}
+
+		return {
+			success: true,
+			approvedEmail: email,
+			generatedPassword: tempPassword,
+			message: `New member "${full_name}" created & approved successfully!`
+		};
 	}
 };
