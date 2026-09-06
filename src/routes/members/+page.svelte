@@ -2,6 +2,7 @@
 	let { data } = $props();
 	let searchQuery = $state('');
 	let selectedProvince = $state('ALL');
+	let viewMode = $state<'grid' | 'table'>('grid');
 
 	const filteredMembers = $derived(
 		(data.members || []).filter((m: any) => {
@@ -100,6 +101,28 @@
 						<option value="MB">Manitoba (MB)</option>
 						<option value="SK">Saskatchewan (SK)</option>
 					</select>
+
+					<!-- View Mode Toggle: Grid vs Table -->
+					<div class="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 ml-auto md:ml-0">
+						<button
+							type="button"
+							onclick={() => (viewMode = 'grid')}
+							class="px-3 py-1.5 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 {viewMode === 'grid' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}"
+							title="Grid Card View"
+						>
+							<span>⊞</span>
+							<span class="hidden sm:inline">Cards</span>
+						</button>
+						<button
+							type="button"
+							onclick={() => (viewMode = 'table')}
+							class="px-3 py-1.5 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 {viewMode === 'table' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}"
+							title="Table List View"
+						>
+							<span>☰</span>
+							<span class="hidden sm:inline">Table</span>
+						</button>
+					</div>
 				</div>
 			</div>
 
@@ -108,7 +131,7 @@
 				<div class="glass-card p-12 rounded-3xl text-center border border-slate-800">
 					<p class="text-slate-400 text-sm">No active members found matching your search query.</p>
 				</div>
-			{:else}
+			{:else if viewMode === 'grid'}
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 					{#each filteredMembers as member}
 						<div class="glass-card p-6 rounded-3xl border border-slate-800 hover:border-blue-500/40 transition-all flex flex-col justify-between group">
@@ -158,6 +181,93 @@
 							</div>
 						</div>
 					{/each}
+				</div>
+			{:else}
+				<!-- High-density Table View -->
+				<div class="glass-card rounded-3xl border border-slate-800 overflow-hidden shadow-2xl">
+					<div class="overflow-x-auto">
+						<table class="w-full text-left text-xs text-slate-300">
+							<thead class="bg-slate-900/90 text-slate-400 uppercase font-bold text-[10px] tracking-wider border-b border-slate-800">
+								<tr>
+									<th class="py-3.5 px-5">Member</th>
+									<th class="py-3.5 px-5">Organizational Role</th>
+									<th class="py-3.5 px-5">Profession</th>
+									<th class="py-3.5 px-5">Location</th>
+									<th class="py-3.5 px-5">Bio</th>
+									<th class="py-3.5 px-5 text-right">Contact</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-slate-800/70">
+								{#each filteredMembers as member}
+									<tr class="hover:bg-slate-800/40 transition-colors">
+										<td class="py-3.5 px-5">
+											<div class="flex items-center gap-3">
+												{#if member.avatar_url}
+													<img
+														src={member.avatar_url}
+														alt={member.full_name}
+														class="w-9 h-9 rounded-xl object-cover border border-slate-700 flex-shrink-0"
+													/>
+												{:else}
+													<div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center flex-shrink-0 shadow-sm">
+														{member.full_name.charAt(0)}
+													</div>
+												{/if}
+												<div>
+													<span class="font-bold text-white text-sm block">{member.full_name}</span>
+													{#if member.role}
+														<span class="text-[10px] text-slate-500 capitalize">{member.role}</span>
+													{/if}
+												</div>
+											</div>
+										</td>
+										<td class="py-3.5 px-5 whitespace-nowrap">
+											{#if member.organizational_role}
+												<span class="inline-block px-2.5 py-1 text-[11px] font-bold rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 shadow-sm">
+													🏛️ {member.organizational_role}
+												</span>
+											{:else}
+												<span class="text-slate-600 italic text-[11px]">—</span>
+											{/if}
+										</td>
+										<td class="py-3.5 px-5 whitespace-nowrap">
+											{#if member.profession}
+												<span class="text-blue-400 font-semibold">{member.profession}</span>
+											{:else}
+												<span class="text-slate-600 italic">—</span>
+											{/if}
+										</td>
+										<td class="py-3.5 px-5 whitespace-nowrap text-slate-300">
+											{#if member.city || member.province}
+												<span>📍 {[member.city, member.province].filter(Boolean).join(', ')}</span>
+											{:else}
+												<span class="text-slate-600 italic">—</span>
+											{/if}
+										</td>
+										<td class="py-3.5 px-5 max-w-xs truncate text-slate-400" title={member.bio || ''}>
+											{#if member.bio}
+												<span>{member.bio}</span>
+											{:else}
+												<span class="text-slate-600 italic">—</span>
+											{/if}
+										</td>
+										<td class="py-3.5 px-5 text-right whitespace-nowrap">
+											{#if member.email}
+												<a
+													href="mailto:{member.email}"
+													class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 transition-all font-semibold"
+												>
+													✉️ Contact
+												</a>
+											{:else}
+												<span class="text-slate-600 italic">—</span>
+											{/if}
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
 				</div>
 			{/if}
 		{/if}

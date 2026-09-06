@@ -680,7 +680,7 @@
 								id="bodyContent"
 								rows="8"
 								bind:value={bodyHtml}
-								placeholder="<p>Dear {{name}},</p><p>We are delighted to invite you...</p>"
+								placeholder={`<p>Dear {{name}},</p><p>We are delighted to invite you...</p>`}
 								class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs font-mono text-slate-200 focus:outline-none focus:border-red-500 transition-colors leading-relaxed"
 							></textarea>
 						</div>
