@@ -1957,5 +1957,16 @@ export async function deleteOrganizationalRole(db: any, id: string): Promise<voi
 	}
 }
 
+export async function removeMemberOrganizationalRole(db: any, assignmentId: string): Promise<void> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureOrgRolesTables(db);
+		await db.prepare(`DELETE FROM member_organizational_roles WHERE id = ?`).bind(assignmentId).run();
+	} else {
+		memoryMemberOrgRoles = memoryMemberOrgRoles.filter((mor) => mor.id !== assignmentId);
+	}
+}
+
+
 
 
