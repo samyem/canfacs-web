@@ -36,10 +36,17 @@
 	let isGeneratingAi = $state(false);
 	let aiSummary = $state('');
 	let suggestedPlaceholders = $state<Array<{ token: string; label: string; example: string }>>([
+		{ token: '{{salutation}}', label: 'Salutation', example: 'Dr.' },
 		{ token: '{{name}}', label: 'Recipient Name', example: 'Aarav Sharma' },
-		{ token: '{{email}}', label: 'Recipient Email', example: 'member@example.com' },
-		{ token: '{{city}}', label: 'City', example: 'Toronto' },
-		{ token: '{{province}}', label: 'Province', example: 'ON' }
+		{ token: '{{organizational_role}}', label: 'Org Role', example: 'Vice President' },
+		{ token: '{{role}}', label: 'Society Role', example: 'BOD Member' },
+		{ token: '{{email}}', label: 'Email', example: 'member@example.com' },
+		{ token: '{{phone}}', label: 'Phone', example: '604-555-0199' },
+		{ token: '{{address_street}}', label: 'Street', example: '123 Robson St' },
+		{ token: '{{city}}', label: 'City', example: 'Vancouver' },
+		{ token: '{{province}}', label: 'Province', example: 'BC' },
+		{ token: '{{country}}', label: 'Country', example: 'Canada' },
+		{ token: '{{associated_organizations}}', label: 'Associated Org', example: 'NRN Canada' }
 	]);
 
 	// Recipients state
@@ -54,10 +61,14 @@
 	// Selected audit batch for log review
 	let activeBatchId = $state<string | null>(null);
 
-	// Pre-fill recipient text
+	// Pre-fill recipient text by role with full metadata
 	function importAllMembers() {
-		const list = data.members.map((m: any) => `${m.name}, ${m.email}, ${m.city}, ${m.province}`).join('\n');
-		recipientsRaw = list;
+		recipientsRaw = JSON.stringify(data.members, null, 2);
+	}
+
+	function importByRole(targetRole: string) {
+		const filtered = data.members.filter((m: any) => m.role === targetRole);
+		recipientsRaw = JSON.stringify(filtered, null, 2);
 	}
 
 	function importDonors() {
@@ -138,11 +149,17 @@
 	// Render preview HTML
 	const renderedPreviewHtml = $derived.by(() => {
 		const sampleData = {
+			salutation: 'Dr.',
 			name: 'Aarav Sharma',
 			email: 'aarav.sharma@example.ca',
+			organizational_role: 'Vice President',
+			role: 'BOD Member',
+			phone: '604-555-0199',
+			address_street: '123 Robson St',
 			city: 'Vancouver',
 			province: 'BC',
-			role: 'Member'
+			country: 'Canada',
+			associated_organizations: 'NRN Canada'
 		};
 
 		let content = bodyHtml || `<p style="color: #94a3b8; font-style: italic;">Enter email body or use Gemini AI to generate draft...</p>`;
@@ -435,7 +452,7 @@
 									onclick={importAllMembers}
 									class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
 								>
-									All Members ({data.members.length})
+									All ({data.members.length})
 								</button>
 								<button
 									type="button"
@@ -452,6 +469,39 @@
 									+ Me
 								</button>
 							</div>
+						</div>
+
+						<!-- Role Filter Pill Bar -->
+						<div class="flex items-center gap-1.5 flex-wrap pt-1">
+							<span class="text-[10px] uppercase font-bold text-slate-500 mr-1">Select by Role:</span>
+							<button
+								type="button"
+								onclick={() => importByRole('admin')}
+								class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition-all"
+							>
+								👑 Admins ({data.members.filter((m: any) => m.role === 'admin').length})
+							</button>
+							<button
+								type="button"
+								onclick={() => importByRole('bod')}
+								class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/30 hover:bg-purple-500/20 transition-all"
+							>
+								🏛️ BOD ({data.members.filter((m: any) => m.role === 'bod').length})
+							</button>
+							<button
+								type="button"
+								onclick={() => importByRole('member')}
+								class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-750 transition-all"
+							>
+								👤 Regular Members ({data.members.filter((m: any) => m.role === 'member' || !m.role).length})
+							</button>
+							<button
+								type="button"
+								onclick={() => importByRole('partner')}
+								class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 transition-all"
+							>
+								🤝 MOU Partners ({data.members.filter((m: any) => m.role === 'partner').length})
+							</button>
 						</div>
 
 						<p class="text-xs text-slate-400">

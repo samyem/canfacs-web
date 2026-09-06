@@ -5,13 +5,26 @@ export interface MemberRow {
 	email: string;
 	password_hash: string | null;
 	full_name: string;
+	salutation?: string | null;
 	phone: string | null;
+	phone_secondary?: string | null;
 	profession: string | null;
+	organizational_role?: string | null;
+	role_start_date?: string | null;
+	role_end_date?: string | null;
+	address_street?: string | null;
 	city: string | null;
 	province: string | null;
+	country?: string | null;
+	postal_code?: string | null;
 	bio: string | null;
+	facebook_id?: string | null;
+	instagram_id?: string | null;
+	associated_organizations?: string | null;
+	google_login_enabled?: boolean | number;
+	avatar_url?: string | null;
 	status: 'pending' | 'approved' | 'denied';
-	role: 'member' | 'admin';
+	role: 'admin' | 'bod' | 'member' | 'partner' | string;
 	created_at: string;
 	approved_at: string | null;
 }
@@ -421,7 +434,7 @@ export async function updateMemberStatus(
 export async function updateMemberRole(
 	db: any,
 	id: string,
-	role: 'member' | 'admin'
+	role: string
 ): Promise<void> {
 	await ensureLocalDefaultAdmin();
 	if (db) {
@@ -430,6 +443,59 @@ export async function updateMemberRole(
 		const idx = memoryMembers.findIndex((m) => m.id === id);
 		if (idx !== -1) {
 			memoryMembers[idx].role = role;
+		}
+	}
+}
+
+export async function updateMemberProfile(
+	db: any,
+	id: string,
+	data: Partial<MemberRow>
+): Promise<void> {
+	await ensureLocalDefaultAdmin();
+	const fields: string[] = [];
+	const values: any[] = [];
+
+	const allowedFields: (keyof MemberRow)[] = [
+		'full_name',
+		'salutation',
+		'phone',
+		'phone_secondary',
+		'profession',
+		'organizational_role',
+		'role_start_date',
+		'role_end_date',
+		'address_street',
+		'city',
+		'province',
+		'country',
+		'postal_code',
+		'bio',
+		'facebook_id',
+		'instagram_id',
+		'associated_organizations',
+		'google_login_enabled',
+		'avatar_url',
+		'role',
+		'status'
+	];
+
+	for (const field of allowedFields) {
+		if (data[field] !== undefined) {
+			fields.push(`${field} = ?`);
+			values.push(data[field]);
+		}
+	}
+
+	if (fields.length === 0) return;
+
+	if (db) {
+		values.push(id);
+		await db.prepare(`UPDATE members SET ${fields.join(', ')} WHERE id = ?`).bind(...values).run();
+	} else {
+		const idx = memoryMembers.findIndex((m) => m.id === id);
+		if (idx !== -1) {
+			memoryMembers[idx] = { ...memoryMembers[idx], ...data };
 		}
 	}
 }

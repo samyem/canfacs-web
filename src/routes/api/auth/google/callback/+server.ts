@@ -90,7 +90,10 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 				}
 			}
 		}
-	} else {
+		if (member.google_login_enabled === 0 || member.google_login_enabled === false) {
+			throw redirect(303, '/login?error=google_login_disabled');
+		}
+
 		if (member.status === 'pending') {
 			// Auto-activate member on verified Google sign-in
 			await updateMemberStatus(db, member.id, 'approved');

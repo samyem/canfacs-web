@@ -5,13 +5,26 @@ CREATE TABLE IF NOT EXISTS members (
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT,
     full_name TEXT NOT NULL,
+    salutation TEXT, -- Dr., Mr., Ms., Prof.
     phone TEXT,
+    phone_secondary TEXT,
     profession TEXT,
+    organizational_role TEXT, -- e.g. Vice President, Cultural Advisor
+    role_start_date TEXT,
+    role_end_date TEXT,
+    address_street TEXT,
     city TEXT,
     province TEXT,
+    country TEXT DEFAULT 'Canada',
+    postal_code TEXT,
     bio TEXT,
+    facebook_id TEXT,
+    instagram_id TEXT,
+    associated_organizations TEXT,
+    google_login_enabled INTEGER DEFAULT 1,
+    avatar_url TEXT,
     status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'approved', 'denied'
-    role TEXT NOT NULL DEFAULT 'member', -- 'member', 'admin'
+    role TEXT NOT NULL DEFAULT 'member', -- 'member', 'admin', 'bod', 'partner', etc.
     created_at TEXT NOT NULL,
     approved_at TEXT
 );

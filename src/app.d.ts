@@ -7,7 +7,8 @@ declare global {
 				id: string;
 				email: string;
 				fullName: string;
-				role: 'member' | 'admin';
+				avatarUrl?: string | null;
+				role: 'admin' | 'bod' | 'member' | 'partner' | string;
 				status: 'pending' | 'approved' | 'denied';
 			} | null;
 		}

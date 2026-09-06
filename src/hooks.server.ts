@@ -16,6 +16,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 					id: member.id,
 					email: member.email,
 					fullName: member.full_name,
+					avatarUrl: member.avatar_url || null,
 					role: member.role,
 					status: member.status
 				};
