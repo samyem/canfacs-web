@@ -820,6 +820,17 @@
 								<span>Advisory</span>
 								{#if editingMember.role === 'advisory'}<span>✓</span>{/if}
 							</button>
+
+							<button
+								type="button"
+								onclick={() => (editingMember.role = editingMember.role === 'partner' ? 'member' : 'partner')}
+								class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 border {editingMember.role === 'partner' ? 'bg-teal-600 text-white border-teal-500 shadow-md' : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'}"
+								title="External Partner or Institutional Contact"
+							>
+								<span>🤝</span>
+								<span>Partner</span>
+								{#if editingMember.role === 'partner'}<span>✓</span>{/if}
+							</button>
 						</div>
 					</div>
 				</div>
@@ -1017,13 +1028,33 @@
 						/>
 					</div>
 					<div>
-						<label for="mAssoc" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">Associated Organizations</label>
+						<div class="flex items-center justify-between mb-1">
+							<label for="mAssoc" class="block text-[11px] font-semibold uppercase text-slate-400">Associated Organizations</label>
+							<button
+								type="button"
+								onclick={() => {
+									if (editingMember.associated_organizations?.includes('(MOU Partner)')) {
+										editingMember.associated_organizations = editingMember.associated_organizations.replace(/\s*\(MOU Partner\)/gi, '').trim();
+									} else {
+										editingMember.associated_organizations = `${(editingMember.associated_organizations || '').trim()} (MOU Partner)`.trim();
+									}
+								}}
+								class="text-[10px] font-bold px-1.5 py-0.5 rounded transition-all flex items-center gap-1 border {editingMember.associated_organizations?.toLowerCase().includes('mou') ? 'bg-teal-500/20 text-teal-300 border-teal-500/40' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'}"
+								title="Click to toggle official MOU Partner tag"
+							>
+								<span>📜</span>
+								<span>MOU Partner</span>
+								{#if editingMember.associated_organizations?.toLowerCase().includes('mou')}
+									<span>✓</span>
+								{/if}
+							</button>
+						</div>
 						<input
 							id="mAssoc"
 							type="text"
 							name="associated_organizations"
 							bind:value={editingMember.associated_organizations}
-							placeholder="e.g. NRN Canada, Embassy of Nepal"
+							placeholder="e.g. NRN Canada (MOU Partner), Embassy of Nepal"
 							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
 						/>
 					</div>

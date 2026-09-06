@@ -130,6 +130,50 @@
 		recipientsRaw = JSON.stringify(expanded, null, 2);
 	}
 
+	// Filter strictly for formal MOU Partners
+	function importMOUOrganizations() {
+		const filtered = data.members.filter(
+			(m: any) =>
+				m.associated_organizations?.toLowerCase().includes('mou') ||
+				m.organizational_role?.toLowerCase().includes('mou')
+		);
+		const expanded: any[] = [];
+		for (const m of filtered) {
+			expanded.push(m);
+			if (m.phone_secondary && m.phone_secondary.includes('@')) {
+				expanded.push({
+					...m,
+					id: `${m.id}_alt`,
+					email: m.phone_secondary,
+					is_secondary: true
+				});
+			}
+		}
+		recipientsRaw = JSON.stringify(expanded, null, 2);
+	}
+
+	// Filter for all external partner and affiliated organizations
+	function importAllOrganizations() {
+		const filtered = data.members.filter(
+			(m: any) =>
+				(m.associated_organizations && m.associated_organizations.trim().length > 0) ||
+				m.role === 'partner'
+		);
+		const expanded: any[] = [];
+		for (const m of filtered) {
+			expanded.push(m);
+			if (m.phone_secondary && m.phone_secondary.includes('@')) {
+				expanded.push({
+					...m,
+					id: `${m.id}_alt`,
+					email: m.phone_secondary,
+					is_secondary: true
+				});
+			}
+		}
+		recipientsRaw = JSON.stringify(expanded, null, 2);
+	}
+
 	function importDonors() {
 		const list = data.donors.map((d: any) => `${d.name}, ${d.email}`).join('\n');
 		recipientsRaw = list;
@@ -664,6 +708,24 @@
 							>
 								🤝 Partners ({data.members.filter((m: any) => m.role === 'partner').length})
 							</button>
+							<button
+								type="button"
+								onclick={importMOUOrganizations}
+								class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-teal-500/15 text-teal-300 border border-teal-500/40 hover:bg-teal-500/25 transition-all flex items-center gap-1 shadow-sm"
+								title="Filter strictly for contacts with official bilateral MOU agreements"
+							>
+								<span>📜</span>
+								<span>MOU Partners ({data.members.filter((m: any) => m.associated_organizations?.toLowerCase().includes('mou') || m.organizational_role?.toLowerCase().includes('mou')).length})</span>
+							</button>
+							<button
+								type="button"
+								onclick={importAllOrganizations}
+								class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all flex items-center gap-1"
+								title="Filter for all external partner organizations, associations, and clubs"
+							>
+								<span>🏢</span>
+								<span>All Orgs ({data.members.filter((m: any) => (m.associated_organizations && m.associated_organizations.trim().length > 0) || m.role === 'partner').length})</span>
+							</button>
 						</div>
 
 						<!-- Organizational Titles Filter Pill Bar -->
@@ -758,17 +820,25 @@
 														{r.email}
 													</td>
 													<td class="py-2 px-3">
-														{#if r.org_role}
-															<span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30">
-																{r.org_role}
-															</span>
-														{:else if r.role}
-															<span class="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30">
-																{r.role}
-															</span>
-														{:else}
-															<span class="text-slate-500 text-[10px]">—</span>
-														{/if}
+														<div class="flex items-center gap-1 flex-wrap">
+															{#if r.associated_organizations}
+																<span class="px-1.5 py-0.5 rounded text-[10px] bg-teal-500/20 text-teal-300 border border-teal-500/40" title="MOU Partner Organization">
+																	🏛️ {r.associated_organizations}
+																</span>
+															{/if}
+															{#if r.org_role}
+																<span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30">
+																	{r.org_role}
+																</span>
+															{:else if r.role}
+																<span class="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30">
+																	{r.role}
+																</span>
+															{/if}
+															{#if !r.associated_organizations && !r.org_role && !r.role}
+																<span class="text-slate-500 text-[10px]">—</span>
+															{/if}
+														</div>
 													</td>
 													<td class="py-2 px-2 text-right">
 														<button
