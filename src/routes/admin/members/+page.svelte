@@ -785,21 +785,103 @@
 							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
 						/>
 					</div>
-					<div>
-						<label for="mRole" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">System Role</label>
-						<select
-							id="mRole"
-							name="role"
-							bind:value={editingMember.role}
-							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-						>
-							<option value="member">Regular Member</option>
-							<option value="bod">🏛️ BOD Member</option>
-							<option value="advisory">🎓 Advisory Board</option>
-							<option value="partner">🤝 MOU Partner</option>
-							<option value="admin">👑 Administrator</option>
-						</select>
+					<div class="sm:col-span-1">
+						<input type="hidden" name="role" value={editingMember.role} />
+						<div class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">
+							Primary System Role
+						</div>
+						<div class="flex items-center gap-1.5 flex-wrap">
+							<button
+								type="button"
+								onclick={() => (editingMember.role = editingMember.role === 'admin' ? 'bod' : 'admin')}
+								class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 border {editingMember.role === 'admin' ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md ring-2 ring-amber-500/40' : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'}"
+							>
+								<span>👑</span>
+								<span>Admin</span>
+								{#if editingMember.role === 'admin'}<span>✓</span>{/if}
+							</button>
+
+							<button
+								type="button"
+								onclick={() => (editingMember.role = editingMember.role === 'bod' ? 'member' : 'bod')}
+								class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 border {editingMember.role === 'bod' || editingMember.role === 'admin' ? 'bg-purple-600 text-white border-purple-500 shadow-md' : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'}"
+							>
+								<span>🏛️</span>
+								<span>BOD</span>
+								{#if editingMember.role === 'bod' || editingMember.role === 'admin'}<span>✓</span>{/if}
+							</button>
+
+							<button
+								type="button"
+								onclick={() => (editingMember.role = editingMember.role === 'advisory' ? 'member' : 'advisory')}
+								class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 border {editingMember.role === 'advisory' ? 'bg-indigo-600 text-white border-indigo-500 shadow-md' : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'}"
+							>
+								<span>🎓</span>
+								<span>Advisory</span>
+								{#if editingMember.role === 'advisory'}<span>✓</span>{/if}
+							</button>
+						</div>
 					</div>
+				</div>
+
+				<!-- Role Hierarchy & Inheritance Tree Indicator -->
+				<div class="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/40 via-slate-900 to-amber-950/30 border border-slate-800 space-y-2">
+					<div class="flex items-center justify-between">
+						<span class="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+							<span>🌳</span>
+							<span>Role Governance Hierarchy & Inherited Entitlements</span>
+						</span>
+						{#if editingMember.role === 'admin'}
+							<span class="text-[10px] font-semibold bg-emerald-950 border border-emerald-800 text-emerald-300 px-2 py-0.5 rounded-full">
+								Dual Role Active: Admin + BOD
+							</span>
+						{:else if editingMember.role === 'bod'}
+							<span class="text-[10px] font-semibold bg-purple-950 border border-purple-800 text-purple-300 px-2 py-0.5 rounded-full">
+								Board Director Member
+							</span>
+						{/if}
+					</div>
+
+					<div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 font-mono text-[11px] space-y-1.5 text-slate-300">
+						<div class="flex items-center gap-2">
+							<span class="{editingMember.role === 'bod' || editingMember.role === 'admin' ? 'text-purple-400 font-bold' : 'text-slate-500'}">
+								🏛️ Board of Directors (BOD)
+							</span>
+							{#if editingMember.role === 'bod' || editingMember.role === 'admin'}
+								<span class="text-[9px] bg-purple-900/60 text-purple-200 border border-purple-700/50 px-1.5 py-0.2 rounded font-sans">Active</span>
+							{/if}
+						</div>
+						<div class="pl-4 border-l-2 border-slate-800 ml-2 space-y-1">
+							<div class="flex items-center gap-2">
+								<span class="text-slate-600">└──</span>
+								<span class="{editingMember.role === 'admin' ? 'text-amber-400 font-bold' : 'text-slate-500'}">
+									👑 Administrator (Admin)
+								</span>
+								{#if editingMember.role === 'admin'}
+									<span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.2 rounded font-sans">Subset of BOD • Full Admin Rights</span>
+								{/if}
+							</div>
+							{#if editingMember.selected_org_role_id}
+								{@const selectedRole = (data.orgRoles || []).find((r: any) => r.id === editingMember.selected_org_role_id)}
+								{#if selectedRole}
+									<div class="flex items-center gap-2">
+										<span class="text-slate-600">└──</span>
+										<span class="text-blue-400 font-bold">
+											📜 {selectedRole.title} ({selectedRole.category})
+										</span>
+										{#if selectedRole.parent_title}
+											<span class="text-[9px] bg-slate-900 text-slate-400 border border-slate-800 px-1.5 py-0.2 rounded font-sans">
+												Child of {selectedRole.parent_title}
+											</span>
+										{/if}
+									</div>
+								{/if}
+							{/if}
+						</div>
+					</div>
+					<p class="text-[10px] text-slate-400 leading-tight">
+						💡 <em>Admin is a functional subset of BOD. Selecting <strong>👑 Admin</strong> automatically inherits <strong>🏛️ BOD Member</strong> privileges, directories, and broadcast groups.</em>
+					</p>
 				</div>
 
 				<!-- Row 2: Organizational Role & Dates -->
