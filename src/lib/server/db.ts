@@ -2078,16 +2078,65 @@ export async function getTeamLeadership(db: any): Promise<{
 	const orgRoles = await getOrganizationalRoles(db);
 	const memberOrgRoles = await getAllMemberOrganizationalRoles(db, true);
 
-	const enriched: TeamMemberView[] = members.map((m) => {
+	// Filter members to only those who are BOD or Advisory:
+	// Partners and regular members with no BOD or Advisory appointment must NOT be shown.
+	const teamEligibleMembers = members.filter((m) => {
+		if (m.role === 'partner') return false;
+
 		const activeAssignment = memberOrgRoles.find(
 			(mor) => mor.member_id === m.id && (mor.is_active === 1 || mor.is_active === true)
 		);
 		const matchedRole = orgRoles.find(
-			(r) => r.id === activeAssignment?.role_id || r.title.toLowerCase() === (m.organizational_role || '').toLowerCase()
+			(r) => r.id === activeAssignment?.role_id || (m.organizational_role && r.title.toLowerCase() === m.organizational_role.toLowerCase())
 		);
 
-		const roleTitle = activeAssignment?.title || matchedRole?.title || m.organizational_role || 'Board Member';
-		const category = activeAssignment?.category || matchedRole?.category || (m.role === 'advisory' ? 'advisory' : 'board');
+		const category = activeAssignment?.category || matchedRole?.category;
+		const orgTitle = (activeAssignment?.title || matchedRole?.title || m.organizational_role || '').toLowerCase();
+
+		const isAdvisoryRole =
+			m.role === 'advisory' ||
+			category === 'advisory' ||
+			orgTitle.includes('advisor') ||
+			orgTitle.includes('advisory') ||
+			orgTitle.includes('consul') ||
+			orgTitle.includes('founder');
+
+		const isBodRole =
+			m.role === 'bod' ||
+			m.role === 'admin' ||
+			category === 'board' ||
+			category === 'executive' ||
+			matchedRole?.parent_role_id === 'org_director' ||
+			orgTitle.includes('director') ||
+			orgTitle.includes('president') ||
+			orgTitle.includes('secretary') ||
+			orgTitle.includes('treasurer') ||
+			orgTitle.includes('admin');
+
+		return isAdvisoryRole || isBodRole;
+	});
+
+	const enriched: TeamMemberView[] = teamEligibleMembers.map((m) => {
+		const activeAssignment = memberOrgRoles.find(
+			(mor) => mor.member_id === m.id && (mor.is_active === 1 || mor.is_active === true)
+		);
+		const matchedRole = orgRoles.find(
+			(r) => r.id === activeAssignment?.role_id || (m.organizational_role && r.title.toLowerCase() === m.organizational_role.toLowerCase())
+		);
+
+		const isAdvisorMember =
+			m.role === 'advisory' ||
+			activeAssignment?.category === 'advisory' ||
+			matchedRole?.category === 'advisory' ||
+			(m.organizational_role || '').toLowerCase().includes('advisor') ||
+			(m.organizational_role || '').toLowerCase().includes('consul') ||
+			(m.organizational_role || '').toLowerCase().includes('founder');
+
+		const defaultRoleTitle = isAdvisorMember ? 'Advisory Board Member' : 'Board Member';
+		const defaultCategory = isAdvisorMember ? 'advisory' : 'board';
+
+		const roleTitle = activeAssignment?.title || matchedRole?.title || m.organizational_role || defaultRoleTitle;
+		const category = activeAssignment?.category || matchedRole?.category || defaultCategory;
 		const roleRank = activeAssignment?.rank_order ?? matchedRole?.rank_order ?? 100;
 		const displayOrder = m.display_order ?? 100;
 
