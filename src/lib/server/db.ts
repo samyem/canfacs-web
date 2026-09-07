@@ -2069,7 +2069,14 @@ export async function getTeamLeadership(db: any): Promise<{
 		const roleRank = activeAssignment?.rank_order ?? matchedRole?.rank_order ?? 100;
 		const displayOrder = m.display_order ?? 100;
 
-		const displayName = m.salutation ? `${m.salutation} ${m.full_name}` : m.full_name;
+		let displayName = (m.full_name || '').trim();
+		if (m.salutation && m.salutation.trim()) {
+			const sal = m.salutation.trim();
+			const salRegex = new RegExp(`^${sal.replace('.', '\\.')}\\s*`, 'i');
+			if (!salRegex.test(displayName) && !/^(Dr\.|Mr\.|Mrs\.|Ms\.|Hon\.|Prof\.)\s+/i.test(displayName)) {
+				displayName = `${sal} ${displayName}`;
+			}
+		}
 		const region = m.province ? (m.city ? `${m.city}, ${m.province}` : m.province) : (m.city || null);
 
 		return {

@@ -416,5 +416,82 @@ export const actions: Actions = {
 			generatedPassword: tempPassword,
 			message: `New member "${full_name}" created & approved successfully!`
 		};
+	},
+
+	reorderMember: async ({ request, locals, platform }) => {
+		if (!locals.user || locals.user.role !== 'admin') {
+			return fail(403, { error: 'Unauthorized' });
+		}
+		const formData = await request.formData();
+		const memberId = formData.get('memberId')?.toString();
+		const targetMemberId = formData.get('targetMemberId')?.toString();
+		const group = formData.get('group')?.toString();
+
+		if (!memberId || !targetMemberId) {
+			return fail(400, { error: 'Missing reordering target' });
+		}
+
+		const db = getDb(platform);
+		const { getAllMembers, getOrganizationalRoles, getAllMemberOrganizationalRoles } = await import('$lib/server/db');
+
+		const members = await getAllMembers(db, 'approved');
+		const orgRoles = await getOrganizationalRoles(db);
+		const memberOrgRoles = await getAllMemberOrganizationalRoles(db, true);
+
+		// Determine advisory vs bod
+		const isAdvisor = (m: any) => {
+			const activeAssignment = memberOrgRoles.find((mor) => mor.member_id === m.id && (mor.is_active === 1 || mor.is_active === true));
+			const matchedRole = orgRoles.find((r) => r.id === activeAssignment?.role_id || r.title.toLowerCase() === (m.organizational_role || '').toLowerCase());
+			const category = activeAssignment?.category || matchedRole?.category || (m.role === 'advisory' ? 'advisory' : 'board');
+			const title = (activeAssignment?.title || matchedRole?.title || m.organizational_role || '').toLowerCase();
+			return category === 'advisory' || title.includes('advisor') || title.includes('founder') || title.includes('consul');
+		};
+
+		const groupMembers = members.filter((m) => {
+			if (group === 'advisory') return isAdvisor(m);
+			return !isAdvisor(m) && (
+				m.role === 'bod' || m.role === 'admin' ||
+				m.organizational_role?.toLowerCase().includes('director') ||
+				m.organizational_role?.toLowerCase().includes('president') ||
+				m.organizational_role?.toLowerCase().includes('secretary') ||
+				m.organizational_role?.toLowerCase().includes('treasurer')
+			);
+		});
+
+		// Sort by current effective order
+		groupMembers.sort((a, b) => {
+			const activeA = memberOrgRoles.find((mor) => mor.member_id === a.id && (mor.is_active === 1 || mor.is_active === true));
+			const activeB = memberOrgRoles.find((mor) => mor.member_id === b.id && (mor.is_active === 1 || mor.is_active === true));
+			const roleA = orgRoles.find((r) => r.id === activeA?.role_id || r.title.toLowerCase() === (a.organizational_role || '').toLowerCase());
+			const roleB = orgRoles.find((r) => r.id === activeB?.role_id || r.title.toLowerCase() === (b.organizational_role || '').toLowerCase());
+			const effA = a.display_order !== 100 ? (a.display_order ?? 100) : (activeA?.rank_order ?? roleA?.rank_order ?? 100);
+			const effB = b.display_order !== 100 ? (b.display_order ?? 100) : (activeB?.rank_order ?? roleB?.rank_order ?? 100);
+			if (effA !== effB) return effA - effB;
+			return (a.full_name || '').localeCompare(b.full_name || '');
+		});
+
+		const fromIndex = groupMembers.findIndex((m) => m.id === memberId);
+		const toIndex = groupMembers.findIndex((m) => m.id === targetMemberId);
+
+		if (fromIndex !== -1 && toIndex !== -1) {
+			const [moved] = groupMembers.splice(fromIndex, 1);
+			groupMembers.splice(toIndex, 0, moved);
+
+			if (db) {
+				const stmts = groupMembers.map((m, idx) => {
+					return db.prepare(`UPDATE members SET display_order = ? WHERE id = ?`).bind(idx + 1, m.id);
+				});
+				await db.batch(stmts);
+			} else {
+				groupMembers.forEach((m, idx) => {
+					m.display_order = idx + 1;
+				});
+			}
+		}
+
+		return {
+			success: true,
+			message: 'Presentation order updated.'
+		};
 	}
 };

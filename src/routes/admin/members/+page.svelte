@@ -497,7 +497,7 @@
 			</div>
 		{:else}
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-				{#each filteredMembers as member}
+				{#each filteredMembers as member, index (member.id)}
 					<div class="glass-card p-6 rounded-2xl flex flex-col justify-between border border-slate-800/80 hover:border-slate-700 transition-all {member.role === 'admin' ? 'ring-1 ring-amber-500/30' : ''}">
 						<div>
 							<div class="flex items-start justify-between gap-2 mb-3">
@@ -575,10 +575,20 @@
 											{member.role || 'Member'}
 										</span>
 									{/if}
+
+									{#if activeTab === 'bod' || activeTab === 'advisory'}
+										{@const effOrder = member.display_order !== 100 ? member.display_order : (member.role_rank_order ?? 100)}
+										<span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold {member.display_order !== 100 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-900 text-slate-400 border border-slate-800'}" title="Presentation Order on /team (click Edit to change)">
+											Order #{effOrder}
+										</span>
+									{/if}
 								</div>
 							</div>
 
 							<div class="space-y-1.5 text-xs text-slate-300 mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+								{#if member.display_order && member.display_order !== 100}
+									<p><strong class="text-amber-400 font-medium">Team Order:</strong> <span class="font-mono text-amber-300 font-bold">#{member.display_order}</span> <span class="text-[10px] text-slate-500">(Custom override for /team)</span></p>
+								{/if}
 								{#if member.salutation}
 									<p><strong class="text-slate-400 font-medium">Salutation:</strong> {member.salutation}</p>
 								{/if}
@@ -681,14 +691,52 @@
 								</div>
 							{:else}
 								<div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/60">
-									<button
-										type="button"
-										onclick={() => openEditModal(member)}
-										class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-750 hover:text-white border border-slate-700 transition-colors flex items-center gap-1"
-									>
-										<span>✏️</span>
-										<span>Edit</span>
-									</button>
+									<div class="flex items-center gap-1.5">
+										<button
+											type="button"
+											onclick={() => openEditModal(member)}
+											class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-750 hover:text-white border border-slate-700 transition-colors flex items-center gap-1"
+										>
+											<span>✏️</span>
+											<span>Edit</span>
+										</button>
+
+										<!-- Move Up / Down Buttons for BOD and Advisory tabs -->
+										{#if activeTab === 'bod' || activeTab === 'advisory'}
+											{@const prevMember = filteredMembers[index - 1]}
+											{@const nextMember = filteredMembers[index + 1]}
+											<div class="flex items-center rounded-lg border border-slate-700/80 bg-slate-900 overflow-hidden shadow-sm" title="Move order on /team">
+												<form method="POST" action="?/reorderMember" use:enhance>
+													<input type="hidden" name="memberId" value={member.id} />
+													<input type="hidden" name="targetMemberId" value={prevMember?.id || ''} />
+													<input type="hidden" name="direction" value="up" />
+													<input type="hidden" name="group" value={activeTab} />
+													<button
+														type="submit"
+														disabled={!prevMember}
+														class="px-2 py-1 text-xs hover:bg-slate-800 text-slate-300 hover:text-amber-400 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-300 border-r border-slate-800 transition-colors cursor-pointer disabled:cursor-not-allowed"
+														title="Move up in /team presentation order"
+													>
+														▲
+													</button>
+												</form>
+												<form method="POST" action="?/reorderMember" use:enhance>
+													<input type="hidden" name="memberId" value={member.id} />
+													<input type="hidden" name="targetMemberId" value={nextMember?.id || ''} />
+													<input type="hidden" name="direction" value="down" />
+													<input type="hidden" name="group" value={activeTab} />
+													<button
+														type="submit"
+														disabled={!nextMember}
+														class="px-2 py-1 text-xs hover:bg-slate-800 text-slate-300 hover:text-amber-400 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-300 transition-colors cursor-pointer disabled:cursor-not-allowed"
+														title="Move down in /team presentation order"
+													>
+														▼
+													</button>
+												</form>
+											</div>
+										{/if}
+									</div>
 
 									<!-- Reset & Send Password Button -->
 									<form
