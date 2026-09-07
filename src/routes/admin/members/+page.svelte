@@ -32,6 +32,7 @@
 			country: 'Canada',
 			bio: '',
 			avatar_url: '',
+			display_order: 100,
 			google_login_enabled: 1
 		};
 		isCreatingMember = true;
@@ -53,6 +54,7 @@
 		const matchingRole = data.orgRoles?.find((r: any) => r.title.toLowerCase() === (m.organizational_role || '').toLowerCase());
 		editingMember = {
 			...m,
+			display_order: m.display_order ?? 100,
 			selected_org_role_id: existingAssigned?.role_id || matchingRole?.id || ''
 		};
 		isCreatingMember = false;
@@ -104,15 +106,21 @@
 		data.members.filter((m: any) => m.role === 'admin' || m.org_role_id === 'org_admin')
 	);
 	const bodMembers = $derived(
-		data.members.filter((m: any) =>
-			m.role === 'bod' ||
-			m.role === 'admin' ||
-			m.org_category === 'board' ||
-			m.org_category === 'executive' ||
-			m.parent_role_id === 'org_director' ||
-			m.parent_title?.toLowerCase().includes('director') ||
-			m.organizational_role?.toLowerCase().includes('director')
-		)
+		data.members.filter((m: any) => {
+			const isAdv = m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor');
+			return !isAdv && (
+				m.role === 'bod' ||
+				m.role === 'admin' ||
+				m.org_category === 'board' ||
+				m.org_category === 'executive' ||
+				m.parent_role_id === 'org_director' ||
+				m.parent_title?.toLowerCase().includes('director') ||
+				m.organizational_role?.toLowerCase().includes('director') ||
+				m.organizational_role?.toLowerCase().includes('president') ||
+				m.organizational_role?.toLowerCase().includes('treasurer') ||
+				m.organizational_role?.toLowerCase().includes('secretary')
+			);
+		})
 	);
 	const advisoryMembers = $derived(
 		data.members.filter((m: any) => m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul'))
@@ -122,24 +130,49 @@
 	);
 
 	const filteredMembers = $derived(
-		data.members.filter((m: any) => {
-			let matchesTab = true;
-			if (activeTab === 'pending') matchesTab = m.status === 'pending';
-			else if (activeTab === 'approved') matchesTab = m.status === 'approved';
-			else if (activeTab === 'admins') matchesTab = m.role === 'admin' || m.org_role_id === 'org_admin';
-			else if (activeTab === 'bod') matchesTab = m.role === 'bod' || m.role === 'admin' || m.org_category === 'board' || m.org_category === 'executive' || m.parent_role_id === 'org_director' || m.parent_title?.toLowerCase().includes('director') || m.organizational_role?.toLowerCase().includes('director');
-			else if (activeTab === 'advisory') matchesTab = m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul');
-			else if (activeTab === 'partners') matchesTab = m.role === 'partner';
+		data.members
+			.filter((m: any) => {
+				let matchesTab = true;
+				if (activeTab === 'pending') matchesTab = m.status === 'pending';
+				else if (activeTab === 'approved') matchesTab = m.status === 'approved';
+				else if (activeTab === 'admins') matchesTab = m.role === 'admin' || m.org_role_id === 'org_admin';
+				else if (activeTab === 'bod') {
+					const isAdv = m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor');
+					matchesTab = !isAdv && (
+						m.role === 'bod' ||
+						m.role === 'admin' ||
+						m.org_category === 'board' ||
+						m.org_category === 'executive' ||
+						m.parent_role_id === 'org_director' ||
+						m.parent_title?.toLowerCase().includes('director') ||
+						m.organizational_role?.toLowerCase().includes('director') ||
+						m.organizational_role?.toLowerCase().includes('president') ||
+						m.organizational_role?.toLowerCase().includes('treasurer') ||
+						m.organizational_role?.toLowerCase().includes('secretary')
+					);
+				}
+				else if (activeTab === 'advisory') matchesTab = m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul');
+				else if (activeTab === 'partners') matchesTab = m.role === 'partner';
 
-			const q = searchQuery.toLowerCase();
-			const matchesQuery =
-				!q ||
-				m.full_name?.toLowerCase().includes(q) ||
-				m.email?.toLowerCase().includes(q) ||
-				m.city?.toLowerCase().includes(q) ||
-				m.profession?.toLowerCase().includes(q);
-			return matchesTab && matchesQuery;
-		})
+				const q = searchQuery.toLowerCase();
+				const matchesQuery =
+					!q ||
+					m.full_name?.toLowerCase().includes(q) ||
+					m.email?.toLowerCase().includes(q) ||
+					m.city?.toLowerCase().includes(q) ||
+					m.profession?.toLowerCase().includes(q);
+				return matchesTab && matchesQuery;
+			})
+			.sort((a: any, b: any) => {
+				if (activeTab === 'bod' || activeTab === 'advisory') {
+					const effA = a.display_order !== 100 ? a.display_order : (a.role_rank_order ?? 100);
+					const effB = b.display_order !== 100 ? b.display_order : (b.role_rank_order ?? 100);
+					if (effA !== effB) return effA - effB;
+					if ((a.role_rank_order ?? 100) !== (b.role_rank_order ?? 100)) return (a.role_rank_order ?? 100) - (b.role_rank_order ?? 100);
+					return (a.full_name || '').localeCompare(b.full_name || '');
+				}
+				return 0;
+			})
 	);
 
 	function copyToClipboard(text: string) {
@@ -951,9 +984,9 @@
 					</p>
 				</div>
 
-				<!-- Row 2: Organizational Role & Dates -->
-				<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-					<div>
+				<!-- Row 2: Organizational Role, Display Sequence & Dates -->
+				<div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+					<div class="sm:col-span-5">
 						<label for="mOrgRoleId" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">Organizational Title</label>
 						<select
 							id="mOrgRoleId"
@@ -974,24 +1007,44 @@
 							value={data.orgRoles?.find((r: any) => r.id === editingMember.selected_org_role_id)?.title || editingMember.organizational_role || ''}
 						/>
 					</div>
-					<div>
-						<label for="mRoleStart" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">Role Start Date</label>
+
+					<div class="sm:col-span-3">
+						<div class="flex items-center justify-between mb-1">
+							<label for="mDisplayOrder" class="block text-[11px] font-semibold uppercase text-slate-400">Presentation Order</label>
+							<span class="text-[9px] text-amber-400 font-mono">1 = 1st</span>
+						</div>
+						<input
+							id="mDisplayOrder"
+							type="number"
+							name="display_order"
+							bind:value={editingMember.display_order}
+							min="1"
+							max="999"
+							placeholder="100"
+							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+							title="Controls presentation order on /team. Default is 100 (which follows role hierarchy: President, VP, Directors, Advisors)."
+						/>
+					</div>
+
+					<div class="sm:col-span-2">
+						<label for="mRoleStart" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">Start Date</label>
 						<input
 							id="mRoleStart"
 							type="date"
 							name="role_start_date"
 							bind:value={editingMember.role_start_date}
-							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
 						/>
 					</div>
-					<div>
-						<label for="mRoleEnd" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">Role End Date</label>
+
+					<div class="sm:col-span-2">
+						<label for="mRoleEnd" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">End Date</label>
 						<input
 							id="mRoleEnd"
 							type="date"
 							name="role_end_date"
 							bind:value={editingMember.role_end_date}
-							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
 						/>
 					</div>
 				</div>

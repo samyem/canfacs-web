@@ -23,6 +23,7 @@ export interface MemberRow {
 	associated_organizations?: string | null;
 	google_login_enabled?: boolean | number;
 	avatar_url?: string | null;
+	display_order?: number;
 	status: 'pending' | 'approved' | 'denied';
 	role: 'admin' | 'bod' | 'member' | 'partner' | string;
 	created_at: string;
@@ -81,6 +82,7 @@ export interface EmailBatchRow {
 	label: string;
 	subject: string;
 	template_id: string | null;
+	content_html?: string | null;
 	from_email: string;
 	sender_admin_id: string;
 	total_recipients: number;
@@ -745,6 +747,7 @@ export async function updateMemberProfile(
 		'associated_organizations',
 		'google_login_enabled',
 		'avatar_url',
+		'display_order',
 		'role',
 		'status'
 	];
@@ -1489,6 +1492,7 @@ async function ensureEmailTables(db: any) {
 			label TEXT NOT NULL,
 			subject TEXT NOT NULL,
 			template_id TEXT,
+			content_html TEXT,
 			from_email TEXT NOT NULL,
 			sender_admin_id TEXT NOT NULL,
 			total_recipients INTEGER NOT NULL DEFAULT 0,
@@ -1498,6 +1502,13 @@ async function ensureEmailTables(db: any) {
 			created_at TEXT NOT NULL
 		);
 	`).run();
+
+	// Graceful migration if table was created without content_html
+	try {
+		await db.prepare(`ALTER TABLE email_batches ADD COLUMN content_html TEXT`).run();
+	} catch (e) {
+		// column already exists
+	}
 
 	await db.prepare(`
 		CREATE TABLE IF NOT EXISTS email_logs (
@@ -1532,6 +1543,7 @@ export async function createEmailBatch(
 		label: string;
 		subject: string;
 		template_id?: string | null;
+		content_html?: string | null;
 		from_email: string;
 		sender_admin_id: string;
 		total_recipients: number;
@@ -1548,6 +1560,7 @@ export async function createEmailBatch(
 		label: data.label.trim(),
 		subject: data.subject.trim(),
 		template_id: data.template_id || null,
+		content_html: data.content_html || null,
 		from_email: data.from_email.trim(),
 		sender_admin_id: data.sender_admin_id,
 		total_recipients: data.total_recipients,
@@ -1560,13 +1573,14 @@ export async function createEmailBatch(
 	if (db) {
 		await ensureEmailTables(db);
 		await db.prepare(`
-			INSERT INTO email_batches (id, label, subject, template_id, from_email, sender_admin_id, total_recipients, success_count, failure_count, status, created_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO email_batches (id, label, subject, template_id, content_html, from_email, sender_admin_id, total_recipients, success_count, failure_count, status, created_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`).bind(
 			newBatch.id,
 			newBatch.label,
 			newBatch.subject,
 			newBatch.template_id,
+			newBatch.content_html,
 			newBatch.from_email,
 			newBatch.sender_admin_id,
 			newBatch.total_recipients,
@@ -2014,6 +2028,112 @@ export async function removeMemberOrganizationalRole(db: any, assignmentId: stri
 		memoryMemberOrgRoles = memoryMemberOrgRoles.filter((mor) => mor.id !== assignmentId);
 	}
 }
+
+export interface TeamMemberView {
+	id: string;
+	name: string;
+	full_name: string;
+	salutation: string | null;
+	role: string;
+	org_role_id?: string | null;
+	org_category?: string | null;
+	role_rank_order: number;
+	display_order: number;
+	profession: string | null;
+	subname?: string | null;
+	credentials?: string | null;
+	bio: string | null;
+	region: string | null;
+	photo: string | null;
+}
+
+export async function getTeamLeadership(db: any): Promise<{
+	executiveBoard: TeamMemberView[];
+	advisoryBoard: TeamMemberView[];
+}> {
+	await ensureLocalDefaultAdmin();
+	const members = await getAllMembers(db, 'approved');
+	const orgRoles = await getOrganizationalRoles(db);
+	const memberOrgRoles = await getAllMemberOrganizationalRoles(db, true);
+
+	const enriched: TeamMemberView[] = members.map((m) => {
+		const activeAssignment = memberOrgRoles.find(
+			(mor) => mor.member_id === m.id && (mor.is_active === 1 || mor.is_active === true)
+		);
+		const matchedRole = orgRoles.find(
+			(r) => r.id === activeAssignment?.role_id || r.title.toLowerCase() === (m.organizational_role || '').toLowerCase()
+		);
+
+		const roleTitle = activeAssignment?.title || matchedRole?.title || m.organizational_role || 'Board Member';
+		const category = activeAssignment?.category || matchedRole?.category || (m.role === 'advisory' ? 'advisory' : 'board');
+		const roleRank = activeAssignment?.rank_order ?? matchedRole?.rank_order ?? 100;
+		const displayOrder = m.display_order ?? 100;
+
+		const displayName = m.salutation ? `${m.salutation} ${m.full_name}` : m.full_name;
+		const region = m.province ? (m.city ? `${m.city}, ${m.province}` : m.province) : (m.city || null);
+
+		return {
+			id: m.id,
+			name: displayName,
+			full_name: m.full_name,
+			salutation: m.salutation || null,
+			role: roleTitle,
+			org_role_id: activeAssignment?.role_id || matchedRole?.id || null,
+			org_category: category,
+			role_rank_order: roleRank,
+			display_order: displayOrder,
+			profession: m.profession || null,
+			bio: m.bio || null,
+			region,
+			photo: m.avatar_url || null
+		};
+	});
+
+	// Criteria to determine Advisory vs Executive Board of Directors
+	const isAdvisor = (t: TeamMemberView) => {
+		const r = t.role.toLowerCase();
+		return (
+			t.org_category === 'advisory' ||
+			r.includes('advisor') ||
+			r.includes('advisory') ||
+			r.includes('consul') ||
+			r.includes('founder')
+		);
+	};
+
+	const isBoard = (t: TeamMemberView) => {
+		if (isAdvisor(t)) return false;
+		const r = t.role.toLowerCase();
+		return (
+			t.org_category === 'board' ||
+			t.org_category === 'executive' ||
+			r.includes('director') ||
+			r.includes('president') ||
+			r.includes('secretary') ||
+			r.includes('treasurer') ||
+			r.includes('admin')
+		);
+	};
+
+	// Custom presentation sort:
+	// Respect custom display_order (if set !== 100), otherwise order by role_rank_order, then alphabetically
+	const sortTeam = (a: TeamMemberView, b: TeamMemberView) => {
+		const effA = a.display_order !== 100 ? a.display_order : a.role_rank_order;
+		const effB = b.display_order !== 100 ? b.display_order : b.role_rank_order;
+		if (effA !== effB) return effA - effB;
+		if (a.role_rank_order !== b.role_rank_order) return a.role_rank_order - b.role_rank_order;
+		return a.full_name.localeCompare(b.full_name);
+	};
+
+	const advisoryBoard = enriched.filter(isAdvisor).sort(sortTeam);
+	const executiveBoard = enriched.filter(isBoard).sort(sortTeam);
+
+	return {
+		executiveBoard,
+		advisoryBoard
+	};
+}
+
 
 
 

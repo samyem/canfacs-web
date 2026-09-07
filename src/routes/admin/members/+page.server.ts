@@ -33,6 +33,8 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 				org_category: activeAssignment?.category || null,
 				parent_role_id: activeAssignment?.parent_role_id || null,
 				parent_title: activeAssignment?.parent_title || null,
+				role_rank_order: activeAssignment?.rank_order ?? orgRoles.find((r) => r.title.toLowerCase() === (m.organizational_role || '').toLowerCase())?.rank_order ?? 100,
+				display_order: m.display_order ?? 100,
 				role_start_date: activeAssignment?.start_date || m.role_start_date || null,
 				role_end_date: activeAssignment?.end_date || m.role_end_date || null
 			};
@@ -203,6 +205,8 @@ export const actions: Actions = {
 		const google_login_enabled = data.get('google_login_enabled') === '1' ? 1 : 0;
 		const avatar_url = data.get('avatar_url')?.toString();
 		const role = data.get('role')?.toString();
+		const display_order_raw = data.get('display_order')?.toString();
+		const display_order = display_order_raw !== undefined && display_order_raw !== '' ? Number(display_order_raw) : undefined;
 
 		const org_role_id = data.get('org_role_id')?.toString();
 		const org_role_notes = data.get('org_role_notes')?.toString();
@@ -240,6 +244,7 @@ export const actions: Actions = {
 			associated_organizations: associated_organizations || null,
 			google_login_enabled,
 			avatar_url: avatar_url || null,
+			...(display_order !== undefined && !isNaN(display_order) ? { display_order } : {}),
 			...(role ? { role } : {})
 		});
 
@@ -358,6 +363,9 @@ export const actions: Actions = {
 		const bio = data.get('bio')?.toString().trim() || null;
 		const avatar_url = data.get('avatar_url')?.toString().trim() || null;
 
+		const display_order_raw = data.get('display_order')?.toString();
+		const display_order = display_order_raw !== undefined && display_order_raw !== '' ? Number(display_order_raw) : 100;
+
 		if (!email || !full_name) {
 			return fail(400, { error: 'Full name and email address are required.' });
 		}
@@ -386,12 +394,12 @@ export const actions: Actions = {
 				INSERT INTO members (
 					id, email, password_hash, full_name, salutation, phone, profession,
 					organizational_role, city, province, country, bio, avatar_url,
-					status, role, google_login_enabled, created_at, approved_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', ?, 1, ?, ?)
+					display_order, status, role, google_login_enabled, created_at, approved_at
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', ?, 1, ?, ?)
 			`).bind(
 				id, email, passwordHash, full_name, salutation, phone, profession,
 				resolvedOrgRoleTitle, city, province, country, bio, avatar_url,
-				role, now, now
+				display_order, role, now, now
 			).run();
 
 			if (org_role_id) {

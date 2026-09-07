@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS members (
     associated_organizations TEXT,
     google_login_enabled INTEGER DEFAULT 1,
     avatar_url TEXT,
+    display_order INTEGER DEFAULT 100,
     status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'approved', 'denied'
     role TEXT NOT NULL DEFAULT 'member', -- 'member', 'admin', 'bod', 'partner', etc.
     created_at TEXT NOT NULL,
@@ -117,6 +118,7 @@ CREATE TABLE IF NOT EXISTS email_batches (
     label TEXT NOT NULL,
     subject TEXT NOT NULL,
     template_id TEXT,
+    content_html TEXT,
     from_email TEXT NOT NULL,
     sender_admin_id TEXT NOT NULL,
     total_recipients INTEGER NOT NULL DEFAULT 0,

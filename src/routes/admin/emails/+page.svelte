@@ -578,10 +578,68 @@
 		return `<div style="font-family: sans-serif; padding: 20px; background: #0f172a; color: #f8fafc;">${content}</div>`;
 	});
 
+	// Audit batch filters & search
+	let batchSearchQuery = $state('');
+	let batchStatusFilter = $state<'all' | 'completed' | 'processing' | 'failed'>('all');
+	let batchSortOrder = $state<'newest' | 'oldest' | 'recipients'>('newest');
+	let showSentEmailPreview = $state(false);
+
+	const filteredBatches = $derived(
+		data.batches
+			.filter((b: any) => {
+				const matchesStatus =
+					batchStatusFilter === 'all' || b.status === batchStatusFilter;
+				const q = batchSearchQuery.toLowerCase().trim();
+				const matchesQuery =
+					!q ||
+					b.label?.toLowerCase().includes(q) ||
+					b.subject?.toLowerCase().includes(q) ||
+					b.id?.toLowerCase().includes(q);
+				return matchesStatus && matchesQuery;
+			})
+			.sort((a: any, b: any) => {
+				if (batchSortOrder === 'oldest') {
+					return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+				}
+				if (batchSortOrder === 'recipients') {
+					return b.total_recipients - a.total_recipients;
+				}
+				return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+			})
+	);
+
 	// Find active batch for logs
 	const selectedBatch = $derived(
-		data.batches.find((b: any) => b.id === activeBatchId) || data.batches[0] || null
+		data.batches.find((b: any) => b.id === activeBatchId) || filteredBatches[0] || data.batches[0] || null
 	);
+
+	function reuseBatchInComposer(batch: any, onlyFailed = false) {
+		if (!batch) return;
+		subject = batch.subject || '';
+		if (batch.template_id) {
+			selectedTemplateId = batch.template_id;
+		}
+		if (batch.content_html) {
+			bodyHtml = batch.content_html;
+		}
+		batchLabel = `Re-send: ${batch.label || batch.subject}`;
+
+		if (onlyFailed && data.batchLogs && data.batchLogs.length > 0) {
+			const failed = data.batchLogs
+				.filter((l: any) => l.status === 'failed')
+				.map((l: any) => ({
+					name: l.recipient_name || '',
+					email: l.recipient_email
+				}));
+			if (failed.length > 0) {
+				recipientsRaw = JSON.stringify(failed, null, 2);
+			}
+		}
+		activeTab = 'compose';
+		if (typeof window !== 'undefined') {
+			window.scrollTo({ top: 0, behavior: 'smooth' });
+		}
+	}
 </script>
 
 <svelte:head>
@@ -1468,18 +1526,75 @@
 				<!-- Batch History List -->
 				<div class="lg:col-span-4 space-y-4">
 					<div class="flex items-center justify-between">
-						<h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Email Batches ({data.batches.length})</h2>
+						<h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">
+							Email Batches ({filteredBatches.length}{#if filteredBatches.length !== data.batches.length} of {data.batches.length}{/if})
+						</h2>
 						<span class="text-[11px] text-slate-500">Stored in D1</span>
 					</div>
 
+					<!-- Search, Filter & Sort Controls -->
+					<div class="space-y-2 bg-slate-900/80 p-3 rounded-2xl border border-slate-800">
+						<div class="relative">
+							<input
+								type="text"
+								bind:value={batchSearchQuery}
+								placeholder="Search batches..."
+								class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500"
+							/>
+							<span class="absolute left-2.5 top-2 text-slate-500 text-xs">🔍</span>
+							{#if batchSearchQuery}
+								<button
+									type="button"
+									onclick={() => (batchSearchQuery = '')}
+									class="absolute right-2.5 top-1.5 text-slate-400 hover:text-white text-xs"
+								>✕</button>
+							{/if}
+						</div>
+
+						<div class="flex items-center justify-between gap-2 pt-1 text-[11px]">
+							<!-- Filter status pills -->
+							<div class="flex items-center gap-1">
+								<button
+									type="button"
+									onclick={() => (batchStatusFilter = 'all')}
+									class="px-2 py-0.5 rounded-lg border font-semibold transition-all {batchStatusFilter === 'all' ? 'bg-red-950 border-red-500 text-red-300' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'}"
+								>All</button>
+								<button
+									type="button"
+									onclick={() => (batchStatusFilter = 'completed')}
+									class="px-2 py-0.5 rounded-lg border font-semibold transition-all {batchStatusFilter === 'completed' ? 'bg-emerald-950 border-emerald-500 text-emerald-300' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'}"
+								>Sent</button>
+								<button
+									type="button"
+									onclick={() => (batchStatusFilter = 'failed')}
+									class="px-2 py-0.5 rounded-lg border font-semibold transition-all {batchStatusFilter === 'failed' ? 'bg-red-950 border-red-500 text-red-300' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'}"
+								>Failed</button>
+							</div>
+
+							<!-- Sort Dropdown -->
+							<select
+								bind:value={batchSortOrder}
+								class="bg-slate-950 border border-slate-800 rounded-lg px-2 py-0.5 text-[11px] text-slate-300 focus:outline-none focus:border-red-500"
+							>
+								<option value="newest">Newest</option>
+								<option value="oldest">Oldest</option>
+								<option value="recipients">Recipients</option>
+							</select>
+						</div>
+					</div>
+
 					<div class="space-y-3">
-						{#if data.batches.length === 0}
+						{#if filteredBatches.length === 0}
 							<div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 text-center text-xs text-slate-400">
-								No broadcast batches recorded yet. Send your first broadcast from the composer tab.
+								{#if data.batches.length === 0}
+									No broadcast batches recorded yet. Send your first broadcast from the composer tab.
+								{:else}
+									No batches match your filter.
+								{/if}
 							</div>
 						{/if}
 
-						{#each data.batches as batch}
+						{#each filteredBatches as batch}
 							{@const isSelected = selectedBatch?.id === batch.id}
 							<a
 								href="/admin/emails?batchId={batch.id}"
@@ -1489,13 +1604,13 @@
 									: 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/90'}"
 							>
 								<div class="flex items-start justify-between gap-2">
-									<div class="flex items-center gap-2">
+									<div class="flex items-center gap-2 min-w-0 flex-1">
 										{#if isSelected}
-											<span class="text-red-400 text-xs">▶</span>
+											<span class="text-red-400 text-xs shrink-0">▶</span>
 										{/if}
 										<h3 class="font-bold text-sm {isSelected ? 'text-white font-extrabold' : 'text-slate-200'} truncate">{batch.label}</h3>
 									</div>
-									<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {batch.status === 'completed' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/40' : 'bg-amber-950 text-amber-300 border border-amber-800/40'}">
+									<span class="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold uppercase {batch.status === 'completed' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/40' : 'bg-amber-950 text-amber-300 border border-amber-800/40'}">
 										{batch.status}
 									</span>
 								</div>
@@ -1518,22 +1633,89 @@
 					{#if selectedBatch}
 						<div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5 shadow-2xl">
 							<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-								<div>
+								<div class="min-w-0 flex-1">
 									<span class="text-xs uppercase font-mono text-red-400">Batch ID: {selectedBatch.id}</span>
-									<h2 class="text-xl font-extrabold text-white mt-0.5">{selectedBatch.label}</h2>
-									<p class="text-xs text-slate-400 mt-1">
+									<h2 class="text-xl font-extrabold text-white mt-0.5 truncate">{selectedBatch.label}</h2>
+									<p class="text-xs text-slate-400 mt-1 truncate">
 										Subject: <span class="text-slate-200 font-semibold">"{selectedBatch.subject}"</span>
 									</p>
 								</div>
 
-								<div class="flex items-center gap-2">
+								<div class="flex flex-wrap items-center gap-2">
 									<div class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300">
 										Success: <strong class="text-emerald-400 ml-1">{selectedBatch.success_count}</strong>
 									</div>
 									<div class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300">
 										Failed: <strong class="text-red-400 ml-1">{selectedBatch.failure_count}</strong>
 									</div>
+
+									<!-- Action: Re-use previous email -->
+									<button
+										type="button"
+										onclick={() => reuseBatchInComposer(selectedBatch)}
+										class="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg shadow-red-600/30 transition-all flex items-center gap-1.5"
+										title="Clone this email into the Composer to send to new people"
+									>
+										<span>🔁</span>
+										<span>Re-use in Composer</span>
+									</button>
+
+									{#if selectedBatch.failure_count > 0}
+										<button
+											type="button"
+											onclick={() => reuseBatchInComposer(selectedBatch, true)}
+											class="px-3 py-1.5 rounded-xl bg-amber-600/20 hover:bg-amber-600/40 text-amber-300 border border-amber-500/40 font-bold text-xs transition-all flex items-center gap-1.5"
+											title="Load content and failed recipients into Composer to retry"
+										>
+											<span>⚠️</span>
+											<span>Resend Failed ({selectedBatch.failure_count})</span>
+										</button>
+									{/if}
 								</div>
+							</div>
+
+							<!-- Sent Email Message Content Viewer -->
+							<div class="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
+								<button
+									type="button"
+									onclick={() => (showSentEmailPreview = !showSentEmailPreview)}
+									class="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-900/60 transition-colors"
+								>
+									<div class="flex items-center gap-2">
+										<span class="text-base">✉️</span>
+										<span class="text-xs font-bold text-slate-200">View Sent Email Message Content</span>
+										{#if selectedBatch.content_html}
+											<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800/40">HTML Archived</span>
+										{:else}
+											<span class="text-[10px] text-slate-500 italic">(Not archived for older batch)</span>
+										{/if}
+									</div>
+									<span class="text-slate-400 text-xs font-mono">{showSentEmailPreview ? '▲ Hide Content' : '▼ Show Content'}</span>
+								</button>
+
+								{#if showSentEmailPreview}
+									<div class="p-4 border-t border-slate-800 bg-slate-900/40 space-y-3">
+										{#if selectedBatch.content_html}
+											<div class="flex items-center justify-between text-xs text-slate-400">
+												<span class="truncate">Subject: <strong class="text-white">"{selectedBatch.subject}"</strong></span>
+												<button
+													type="button"
+													onclick={() => reuseBatchInComposer(selectedBatch)}
+													class="text-red-400 hover:text-red-300 font-semibold underline flex items-center gap-1 shrink-0 ml-2"
+												>
+													<span>🔁 Load in Composer to edit or send to new people &rarr;</span>
+												</button>
+											</div>
+											<div class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs overflow-x-auto max-h-96">
+												{@html selectedBatch.content_html}
+											</div>
+										{:else}
+											<div class="p-6 text-center text-xs text-slate-500">
+												Email body content was not stored for this earlier batch. Any batches dispatched moving forward have full HTML archived and ready to re-use.
+											</div>
+										{/if}
+									</div>
+								{/if}
 							</div>
 
 							<!-- Recipient Delivery Log Table -->

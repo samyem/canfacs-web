@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { EXECUTIVE_BOARD, ADVISORY_BOARD, SITE_INFO } from '$lib/data/siteData';
+	import { SITE_INFO } from '$lib/data/siteData';
+
+	let { data } = $props();
+
+	const executiveBoard = $derived(data.executiveBoard || []);
+	const advisoryBoard = $derived(data.advisoryBoard || []);
 </script>
 
 <svelte:head>
@@ -20,7 +25,7 @@
 		<div class="mb-20">
 			<h2 class="text-2xl font-bold text-white mb-8 border-b border-slate-800 pb-4">Executive Board of Directors</h2>
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-				{#each EXECUTIVE_BOARD as member}
+				{#each executiveBoard as member}
 					<div class="glass-card p-6 rounded-3xl flex flex-col justify-between group hover:border-red-600/40 transition-all duration-300">
 						<div>
 							<div class="flex items-center gap-4 mb-4">
@@ -68,7 +73,7 @@
 		<div>
 			<h2 class="text-2xl font-bold text-white mb-8 border-b border-slate-800 pb-4">Advisory Board Members</h2>
 			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-				{#each ADVISORY_BOARD as advisor}
+				{#each advisoryBoard as advisor}
 					<div class="glass-card p-6 rounded-2xl flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 hover:border-red-500/40 transition-all duration-300">
 						{#if advisor.photo}
 							<img

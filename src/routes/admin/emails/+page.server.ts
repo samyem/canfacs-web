@@ -310,6 +310,7 @@ export const actions: Actions = {
 			label: batchLabel,
 			subject,
 			template_id: templateId || null,
+			content_html: contentHtml,
 			from_email: fromEmail,
 			sender_admin_id: locals.user.id,
 			total_recipients: recipientsList.length,

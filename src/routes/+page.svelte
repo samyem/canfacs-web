@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { SITE_INFO, PURPOSES, EXECUTIVE_BOARD } from '$lib/data/siteData';
+
+	let { data } = $props();
+	const boardPreview = $derived((data.executiveBoard && data.executiveBoard.length > 0 ? data.executiveBoard : EXECUTIVE_BOARD).slice(0, 4));
 </script>
 
 <svelte:head>
@@ -229,7 +232,7 @@
 		</div>
 
 		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-			{#each EXECUTIVE_BOARD.slice(0, 4) as member}
+			{#each boardPreview as member}
 				<div class="glass-card p-6 rounded-2xl text-center flex flex-col justify-between items-center group">
 					<div>
 						{#if member.photo}
