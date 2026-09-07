@@ -11,21 +11,25 @@
 	let selectedTemplateId = $state('');
 	let fromEmail = $state(data.fromEmail || 'info@canfacs.org');
 	let subject = $state('');
-	// bodyText = what the user types (plain text)
-	// bodyHtml = derived HTML for preview & sending
-	let bodyText = $state('');
-	let bodyHtml = $derived.by(() => {
-		const t = bodyText.trim();
-		if (!t) return '';
-		// If already wrapped in block html tags, pass through
-		if (/^<(p|div|h[1-6]|ul|ol|table|section)/i.test(t)) return t;
-		// Convert plain paragraphs separated by double newlines
-		return t
-			.split(/\n{2,}/)
-			.map(para => `<p style="margin:0 0 16px;line-height:1.7;">${para.replace(/\n/g, '<br />')}</p>`)
-			.join('\n');
-	});
+
+	// Editor mode: defaults to 'visual' editor, with option to view/edit HTML 'code'
+	let editorMode = $state<'visual' | 'code'>('visual');
+
+	// HTML body state for editor, preview & sending
+	let bodyHtml = $state(
+		`<p>Dear {{salutation}} {{name}},</p>\n<p>We are pleased to invite you to our upcoming CANFACS gathering.</p>\n<p>Please join us with your family!</p>\n<p>Warm regards,<br />CANFACS Executive Committee</p>`
+	);
+	let visualEditorElement = $state<HTMLDivElement | null>(null);
 	let aiDraftLoaded = $state(false); // true after AI fills the editor
+
+	// Sync visual editor innerHTML when switching to visual mode or when external changes occur
+	$effect(() => {
+		if (editorMode === 'visual' && visualEditorElement) {
+			if (visualEditorElement.innerHTML !== bodyHtml) {
+				visualEditorElement.innerHTML = bodyHtml;
+			}
+		}
+	});
 
 	// Initialize props into state
 	$effect(() => {
@@ -243,25 +247,154 @@
 		recipientsRaw = lines.join('\n');
 	}
 
-	// Quick formatting toolbar helpers
-	function applyFormatting(prefix: string, suffix = '') {
-		const textarea = document.getElementById('bodyContent') as HTMLTextAreaElement | null;
+	// Visual & Code Editor Helpers
+	function handleVisualInput() {
+		if (visualEditorElement) {
+			bodyHtml = visualEditorElement.innerHTML;
+		}
+	}
+
+	function execVisualCommand(command: string, value: string | undefined = undefined) {
+		if (typeof document === 'undefined') return;
+		if (visualEditorElement) {
+			visualEditorElement.focus();
+		}
+		document.execCommand(command, false, value);
+		if (visualEditorElement) {
+			bodyHtml = visualEditorElement.innerHTML;
+		}
+	}
+
+	function insertHtmlAtCursor(html: string) {
+		if (typeof window === 'undefined') return;
+		if (!visualEditorElement) {
+			bodyHtml = bodyHtml ? `${bodyHtml}${html}` : html;
+			return;
+		}
+		visualEditorElement.focus();
+		const sel = window.getSelection();
+		if (!sel || sel.rangeCount === 0 || !visualEditorElement.contains(sel.anchorNode)) {
+			visualEditorElement.innerHTML += html;
+			bodyHtml = visualEditorElement.innerHTML;
+			return;
+		}
+		const range = sel.getRangeAt(0);
+		range.deleteContents();
+		const tempEl = document.createElement('div');
+		tempEl.innerHTML = html;
+		const frag = document.createDocumentFragment();
+		let node: ChildNode | null;
+		let lastNode: ChildNode | null = null;
+		while ((node = tempEl.firstChild)) {
+			lastNode = frag.appendChild(node);
+		}
+		range.insertNode(frag);
+		if (lastNode) {
+			range.setStartAfter(lastNode);
+			range.collapse(true);
+			sel.removeAllRanges();
+			sel.addRange(range);
+		}
+		bodyHtml = visualEditorElement.innerHTML;
+	}
+
+	function applyCodeFormatting(prefix: string, suffix = '') {
+		const textarea = document.getElementById('codeEditor') as HTMLTextAreaElement | null;
 		if (!textarea) {
-			bodyText = `${bodyText}${prefix}${suffix}`;
+			bodyHtml = `${bodyHtml}${prefix}${suffix}`;
 			return;
 		}
 
 		const start = textarea.selectionStart;
 		const end = textarea.selectionEnd;
-		const selected = bodyText.substring(start, end);
-		const before = bodyText.substring(0, start);
-		const after = bodyText.substring(end);
+		const selected = bodyHtml.substring(start, end);
+		const before = bodyHtml.substring(0, start);
+		const after = bodyHtml.substring(end);
 
-		bodyText = `${before}${prefix}${selected || 'text'}${suffix}${after}`;
+		bodyHtml = `${before}${prefix}${selected || (suffix ? 'text' : '')}${suffix}${after}`;
 		setTimeout(() => {
 			textarea.focus();
-			textarea.setSelectionRange(start + prefix.length, start + prefix.length + (selected.length || 4));
+			const cursor = start + prefix.length + (selected ? selected.length : (suffix ? 4 : 0));
+			textarea.setSelectionRange(cursor, cursor);
 		}, 0);
+	}
+
+	// Unified formatting actions based on active mode
+	function formatBold() {
+		if (editorMode === 'visual') execVisualCommand('bold');
+		else applyCodeFormatting('<b>', '</b>');
+	}
+
+	function formatItalic() {
+		if (editorMode === 'visual') execVisualCommand('italic');
+		else applyCodeFormatting('<i>', '</i>');
+	}
+
+	function formatUnderline() {
+		if (editorMode === 'visual') execVisualCommand('underline');
+		else applyCodeFormatting('<u>', '</u>');
+	}
+
+	function formatH2() {
+		if (editorMode === 'visual') execVisualCommand('formatBlock', '<h2>');
+		else applyCodeFormatting('<h2 style="color: #ffffff; margin-top: 24px; font-weight: bold;">', '</h2>');
+	}
+
+	function formatH3() {
+		if (editorMode === 'visual') execVisualCommand('formatBlock', '<h3>');
+		else applyCodeFormatting('<h3 style="color: #ffffff; margin-top: 20px; font-weight: 600;">', '</h3>');
+	}
+
+	function formatParagraph() {
+		if (editorMode === 'visual') execVisualCommand('formatBlock', '<p>');
+		else applyCodeFormatting('<p style="margin: 0 0 16px; line-height: 1.7;">', '</p>');
+	}
+
+	function formatBulletList() {
+		if (editorMode === 'visual') execVisualCommand('insertUnorderedList');
+		else applyCodeFormatting('<ul style="margin: 12px 0; padding-left: 20px;">\n  <li>', '</li>\n</ul>');
+	}
+
+	function formatOrderedList() {
+		if (editorMode === 'visual') execVisualCommand('insertOrderedList');
+		else applyCodeFormatting('<ol style="margin: 12px 0; padding-left: 20px;">\n  <li>', '</li>\n</ol>');
+	}
+
+	function insertLink() {
+		if (editorMode === 'visual') {
+			const url = prompt('Enter link destination URL:', 'https://canfacs.org');
+			if (url) {
+				execVisualCommand('createLink', url);
+			}
+		} else {
+			applyCodeFormatting('<a href="https://canfacs.org" style="color: #38bdf8; text-decoration: underline;">', '</a>');
+		}
+	}
+
+	function insertButton() {
+		const btnHtml = `<div style="text-align: center; margin: 24px 0;"><a href="https://canfacs.org" style="display: inline-block; background: #dc2626; color: #ffffff; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none;">CANFACS Action Button</a></div>`;
+		if (editorMode === 'visual') {
+			insertHtmlAtCursor(btnHtml);
+		} else {
+			applyCodeFormatting(btnHtml);
+		}
+	}
+
+	function insertDivider() {
+		const hrHtml = `<hr style="border: 0; border-top: 1px solid #334155; margin: 20px 0;" />`;
+		if (editorMode === 'visual') {
+			insertHtmlAtCursor(`${hrHtml}<p><br></p>`);
+		} else {
+			applyCodeFormatting(`${hrHtml}\n`);
+		}
+	}
+
+	function clearEditor() {
+		bodyHtml = '';
+		if (visualEditorElement) {
+			visualEditorElement.innerHTML = '';
+		}
+		aiDraftLoaded = false;
 	}
 
 	// Preset AI prompts
@@ -300,27 +433,33 @@
 
 	// Insert placeholder token into active cursor / text
 	function insertPlaceholder(token: string) {
-		bodyText = bodyText ? `${bodyText} ${token}` : token;
+		if (editorMode === 'visual') {
+			insertHtmlAtCursor(`<span>${token}</span>&nbsp;`);
+		} else {
+			applyCodeFormatting(token);
+		}
 		copiedTag = token;
 		setTimeout(() => (copiedTag = ''), 2000);
 	}
 
-	// Watch AI response — AI produces HTML, strip to readable plain text for composer
+	// Watch AI response — load rich HTML directly into bodyHtml
 	$effect(() => {
 		if (form?.aiResult) {
 			if (form.aiResult.subject) subject = form.aiResult.subject;
 			if (form.aiResult.bodyHtml) {
-				// Strip HTML tags, convert to plain text for the composer textarea
-				bodyText = form.aiResult.bodyHtml
-					.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-					.replace(/<br\s*\/?>/gi, '\n')
-					.replace(/<\/p>/gi, '\n\n')
-					.replace(/<\/h[1-6]>/gi, '\n\n')
-					.replace(/<li[^>]*>/gi, '• ')
-					.replace(/<[^>]+>/g, '')
-					.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ')
-					.replace(/\n{3,}/g, '\n\n')
-					.trim();
+				bodyHtml = form.aiResult.bodyHtml.trim();
+				if (visualEditorElement) {
+					visualEditorElement.innerHTML = bodyHtml;
+				}
+				aiDraftLoaded = true;
+			} else if (form.aiResult.bodyText) {
+				bodyHtml = form.aiResult.bodyText
+					.split(/\n{2,}/)
+					.map((p: string) => `<p style="margin:0 0 16px;line-height:1.7;">${p.replace(/\n/g, '<br />')}</p>`)
+					.join('\n');
+				if (visualEditorElement) {
+					visualEditorElement.innerHTML = bodyHtml;
+				}
 				aiDraftLoaded = true;
 			}
 			// Merge AI suggestions into existing placeholders (don't replace defaults)
@@ -335,7 +474,7 @@
 		}
 	});
 
-	// Final HTML for preview and submission (bodyHtml is derived from bodyText)
+	// Final HTML for preview and submission
 	const finalBodyHtml = $derived(bodyHtml);
 
 	// Derive parsed recipients list for non-technical users (table & cards)
@@ -1039,41 +1178,79 @@
 							</div>
 						</div>
 
-						<!-- Email Body Editor with Rich Formatting Toolbar -->
+						<!-- Email Body Editor with Mode Toggle & Rich Formatting Toolbar -->
 						<div class="space-y-2">
-							<div class="flex items-center justify-between">
-								<label for="bodyContent" class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-									<span>✍️</span>
-									<span>Email Message (Type with Normal Line Breaks)</span>
-								</label>
-								<span class="text-[11px] text-slate-400">
-									Line breaks & paragraphs format automatically
-								</span>
+							<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+								<div class="flex items-center gap-2">
+									<span class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+										<span>✍️</span>
+										<span>Email Message</span>
+									</span>
+									{#if editorMode === 'visual'}
+										<span class="text-[10px] px-2 py-0.5 rounded-full bg-red-950/80 text-red-300 border border-red-800/50 font-semibold flex items-center gap-1">
+											<span>👁️</span> Visual WYSIWYG
+										</span>
+									{:else}
+										<span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-cyan-300 border border-slate-700 font-mono flex items-center gap-1">
+											<span>&lt;/&gt;</span> HTML Code
+										</span>
+									{/if}
+								</div>
+
+								<!-- Mode Switcher: Visual Editor (Default) vs HTML Code -->
+								<div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs self-start sm:self-auto">
+									<button
+										type="button"
+										onclick={() => {
+											editorMode = 'visual';
+											if (visualEditorElement) visualEditorElement.innerHTML = bodyHtml;
+										}}
+										class="px-3 py-1 rounded-lg transition-all flex items-center gap-1.5 {editorMode === 'visual'
+											? 'bg-red-600 text-white shadow font-bold'
+											: 'text-slate-400 hover:text-white hover:bg-slate-900'}"
+									>
+										<span>👁️</span>
+										<span>Visual Editor</span>
+									</button>
+									<button
+										type="button"
+										onclick={() => {
+											if (visualEditorElement) bodyHtml = visualEditorElement.innerHTML;
+											editorMode = 'code';
+										}}
+										class="px-3 py-1 rounded-lg transition-all flex items-center gap-1.5 {editorMode === 'code'
+											? 'bg-slate-800 text-cyan-300 border border-slate-700 shadow font-bold'
+											: 'text-slate-400 hover:text-white hover:bg-slate-900'}"
+									>
+										<span>&lt;/&gt;</span>
+										<span>HTML Code</span>
+									</button>
+								</div>
 							</div>
 
 							<!-- Formatting Toolbar -->
 							<div class="flex items-center gap-1 p-1.5 bg-slate-950 rounded-2xl border border-slate-800 flex-wrap text-xs">
 								<button
 									type="button"
-									onclick={() => applyFormatting('<b>', '</b>')}
+									onclick={formatBold}
 									class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold border border-slate-800 transition-colors"
-									title="Bold Text"
+									title="Bold Text (Ctrl+B)"
 								>
 									B
 								</button>
 								<button
 									type="button"
-									onclick={() => applyFormatting('<i>', '</i>')}
+									onclick={formatItalic}
 									class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 italic font-serif border border-slate-800 transition-colors"
-									title="Italic Text"
+									title="Italic Text (Ctrl+I)"
 								>
 									I
 								</button>
 								<button
 									type="button"
-									onclick={() => applyFormatting('<u>', '</u>')}
+									onclick={formatUnderline}
 									class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 underline border border-slate-800 transition-colors"
-									title="Underline Text"
+									title="Underline Text (Ctrl+U)"
 								>
 									U
 								</button>
@@ -1082,23 +1259,50 @@
 
 								<button
 									type="button"
-									onclick={() => applyFormatting('<h3 style="color: #ffffff; margin-top: 20px;">', '</h3>')}
-									class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold border border-slate-800 transition-colors"
-									title="Section Heading"
+									onclick={formatH2}
+									class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold border border-slate-800 transition-colors"
+									title="Major Heading (H2)"
 								>
-									H3 Heading
+									H2
 								</button>
 								<button
 									type="button"
-									onclick={() => applyFormatting('<ul style="margin: 12px 0; padding-left: 20px;">\n  <li>', '</li>\n</ul>')}
+									onclick={formatH3}
+									class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold border border-slate-800 transition-colors"
+									title="Section Heading (H3)"
+								>
+									H3
+								</button>
+								<button
+									type="button"
+									onclick={formatParagraph}
+									class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors text-[11px]"
+									title="Normal Paragraph"
+								>
+									¶ Para
+								</button>
+
+								<div class="h-4 w-px bg-slate-800 mx-1"></div>
+
+								<button
+									type="button"
+									onclick={formatBulletList}
 									class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition-colors"
 									title="Bullet List"
 								>
-									• Bullet List
+									• List
 								</button>
 								<button
 									type="button"
-									onclick={() => applyFormatting('<a href="https://canfacs.org" style="color: #38bdf8; text-decoration: underline;">', '</a>')}
+									onclick={formatOrderedList}
+									class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition-colors"
+									title="Numbered List"
+								>
+									1. List
+								</button>
+								<button
+									type="button"
+									onclick={insertLink}
 									class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-cyan-400 border border-slate-800 transition-colors"
 									title="Web Link"
 								>
@@ -1106,46 +1310,68 @@
 								</button>
 								<button
 									type="button"
-									onclick={() => applyFormatting('<div style="text-align: center; margin: 24px 0;"><a href="https://canfacs.org" style="display: inline-block; background: #dc2626; color: #ffffff; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none;">', '</a></div>')}
+									onclick={insertButton}
 									class="px-2.5 py-1 rounded-lg bg-red-950/70 hover:bg-red-900 text-red-300 font-semibold border border-red-800/50 transition-colors"
 									title="Call-to-action Button"
 								>
 									🔴 Button
 								</button>
-
-								<div class="h-4 w-px bg-slate-800 mx-1"></div>
-
 								<button
 									type="button"
-									onclick={() => applyFormatting('<br>\n')}
+									onclick={insertDivider}
 									class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-800 text-[11px]"
-									title="Insert Line Break"
+									title="Divider Line"
 								>
-									↵ Break
+									— Rule
 								</button>
+
 								<button
 									type="button"
-									onclick={() => { bodyText = ''; aiDraftLoaded = false; }}
-									class="ml-auto px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-500 hover:text-red-400 text-[11px]"
-									title="Clear text"
+									onclick={clearEditor}
+									class="ml-auto px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-500 hover:text-red-400 text-[11px] transition-colors"
+									title="Clear message body"
 								>
 									Clear ✕
 								</button>
 							</div>
 
-							<textarea
-								id="bodyContent"
-								rows="9"
-								bind:value={bodyText}
-								placeholder="Dear {'{'}{'{'}}salutation{'}'}{'}'} {'{'}{'{'}}name{'}'}{'}'},&#10;&#10;We are pleased to invite you to our upcoming CANFACS gathering.&#10;&#10;Please join us with your family!&#10;&#10;Warm regards,&#10;CANFACS Executive Committee"
-								class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-sm font-sans text-slate-100 focus:outline-none focus:border-red-500 transition-colors leading-relaxed tracking-normal"
-							></textarea>
-							<p class="text-[11px] text-slate-400 italic">
-								💡 Type your email in plain English. Press Enter twice for a new paragraph. Use the toolbar buttons above for formatting.
+							<!-- Visual Rich Text Area (Default) -->
+							{#if editorMode === 'visual'}
+								<div
+									bind:this={visualEditorElement}
+									contenteditable="true"
+									role="textbox"
+									aria-multiline="true"
+									aria-label="Email message visual editor"
+									data-placeholder="Write your email message here. Format text with toolbar buttons, or insert personalization tags on the left..."
+									oninput={handleVisualInput}
+									class="min-h-[220px] max-h-[500px] overflow-y-auto w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-sm font-sans text-slate-100 focus:outline-none focus:border-red-500 transition-colors leading-relaxed tracking-normal outline-none [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-white [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-white [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3 [&_li]:mb-1 [&_a]:text-cyan-400 [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-red-500 [&_blockquote]:pl-4 [&_blockquote]:italic empty:before:content-[attr(data-placeholder)] empty:before:text-slate-600 empty:before:pointer-events-none empty:before:block"
+								></div>
+							{:else}
+								<!-- Raw HTML Code Editor -->
+								<textarea
+									id="codeEditor"
+									rows="10"
+									bind:value={bodyHtml}
+									placeholder="<p>Dear {{salutation}} {{name}},</p>..."
+									class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs font-mono text-cyan-200 focus:outline-none focus:border-red-500 transition-colors leading-relaxed tracking-normal"
+								></textarea>
+							{/if}
+
+							<div class="flex items-center justify-between text-[11px] text-slate-400">
+								<span>
+									{#if editorMode === 'visual'}
+										💡 <strong>Visual Mode:</strong> Type naturally with formatted text. Switch to <strong>HTML Code</strong> anytime to view or edit the raw markup.
+									{:else}
+										💡 <strong>Code Mode:</strong> Edit raw HTML markup directly. Switch to <strong>Visual Editor</strong> to edit visually.
+									{/if}
+								</span>
 								{#if aiDraftLoaded}
-									<span class="ml-2 px-2 py-0.5 rounded-full bg-violet-950 text-violet-300 border border-violet-700/40 text-[10px] font-semibold">✨ AI draft loaded — edit above to customize</span>
+									<span class="px-2 py-0.5 rounded-full bg-violet-950 text-violet-300 border border-violet-700/40 text-[10px] font-semibold">
+										✨ AI draft loaded
+									</span>
 								{/if}
-							</p>
+							</div>
 						</div>
 
 						<!-- Live Preview of Merged Message -->
