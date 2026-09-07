@@ -487,6 +487,8 @@ export const actions: Actions = {
 					m.display_order = idx + 1;
 				});
 			}
+			const { invalidateTeamLeadershipCache } = await import('$lib/server/db');
+			invalidateTeamLeadershipCache();
 		}
 
 		return {

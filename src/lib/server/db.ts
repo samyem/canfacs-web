@@ -700,6 +700,7 @@ export async function updateMemberStatus(
 			if (approved_at) memoryMembers[idx].approved_at = approved_at;
 		}
 	}
+	invalidateTeamLeadershipCache();
 }
 
 export async function updateMemberRole(
@@ -716,6 +717,7 @@ export async function updateMemberRole(
 			memoryMembers[idx].role = role;
 		}
 	}
+	invalidateTeamLeadershipCache();
 }
 
 export async function updateMemberProfile(
@@ -770,6 +772,7 @@ export async function updateMemberProfile(
 			memoryMembers[idx] = { ...memoryMembers[idx], ...data };
 		}
 	}
+	invalidateTeamLeadershipCache();
 }
 
 // POST QUERIES
@@ -1956,6 +1959,7 @@ export async function assignMemberOrganizationalRole(
 	} else {
 		memoryMemberOrgRoles.push(newRow);
 	}
+	invalidateTeamLeadershipCache();
 	return newRow;
 }
 
@@ -2005,6 +2009,7 @@ export async function upsertOrganizationalRole(
 			memoryOrgRoles.push(newRow);
 		}
 	}
+	invalidateTeamLeadershipCache();
 	return newRow;
 }
 
@@ -2017,6 +2022,7 @@ export async function deleteOrganizationalRole(db: any, id: string): Promise<voi
 		memoryOrgRoles = memoryOrgRoles.filter((r) => r.id !== id);
 		memoryMemberOrgRoles = memoryMemberOrgRoles.filter((mor) => mor.role_id !== id);
 	}
+	invalidateTeamLeadershipCache();
 }
 
 export async function removeMemberOrganizationalRole(db: any, assignmentId: string): Promise<void> {
@@ -2027,6 +2033,7 @@ export async function removeMemberOrganizationalRole(db: any, assignmentId: stri
 	} else {
 		memoryMemberOrgRoles = memoryMemberOrgRoles.filter((mor) => mor.id !== assignmentId);
 	}
+	invalidateTeamLeadershipCache();
 }
 
 export interface TeamMemberView {
@@ -2047,10 +2054,25 @@ export interface TeamMemberView {
 	photo: string | null;
 }
 
+let cachedLeadership: { executiveBoard: TeamMemberView[]; advisoryBoard: TeamMemberView[] } | null = null;
+let leadershipVersion = Date.now();
+
+export function invalidateTeamLeadershipCache() {
+	cachedLeadership = null;
+	leadershipVersion = Date.now();
+}
+
+export function getLeadershipVersion(): number {
+	return leadershipVersion;
+}
+
 export async function getTeamLeadership(db: any): Promise<{
 	executiveBoard: TeamMemberView[];
 	advisoryBoard: TeamMemberView[];
 }> {
+	if (cachedLeadership) {
+		return cachedLeadership;
+	}
 	await ensureLocalDefaultAdmin();
 	const members = await getAllMembers(db, 'approved');
 	const orgRoles = await getOrganizationalRoles(db);
@@ -2135,10 +2157,12 @@ export async function getTeamLeadership(db: any): Promise<{
 	const advisoryBoard = enriched.filter(isAdvisor).sort(sortTeam);
 	const executiveBoard = enriched.filter(isBoard).sort(sortTeam);
 
-	return {
+	cachedLeadership = {
 		executiveBoard,
 		advisoryBoard
 	};
+
+	return cachedLeadership;
 }
 
 
