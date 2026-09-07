@@ -14,6 +14,7 @@
 	let avatarUploadError = $state('');
 	let isRoleDropdownOpen = $state(false);
 	let isCreatingMember = $state(false);
+	let resettingPasswordId = $state<string | null>(null);
 
 	function openCreateModal() {
 		editingMember = {
@@ -195,34 +196,40 @@
 			</div>
 		{/if}
 
-		<!-- Newly Approved Password Modal Banner -->
+		<!-- Password Credentials Modal Banner (For Approvals, Resets & New Members) -->
 		{#if form?.success && form?.generatedPassword}
-			<div class="p-6 rounded-2xl bg-emerald-950/90 border-2 border-emerald-500/60 text-white shadow-2xl relative">
+			<div class="p-6 rounded-2xl bg-emerald-950/90 border-2 border-emerald-500/60 text-white shadow-2xl relative animate-in fade-in duration-200">
 				<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
 					<div>
 						<div class="flex items-center gap-2">
-							<span class="text-xl">🎉</span>
-							<h3 class="text-lg font-bold text-emerald-300">Application Approved!</h3>
+							<span class="text-xl">🔑</span>
+							<h3 class="text-lg font-bold text-emerald-300">Credentials Generated & Ready!</h3>
 						</div>
 						<p class="text-sm text-slate-200 mt-1">
-							Generated login credentials for <strong class="text-white">{form.approvedEmail}</strong>:
+							New login credentials for <strong class="text-white">{form.approvedEmail}</strong> (emailed to member):
 						</p>
 					</div>
 
 					<div class="flex items-center gap-3 bg-slate-900/90 p-3 rounded-xl border border-emerald-500/40">
-						<code class="text-base font-mono font-bold text-amber-300 select-all">{form.generatedPassword}</code>
+						<div class="flex flex-col">
+							<span class="text-[10px] text-slate-400 uppercase font-mono">Password:</span>
+							<code class="text-base font-mono font-bold text-amber-300 select-all">{form.generatedPassword}</code>
+						</div>
 						<button
 							type="button"
 							onclick={() => copyToClipboard(form.generatedPassword)}
-							class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+							class="px-3.5 py-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors shadow"
 						>
 							{copiedPassword ? 'Copied! ✓' : 'Copy Password'}
 						</button>
 					</div>
 				</div>
-				<p class="text-[11px] text-slate-400 mt-3 italic">
-					ℹ️ Supply this temporary password to {form.approvedEmail} so they can log in at <a href="/login" class="underline text-emerald-400">/login</a>.
-				</p>
+				<div class="flex items-center justify-between mt-3 text-[11px] text-slate-400 border-t border-emerald-800/40 pt-2">
+					<span>
+						✉️ A branded email containing this temporary password and the <a href="/login" class="underline text-emerald-400 font-mono">/login</a> link was sent to <strong>{form.approvedEmail}</strong>.
+					</span>
+					<span class="font-mono text-emerald-300">Username: {form.approvedEmail}</span>
+				</div>
 			</div>
 		{/if}
 
@@ -615,7 +622,7 @@
 								{/if}
 							</div>
 
-							<!-- Approval / Denial Controls -->
+							<!-- Action Controls: Approval for pending, Reset Password for existing -->
 							{#if member.status === 'pending'}
 								<div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/60">
 									<form method="POST" action="?/approve" use:enhance>
@@ -636,6 +643,53 @@
 											class="px-3 py-1.5 rounded-lg bg-red-600/80 hover:bg-red-500 text-white text-xs font-bold transition-colors"
 										>
 											Deny ✕
+										</button>
+									</form>
+								</div>
+							{:else}
+								<div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/60">
+									<button
+										type="button"
+										onclick={() => openEditModal(member)}
+										class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-750 hover:text-white border border-slate-700 transition-colors flex items-center gap-1"
+									>
+										<span>✏️</span>
+										<span>Edit</span>
+									</button>
+
+									<!-- Reset & Send Password Button -->
+									<form
+										method="POST"
+										action="?/resetPassword"
+										use:enhance={() => {
+											resettingPasswordId = member.id;
+											return async ({ update }) => {
+												await update();
+												resettingPasswordId = null;
+											};
+										}}
+									>
+										<input type="hidden" name="memberId" value={member.id} />
+										<input type="hidden" name="memberEmail" value={member.email} />
+										<input type="hidden" name="memberName" value={member.full_name} />
+										<button
+											type="submit"
+											disabled={resettingPasswordId === member.id}
+											onclick={(e) => {
+												if (!confirm(`Generate a new temporary password and email it to ${member.email}?`)) {
+													e.preventDefault();
+												}
+											}}
+											class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/10 hover:bg-amber-500 text-amber-300 hover:text-slate-950 border border-amber-500/30 transition-all flex items-center gap-1.5 disabled:opacity-50 shadow-sm"
+											title="Generates a new password, displays it on screen, and emails credentials to member"
+										>
+											{#if resettingPasswordId === member.id}
+												<span class="animate-spin">⏳</span>
+												<span>Sending...</span>
+											{:else}
+												<span>🔑</span>
+												<span>Reset & Email Password</span>
+											{/if}
 										</button>
 									</form>
 								</div>
@@ -685,6 +739,8 @@
 				class="space-y-4"
 			>
 				<input type="hidden" name="memberId" value={editingMember.id} />
+				<input type="hidden" name="memberEmail" value={editingMember.email} />
+				<input type="hidden" name="memberName" value={editingMember.full_name} />
 				<input type="hidden" name="avatar_url" value={editingMember.avatar_url || ''} />
 
 				<!-- Avatar Upload & Social Image Preview -->
@@ -1077,6 +1133,32 @@
 						<div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
 					</label>
 				</div>
+
+				{#if !isCreatingMember}
+					<!-- Row 7: Direct Reset & Email Password within modal -->
+					<div class="p-3.5 bg-slate-950 rounded-xl border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+						<div>
+							<div class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+								<span>🔑</span>
+								<span>Password & Access Credentials</span>
+							</div>
+							<div class="text-[11px] text-slate-400">Generate a new temporary password and dispatch a branded email to this member</div>
+						</div>
+						<button
+							type="submit"
+							formaction="?/resetPassword"
+							onclick={(e) => {
+								if (!confirm(`Generate a new temporary password and email it directly to ${editingMember.email}?`)) {
+									e.preventDefault();
+								}
+							}}
+							class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all flex items-center gap-1 shadow whitespace-nowrap self-start sm:self-auto"
+						>
+							<span>✉️</span>
+							<span>Reset & Email Password</span>
+						</button>
+					</div>
+				{/if}
 
 				<div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
 					<button

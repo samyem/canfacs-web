@@ -11,6 +11,7 @@ import {
 	removeMemberOrganizationalRole
 } from '$lib/server/db';
 import { generateTempPassword, hashPassword } from '$lib/server/auth';
+import { sendPasswordResetEmail } from '$lib/server/email';
 
 export const load: PageServerLoad = async ({ locals, platform }) => {
 	if (!locals.user || locals.user.role !== 'admin') {
@@ -116,6 +117,59 @@ export const actions: Actions = {
 		return {
 			success: true,
 			message: `User ${memberEmail || memberId} role updated to ${newRole.toUpperCase()}.`
+		};
+	},
+
+	resetPassword: async ({ request, locals, platform, url }) => {
+		if (!locals.user || locals.user.role !== 'admin') {
+			return fail(403, { error: 'Unauthorized' });
+		}
+
+		const formData = await request.formData();
+		const memberId = formData.get('memberId')?.toString();
+		const memberEmail = formData.get('memberEmail')?.toString();
+		const memberName = formData.get('memberName')?.toString() || 'Member';
+		const customPassword = formData.get('customPassword')?.toString()?.trim();
+
+		if (!memberId || !memberEmail) {
+			return fail(400, { error: 'Missing member ID or email' });
+		}
+
+		const tempPassword = customPassword || generateTempPassword();
+		const passwordHash = await hashPassword(tempPassword);
+		const db = getDb(platform);
+
+		if (db) {
+			await db.prepare(`
+				UPDATE members
+				SET password_hash = ?, status = 'approved'
+				WHERE id = ?
+			`).bind(passwordHash, memberId).run();
+		}
+
+		// Dispatch branded email notification to member
+		const origin = url.origin || 'https://canfacs.org';
+		const emailResult = await sendPasswordResetEmail(
+			{
+				to: memberEmail,
+				recipientName: memberName,
+				tempPassword,
+				loginUrl: `${origin}/login`
+			},
+			platform?.env
+		);
+
+		let emailNotice = 'and emailed to member';
+		if (!emailResult.success) {
+			emailNotice = `(Email notice note: ${emailResult.error || 'simulated/skipped'})`;
+		}
+
+		return {
+			success: true,
+			approvedId: memberId,
+			approvedEmail: memberEmail,
+			generatedPassword: tempPassword,
+			message: `Password for ${memberEmail} reset successfully ${emailNotice}.`
 		};
 	},
 

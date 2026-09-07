@@ -39,7 +39,7 @@
 		if (data.adminEmail) {
 			testRecipientEmail = data.adminEmail;
 		}
-		if (data.inspectBatchId && !activeBatchId) {
+		if (data.inspectBatchId) {
 			activeBatchId = data.inspectBatchId;
 		}
 	});
@@ -1480,15 +1480,22 @@
 						{/if}
 
 						{#each data.batches as batch}
+							{@const isSelected = selectedBatch?.id === batch.id}
 							<a
 								href="/admin/emails?batchId={batch.id}"
-								class="block p-4 rounded-2xl border transition-all {activeBatchId === batch.id
-									? 'bg-slate-900 border-red-500/70 shadow-lg shadow-red-900/20'
-									: 'bg-slate-900/60 border-slate-800 hover:border-slate-700'}"
+								onclick={() => (activeBatchId = batch.id)}
+								class="block p-4 rounded-2xl border transition-all {isSelected
+									? 'bg-red-950/40 border-red-500 ring-2 ring-red-500/50 shadow-xl shadow-red-950/50 translate-x-1'
+									: 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/90'}"
 							>
 								<div class="flex items-start justify-between gap-2">
-									<h3 class="font-bold text-sm text-white truncate">{batch.label}</h3>
-									<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {batch.status === 'completed' ? 'bg-emerald-950 text-emerald-300' : 'bg-amber-950 text-amber-300'}">
+									<div class="flex items-center gap-2">
+										{#if isSelected}
+											<span class="text-red-400 text-xs">▶</span>
+										{/if}
+										<h3 class="font-bold text-sm {isSelected ? 'text-white font-extrabold' : 'text-slate-200'} truncate">{batch.label}</h3>
+									</div>
+									<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {batch.status === 'completed' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/40' : 'bg-amber-950 text-amber-300 border border-amber-800/40'}">
 										{batch.status}
 									</span>
 								</div>
@@ -1497,7 +1504,7 @@
 								</div>
 								<div class="flex items-center justify-between mt-3 text-[11px] text-slate-500">
 									<span>{new Date(batch.created_at).toLocaleDateString()}</span>
-									<span class="text-slate-300 font-semibold">
+									<span class="{isSelected ? 'text-emerald-300 font-bold' : 'text-slate-300 font-semibold'}">
 										✅ {batch.success_count} / {batch.total_recipients} delivered
 									</span>
 								</div>

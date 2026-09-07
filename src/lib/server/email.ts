@@ -371,3 +371,127 @@ export async function sendCustomEmail(
 	}
 }
 
+export interface PasswordResetEmailData {
+	to: string;
+	recipientName: string;
+	tempPassword: string;
+	loginUrl?: string;
+}
+
+export async function sendPasswordResetEmail(
+	data: PasswordResetEmailData,
+	env?: Record<string, any>
+): Promise<{ success: boolean; error?: string; delivered?: boolean }> {
+	const loginUrl = data.loginUrl || 'https://canfacs.org/login';
+	const recipientName = data.recipientName || 'Member';
+
+	const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0f19; color: #f8fafc; margin: 0; padding: 24px; }
+    .card { max-width: 600px; margin: 0 auto; background: #111827; border-radius: 20px; border: 1px solid #1f2937; padding: 36px; box-shadow: 0 16px 36px rgba(0,0,0,0.6); }
+    .header { text-align: center; border-bottom: 1px solid #1f2937; padding-bottom: 24px; margin-bottom: 24px; }
+    .badge { display: inline-block; background: #dc2626; color: #ffffff; padding: 5px 14px; border-radius: 9999px; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; }
+    h1 { margin: 0 0 6px; color: #ffffff; font-size: 22px; font-weight: 800; }
+    .subtitle { color: #94a3b8; font-size: 13px; margin: 0; }
+    .box { background: #0b0f19; border: 1px solid #1f2937; border-radius: 14px; padding: 20px; margin: 24px 0; }
+    .creds-table { width: 100%; border-collapse: collapse; }
+    .creds-table td { padding: 8px 10px; font-size: 14px; }
+    .label { color: #94a3b8; width: 35%; font-weight: 600; }
+    .value { color: #f8fafc; font-family: monospace; font-weight: 700; }
+    .pass-highlight { font-size: 18px; color: #38bdf8; background: #1e293b; padding: 4px 10px; border-radius: 8px; letter-spacing: 0.05em; display: inline-block; }
+    .btn-container { text-align: center; margin: 28px 0 20px; }
+    .btn { display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: #ffffff !important; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 14px; text-decoration: none; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4); }
+    .note { font-size: 12px; color: #94a3b8; line-height: 1.6; margin-top: 20px; }
+    .footer { text-align: center; font-size: 12px; color: #64748b; margin-top: 32px; border-top: 1px solid #1f2937; padding-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <span class="badge">Official Account Notification</span>
+      <h1>Canada-Nepal Friendship & Cultural Society</h1>
+      <p class="subtitle">CANFACS • Federal Non-Profit Society • Established 2016</p>
+    </div>
+
+    <p style="font-size: 15px; color: #ffffff; margin-bottom: 12px;">Dear <strong>${recipientName}</strong>,</p>
+
+    <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6; margin: 0 0 16px;">
+      An administrator has set or reset your account login credentials for the CANFACS Member Portal. You can use the credentials below to log into your account:
+    </p>
+
+    <div class="box">
+      <table class="creds-table">
+        <tr>
+          <td class="label">Username / Email:</td>
+          <td class="value">${data.to}</td>
+        </tr>
+        <tr>
+          <td class="label">Temporary Password:</td>
+          <td><span class="pass-highlight">${data.tempPassword}</span></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="btn-container">
+      <a href="${loginUrl}" class="btn">Log In to CANFACS Member Portal &rarr;</a>
+    </div>
+
+    <div class="note">
+      <p style="margin: 0 0 8px;"><strong>Important Security Notes:</strong></p>
+      <ul style="margin: 0; padding-left: 18px;">
+        <li>After logging in, please change your password or verify your profile in the Member Dashboard.</li>
+        <li>If you also use Google Sign-In with <strong>${data.to}</strong>, you can optionally log in with Google at any time.</li>
+        <li>If you did not request this or believe this was done in error, please contact CANFACS Executive Committee at <a href="mailto:info@canfacs.org" style="color: #38bdf8;">info@canfacs.org</a>.</li>
+      </ul>
+    </div>
+
+    <div class="footer">
+      <p style="margin: 0 0 4px;">Canada-Nepal Friendship & Cultural Society (CANFACS)</p>
+      <p style="margin: 0 0 4px;">Website: <a href="https://canfacs.org" style="color: #38bdf8;">canfacs.org</a> • Email: <a href="mailto:info@canfacs.org" style="color: #38bdf8;">info@canfacs.org</a></p>
+      <p style="font-size: 11px; color: #475569; margin-top: 8px;">This is an official administrative communication from CANFACS.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+	const text = `
+CANADA-NEPAL FRIENDSHIP & CULTURAL SOCIETY (CANFACS)
+Official Account Notification
+
+Dear ${recipientName},
+
+An administrator has set or reset your account login credentials for the CANFACS Member Portal.
+
+Your Login Details:
+Username / Email: ${data.to}
+Temporary Password: ${data.tempPassword}
+
+Login Link: ${loginUrl}
+
+Security Notes:
+- After logging in, you can update your password or profile at any time.
+- If you use Google with ${data.to}, Google OAuth login is also enabled.
+- For questions, please contact info@canfacs.org.
+
+Canada-Nepal Friendship & Cultural Society (CANFACS)
+Website: https://canfacs.org
+Email: info@canfacs.org
+`;
+
+	return await sendCustomEmail(
+		{
+			to: data.to,
+			subject: 'Your CANFACS Account Login Credentials',
+			html,
+			text
+		},
+		env
+	);
+}
+
+
