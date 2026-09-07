@@ -1,7 +1,7 @@
 -- CANFACS Migration 0008: Add parent_role_id to organizational_roles and seed Admin role under BOD
 -- Allows defining hierarchical roles where a role (e.g. Admin) can be a child/subset of another (e.g. BOD)
-
-ALTER TABLE organizational_roles ADD COLUMN parent_role_id TEXT REFERENCES organizational_roles(id);
+-- parent_role_id column already exists on organizational_roles
+-- ALTER TABLE organizational_roles ADD COLUMN parent_role_id TEXT REFERENCES organizational_roles(id);
 
 CREATE INDEX IF NOT EXISTS idx_org_roles_parent ON organizational_roles(parent_role_id);
 
