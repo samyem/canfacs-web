@@ -1353,7 +1353,7 @@
 									id="codeEditor"
 									rows="10"
 									bind:value={bodyHtml}
-									placeholder="<p>Dear {{salutation}} {{name}},</p>..."
+									placeholder="&lt;p&gt;Dear {`{{salutation}}`} {`{{name}}`},&lt;/p&gt;..."
 									class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs font-mono text-cyan-200 focus:outline-none focus:border-red-500 transition-colors leading-relaxed tracking-normal"
 								></textarea>
 							{/if}

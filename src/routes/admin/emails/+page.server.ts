@@ -324,10 +324,9 @@ export const actions: Actions = {
 		// Dispatch emails
 		for (const recipient of recipientsList) {
 			const mergeData = {
-				name: recipient.name || 'Friend of CANFACS',
-				email: recipient.email,
-				city: recipient.city || '',
-				province: recipient.province || '',
+				name: 'Friend of CANFACS',
+				city: '',
+				province: '',
 				...recipient
 			};
 
