@@ -119,14 +119,14 @@
 		membersList.filter((m: any) => m.status === 'approved')
 	);
 	const deletedMembers = $derived(
-		membersList.filter((m: any) => m.status === 'deleted')
+		membersList.filter((m: any) => m.status === 'deleted' || m.status === 'denied')
 	);
 	const adminMembers = $derived(
-		membersList.filter((m: any) => m.status !== 'deleted' && (m.role === 'admin' || m.org_role_id === 'org_admin'))
+		membersList.filter((m: any) => m.status !== 'deleted' && m.status !== 'denied' && (m.role === 'admin' || m.org_role_id === 'org_admin'))
 	);
 	const bodMembers = $derived(
 		membersList.filter((m: any) => {
-			if (m.status === 'deleted') return false;
+			if (m.status === 'deleted' || m.status === 'denied') return false;
 			const isAdv = m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor');
 			return !isAdv && (
 				m.role === 'bod' ||
@@ -143,10 +143,10 @@
 		})
 	);
 	const advisoryMembers = $derived(
-		membersList.filter((m: any) => m.status !== 'deleted' && (m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul')))
+		membersList.filter((m: any) => m.status !== 'deleted' && m.status !== 'denied' && (m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul')))
 	);
 	const partnerMembers = $derived(
-		membersList.filter((m: any) => m.status !== 'deleted' && m.role === 'partner')
+		membersList.filter((m: any) => m.status !== 'deleted' && m.status !== 'denied' && m.role === 'partner')
 	);
 
 	const filteredMembers = $derived(
@@ -155,10 +155,10 @@
 				let matchesTab = true;
 				if (activeTab === 'pending') matchesTab = m.status === 'pending';
 				else if (activeTab === 'approved') matchesTab = m.status === 'approved';
-				else if (activeTab === 'deleted') matchesTab = m.status === 'deleted';
-				else if (activeTab === 'admins') matchesTab = m.status !== 'deleted' && (m.role === 'admin' || m.org_role_id === 'org_admin');
+				else if (activeTab === 'deleted') matchesTab = m.status === 'deleted' || m.status === 'denied';
+				else if (activeTab === 'admins') matchesTab = m.status !== 'deleted' && m.status !== 'denied' && (m.role === 'admin' || m.org_role_id === 'org_admin');
 				else if (activeTab === 'bod') {
-					if (m.status === 'deleted') return false;
+					if (m.status === 'deleted' || m.status === 'denied') return false;
 					const isAdv = m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor');
 					matchesTab = !isAdv && (
 						m.role === 'bod' ||
@@ -173,9 +173,9 @@
 						m.organizational_role?.toLowerCase().includes('secretary')
 					);
 				}
-				else if (activeTab === 'advisory') matchesTab = m.status !== 'deleted' && (m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul'));
-				else if (activeTab === 'partners') matchesTab = m.status !== 'deleted' && m.role === 'partner';
-				else if (activeTab === 'all') matchesTab = m.status !== 'deleted';
+				else if (activeTab === 'advisory') matchesTab = m.status !== 'deleted' && m.status !== 'denied' && (m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul'));
+				else if (activeTab === 'partners') matchesTab = m.status !== 'deleted' && m.status !== 'denied' && m.role === 'partner';
+				else if (activeTab === 'all') matchesTab = m.status !== 'deleted' && m.status !== 'denied';
 
 				const q = searchQuery.toLowerCase();
 				const matchesQuery =
@@ -416,7 +416,7 @@
 					onclick={() => (activeTab = 'all')}
 					class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap {activeTab === 'all' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}"
 				>
-					All ({membersList.filter((m: any) => m.status !== 'deleted').length})
+					All ({membersList.filter((m: any) => m.status !== 'deleted' && m.status !== 'denied').length})
 				</button>
 
 				<button
@@ -432,7 +432,7 @@
 					onclick={() => (activeTab = 'deleted')}
 					class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'deleted' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-400 hover:text-red-400'}"
 				>
-					<span>🗑️ Deleted</span>
+					<span>🗑️ Deleted / Denied</span>
 					<span class="px-1.5 py-0.2 rounded-md bg-slate-950/40 text-[10px]">{deletedMembers.length}</span>
 				</button>
 			</div>
@@ -551,7 +551,7 @@
 		{:else if filteredMembers.length === 0}
 			<div class="glass-card p-12 rounded-3xl text-center border border-slate-800">
 				{#if activeTab === 'deleted'}
-					<p class="text-slate-400 text-sm">No soft-deleted members in archive. All active records are intact.</p>
+					<p class="text-slate-400 text-sm">No soft-deleted or denied applications in archive. All active records are intact.</p>
 				{:else}
 					<p class="text-slate-400 text-sm">No member applications match the current filter.</p>
 				{/if}
@@ -559,7 +559,7 @@
 		{:else}
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 				{#each filteredMembers as member, index (member.id)}
-					<div class="glass-card p-6 rounded-2xl flex flex-col justify-between border border-slate-800/80 hover:border-slate-700 transition-all {member.role === 'admin' ? 'ring-1 ring-amber-500/30' : ''} {member.status === 'deleted' ? 'border-rose-900/40 bg-slate-950/60' : ''}">
+					<div class="glass-card p-6 rounded-2xl flex flex-col justify-between border border-slate-800/80 hover:border-slate-700 transition-all {member.role === 'admin' ? 'ring-1 ring-amber-500/30' : ''} {member.status === 'deleted' || member.status === 'denied' ? 'border-rose-900/40 bg-slate-950/60' : ''}">
 						<div>
 							<div class="flex items-start justify-between gap-2 mb-3">
 								<div class="flex items-center gap-3">
@@ -717,30 +717,47 @@
 								{/if}
 							</div>
 
-							<!-- Action Controls: Deleted, Pending, Approved -->
-							{#if member.status === 'deleted'}
-								<div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/60">
+							<!-- Action Controls: Deleted, Denied, Pending, Approved -->
+							{#if member.status === 'deleted' || member.status === 'denied'}
+								<div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/60 flex-wrap">
 									<span class="text-[10px] text-rose-400 font-mono flex items-center gap-1">
-										<span>🗑️</span>
-										<span>Deleted {member.deleted_at ? new Date(member.deleted_at).toLocaleDateString() : ''}</span>
+										<span>{member.status === 'denied' ? '❌' : '🗑️'}</span>
+										<span>{member.status === 'denied' ? 'Denied' : 'Deleted'} {member.deleted_at ? new Date(member.deleted_at).toLocaleDateString() : ''}</span>
 									</span>
-									<form method="POST" action="?/restore" use:enhance>
-										<input type="hidden" name="memberId" value={member.id} />
-										<input type="hidden" name="memberEmail" value={member.email} />
-										<input type="hidden" name="targetStatus" value="approved" />
-										<button
-											type="submit"
-											onclick={(e) => {
-												if (!confirm(`Restore ${member.full_name} (${member.email}) back to active Approved members?`)) {
-													e.preventDefault();
-												}
-											}}
-											class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors shadow-md flex items-center gap-1.5 cursor-pointer"
-										>
-											<span>↺</span>
-											<span>Restore Member</span>
-										</button>
-									</form>
+									<div class="flex items-center gap-2">
+										{#if member.status === 'denied'}
+											<form method="POST" action="?/restore" use:enhance>
+												<input type="hidden" name="memberId" value={member.id} />
+												<input type="hidden" name="memberEmail" value={member.email} />
+												<input type="hidden" name="targetStatus" value="pending" />
+												<button
+													type="submit"
+													class="px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition-colors shadow-sm flex items-center gap-1 cursor-pointer"
+													title="Reopen application back to Pending"
+												>
+													<span>↩</span>
+													<span>Reopen Pending</span>
+												</button>
+											</form>
+										{/if}
+										<form method="POST" action="?/restore" use:enhance>
+											<input type="hidden" name="memberId" value={member.id} />
+											<input type="hidden" name="memberEmail" value={member.email} />
+											<input type="hidden" name="targetStatus" value="approved" />
+											<button
+												type="submit"
+												onclick={(e) => {
+													if (!confirm(`Restore ${member.full_name} (${member.email}) to active Approved members?`)) {
+														e.preventDefault();
+													}
+												}}
+												class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors shadow-md flex items-center gap-1.5 cursor-pointer"
+											>
+												<span>↺</span>
+												<span>{member.status === 'denied' ? 'Approve Member' : 'Restore Member'}</span>
+											</button>
+										</form>
+									</div>
 								</div>
 							{:else if member.status === 'pending'}
 								<div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/60">

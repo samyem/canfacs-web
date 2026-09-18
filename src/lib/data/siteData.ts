@@ -46,7 +46,11 @@ export const SITE_INFO = {
 	cooperationYear: '1968',
 	tagline: 'Bridging Nations, Celebrating Cultures & Strengthening Communities Across Canada',
 	missionSummary:
-		'A nationwide non-profit organization fostering rich cultural exchange, bilateral partnership, educational initiatives, and community harmony between Canada and Nepal across all provinces and territories.'
+		'A nationwide non-profit organization fostering rich cultural exchange, bilateral partnership, educational initiatives, and community harmony between Canada and Nepal across all provinces and territories.',
+	social: {
+		facebook: 'https://www.facebook.com/profile.php?id=61573051238563',
+		youtube: 'https://www.youtube.com/@canadanepalfriends3222'
+	}
 };
 
 export const EXECUTIVE_BOARD: TeamMember[] = [

@@ -705,7 +705,7 @@ export async function getAllMembers(
 		if (statusFilter) {
 			conditions.push(`status = '${statusFilter}'`);
 		} else if (!includeDeleted) {
-			conditions.push(`status != 'deleted'`);
+			conditions.push(`status NOT IN ('deleted', 'denied')`);
 		}
 		if (conditions.length > 0) {
 			query += ` WHERE ` + conditions.join(' AND ');
@@ -719,7 +719,7 @@ export async function getAllMembers(
 	}
 	if (!includeDeleted) {
 		return memoryMembers
-			.filter((m) => m.status !== 'deleted')
+			.filter((m) => m.status !== 'deleted' && m.status !== 'denied')
 			.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 	}
 	return [...memoryMembers].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -817,16 +817,17 @@ export async function updateMemberStatus(
 ): Promise<void> {
 	await ensureLocalDefaultAdmin();
 	const approved_at = status === 'approved' ? new Date().toISOString() : null;
+	const deleted_at = status === 'denied' ? new Date().toISOString() : null;
 
 	if (db) {
 		if (passwordHash) {
 			await db.prepare(
-				`UPDATE members SET status = ?, password_hash = ?, approved_at = ? WHERE id = ?`
-			).bind(status, passwordHash, approved_at, id).run();
+				`UPDATE members SET status = ?, password_hash = ?, approved_at = ?, deleted_at = ? WHERE id = ?`
+			).bind(status, passwordHash, approved_at, deleted_at, id).run();
 		} else {
 			await db.prepare(
-				`UPDATE members SET status = ?, approved_at = ? WHERE id = ?`
-			).bind(status, approved_at, id).run();
+				`UPDATE members SET status = ?, approved_at = ?, deleted_at = ? WHERE id = ?`
+			).bind(status, approved_at, deleted_at, id).run();
 		}
 	} else {
 		const idx = memoryMembers.findIndex((m) => m.id === id);
@@ -834,6 +835,7 @@ export async function updateMemberStatus(
 			memoryMembers[idx].status = status;
 			if (passwordHash) memoryMembers[idx].password_hash = passwordHash;
 			if (approved_at) memoryMembers[idx].approved_at = approved_at;
+			memoryMembers[idx].deleted_at = deleted_at;
 		}
 	}
 	invalidateTeamLeadershipCache();
