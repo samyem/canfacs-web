@@ -1,9 +1,13 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
-import { createMember, getDb, getMemberByEmail } from '$lib/server/db';
+import { createMember, getAdminEmails, getDb, getMemberByEmail } from '$lib/server/db';
+import {
+	sendNewMemberAdminNotificationEmail,
+	sendPendingMemberConfirmationEmail
+} from '$lib/server/email';
 
 export const actions: Actions = {
-	default: async ({ request, platform }) => {
+	default: async ({ request, platform, url }) => {
 		const formData = await request.formData();
 		const fullName = formData.get('fullName')?.toString().trim();
 		const email = formData.get('email')?.toString().trim();
@@ -23,7 +27,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'An application or member account already exists with this email address.' });
 		}
 
-		await createMember(db, {
+		const newMember = await createMember(db, {
 			full_name: fullName,
 			email,
 			phone: phone || null,
@@ -32,6 +36,31 @@ export const actions: Actions = {
 			province: province || null,
 			bio: bio || null
 		});
+
+		// Dispatch notifications to admins and the applicant
+		const adminEmails = await getAdminEmails(db);
+		const reviewUrl = `${url.origin}/admin/members?tab=pending`;
+
+		try {
+			await Promise.allSettled([
+				sendNewMemberAdminNotificationEmail(
+					{
+						applicant: newMember,
+						adminEmails,
+						reviewUrl
+					},
+					platform?.env
+				),
+				sendPendingMemberConfirmationEmail(
+					{
+						applicant: newMember
+					},
+					platform?.env
+				)
+			]);
+		} catch (emailErr) {
+			console.warn('[CANFACS] Non-blocking error sending application notification emails:', emailErr);
+		}
 
 		return {
 			success: true,

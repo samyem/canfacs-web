@@ -25,10 +25,11 @@ export interface MemberRow {
 	google_login_enabled?: boolean | number;
 	avatar_url?: string | null;
 	display_order?: number;
-	status: 'pending' | 'approved' | 'denied';
+	status: 'pending' | 'approved' | 'denied' | 'deleted';
 	role: 'admin' | 'bod' | 'member' | 'partner' | string;
 	created_at: string;
 	approved_at: string | null;
+	deleted_at?: string | null;
 }
 
 export interface PostRow {
@@ -692,12 +693,22 @@ export async function getMemberById(db: any, id: string): Promise<MemberRow | nu
 	return memoryMembers.find((m) => m.id === id) || null;
 }
 
-export async function getAllMembers(db: any, statusFilter?: 'pending' | 'approved' | 'denied'): Promise<MemberRow[]> {
+export async function getAllMembers(
+	db: any,
+	statusFilter?: 'pending' | 'approved' | 'denied' | 'deleted',
+	includeDeleted: boolean = false
+): Promise<MemberRow[]> {
 	await ensureLocalDefaultAdmin();
 	if (db) {
 		let query = `SELECT * FROM members`;
+		const conditions: string[] = [];
 		if (statusFilter) {
-			query += ` WHERE status = '${statusFilter}'`;
+			conditions.push(`status = '${statusFilter}'`);
+		} else if (!includeDeleted) {
+			conditions.push(`status != 'deleted'`);
+		}
+		if (conditions.length > 0) {
+			query += ` WHERE ` + conditions.join(' AND ');
 		}
 		query += ` ORDER BY created_at DESC`;
 		const res = await db.prepare(query).all();
@@ -706,7 +717,96 @@ export async function getAllMembers(db: any, statusFilter?: 'pending' | 'approve
 	if (statusFilter) {
 		return memoryMembers.filter((m) => m.status === statusFilter);
 	}
+	if (!includeDeleted) {
+		return memoryMembers
+			.filter((m) => m.status !== 'deleted')
+			.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+	}
 	return [...memoryMembers].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export async function softDeleteMember(db: any, id: string): Promise<void> {
+	await ensureLocalDefaultAdmin();
+	const deleted_at = new Date().toISOString();
+	if (db) {
+		await db.prepare(
+			`UPDATE members SET status = 'deleted', deleted_at = ? WHERE id = ?`
+		).bind(deleted_at, id).run();
+	} else {
+		const idx = memoryMembers.findIndex((m) => m.id === id);
+		if (idx !== -1) {
+			memoryMembers[idx].status = 'deleted';
+			memoryMembers[idx].deleted_at = deleted_at;
+		}
+	}
+	invalidateTeamLeadershipCache();
+}
+
+export async function restoreMember(
+	db: any,
+	id: string,
+	targetStatus: 'approved' | 'pending' = 'approved'
+): Promise<void> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await db.prepare(
+			`UPDATE members SET status = ?, deleted_at = NULL WHERE id = ?`
+		).bind(targetStatus, id).run();
+	} else {
+		const idx = memoryMembers.findIndex((m) => m.id === id);
+		if (idx !== -1) {
+			memoryMembers[idx].status = targetStatus;
+			memoryMembers[idx].deleted_at = null;
+		}
+	}
+	invalidateTeamLeadershipCache();
+}
+
+export async function unapproveMember(db: any, id: string): Promise<void> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await db.prepare(
+			`UPDATE members SET status = 'pending', approved_at = NULL WHERE id = ?`
+		).bind(id).run();
+	} else {
+		const idx = memoryMembers.findIndex((m) => m.id === id);
+		if (idx !== -1) {
+			memoryMembers[idx].status = 'pending';
+			memoryMembers[idx].approved_at = null;
+		}
+	}
+	invalidateTeamLeadershipCache();
+}
+
+export async function getAdminEmails(db: any): Promise<string[]> {
+	await ensureLocalDefaultAdmin();
+	const emails = new Set<string>();
+	emails.add('info@canfacs.org');
+
+	if (db) {
+		try {
+			const res = await db
+				.prepare(`SELECT email FROM members WHERE role = 'admin' AND status = 'approved'`)
+				.all();
+			for (const r of (res.results || [])) {
+				if (r.email && typeof r.email === 'string' && r.email.includes('@')) {
+					emails.add(r.email.trim().toLowerCase());
+				}
+			}
+		} catch (err) {
+			console.warn('[CANFACS] Error querying admin emails from D1:', err);
+		}
+	} else {
+		for (const m of memoryMembers) {
+			if (m.role === 'admin' && m.status === 'approved') {
+				if (m.email && m.email.includes('@')) {
+					emails.add(m.email.trim().toLowerCase());
+				}
+			}
+		}
+	}
+
+	return Array.from(emails);
 }
 
 export async function updateMemberStatus(

@@ -16,7 +16,7 @@
 		memberOrgRolesList = data.memberOrgRoles ? [...data.memberOrgRoles] : [];
 	});
 
-	let activeTab = $state<'pending' | 'approved' | 'admins' | 'bod' | 'advisory' | 'partners' | 'all' | 'org_roles'>('pending');
+	let activeTab = $state<'pending' | 'approved' | 'admins' | 'bod' | 'advisory' | 'partners' | 'all' | 'org_roles' | 'deleted'>('approved');
 	let searchQuery = $state('');
 	let copiedPassword = $state(false);
 	let editingMember = $state<any | null>(null);
@@ -51,6 +51,11 @@
 	}
 
 	$effect(() => {
+		const tabParam = page.url.searchParams.get('tab');
+		if (tabParam && ['pending', 'approved', 'admins', 'bod', 'advisory', 'partners', 'all', 'org_roles', 'deleted'].includes(tabParam)) {
+			activeTab = tabParam as any;
+		}
+
 		const editId = page.url.searchParams.get('edit');
 		if (editId && !editingMember && membersList.length > 0) {
 			const target = membersList.find((m: any) => m.id === editId);
@@ -113,11 +118,15 @@
 	const approvedMembers = $derived(
 		membersList.filter((m: any) => m.status === 'approved')
 	);
+	const deletedMembers = $derived(
+		membersList.filter((m: any) => m.status === 'deleted')
+	);
 	const adminMembers = $derived(
-		membersList.filter((m: any) => m.role === 'admin' || m.org_role_id === 'org_admin')
+		membersList.filter((m: any) => m.status !== 'deleted' && (m.role === 'admin' || m.org_role_id === 'org_admin'))
 	);
 	const bodMembers = $derived(
 		membersList.filter((m: any) => {
+			if (m.status === 'deleted') return false;
 			const isAdv = m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor');
 			return !isAdv && (
 				m.role === 'bod' ||
@@ -134,10 +143,10 @@
 		})
 	);
 	const advisoryMembers = $derived(
-		membersList.filter((m: any) => m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul'))
+		membersList.filter((m: any) => m.status !== 'deleted' && (m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul')))
 	);
 	const partnerMembers = $derived(
-		membersList.filter((m: any) => m.role === 'partner')
+		membersList.filter((m: any) => m.status !== 'deleted' && m.role === 'partner')
 	);
 
 	const filteredMembers = $derived(
@@ -146,8 +155,10 @@
 				let matchesTab = true;
 				if (activeTab === 'pending') matchesTab = m.status === 'pending';
 				else if (activeTab === 'approved') matchesTab = m.status === 'approved';
-				else if (activeTab === 'admins') matchesTab = m.role === 'admin' || m.org_role_id === 'org_admin';
+				else if (activeTab === 'deleted') matchesTab = m.status === 'deleted';
+				else if (activeTab === 'admins') matchesTab = m.status !== 'deleted' && (m.role === 'admin' || m.org_role_id === 'org_admin');
 				else if (activeTab === 'bod') {
+					if (m.status === 'deleted') return false;
 					const isAdv = m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor');
 					matchesTab = !isAdv && (
 						m.role === 'bod' ||
@@ -162,8 +173,9 @@
 						m.organizational_role?.toLowerCase().includes('secretary')
 					);
 				}
-				else if (activeTab === 'advisory') matchesTab = m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul');
-				else if (activeTab === 'partners') matchesTab = m.role === 'partner';
+				else if (activeTab === 'advisory') matchesTab = m.status !== 'deleted' && (m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul'));
+				else if (activeTab === 'partners') matchesTab = m.status !== 'deleted' && m.role === 'partner';
+				else if (activeTab === 'all') matchesTab = m.status !== 'deleted';
 
 				const q = searchQuery.toLowerCase();
 				const matchesQuery =
@@ -244,6 +256,17 @@
 				<span class="px-4 py-2 rounded-xl bg-slate-900 border border-amber-500/30 text-xs font-semibold text-amber-300">
 					👑 Admins: <span class="text-amber-400 font-bold ml-1">{adminMembers.length}</span>
 				</span>
+				{#if deletedMembers.length > 0}
+					<button
+						type="button"
+						onclick={() => (activeTab = 'deleted')}
+						class="px-3.5 py-2 rounded-xl bg-red-950/50 border border-red-800/60 text-xs font-semibold text-red-300 hover:bg-red-900/60 transition-colors flex items-center gap-1 cursor-pointer"
+						title="View soft-deleted members"
+					>
+						<span>🗑️ Deleted:</span>
+						<span class="text-red-400 font-bold ml-1">{deletedMembers.length}</span>
+					</button>
+				{/if}
 			</div>
 		</div>
 
@@ -297,20 +320,20 @@
 				<!-- Status Tabs -->
 				<button
 					type="button"
-					onclick={() => (activeTab = 'pending')}
-					class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'pending' ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}"
-				>
-					<span>⏳ Pending</span>
-					<span class="px-1.5 py-0.2 rounded-md bg-slate-950/40 text-[10px]">{pendingMembers.length}</span>
-				</button>
-
-				<button
-					type="button"
 					onclick={() => (activeTab = 'approved')}
 					class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'approved' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}"
 				>
 					<span>✅ Approved</span>
 					<span class="px-1.5 py-0.2 rounded-md bg-slate-950/40 text-[10px]">{approvedMembers.length}</span>
+				</button>
+
+				<button
+					type="button"
+					onclick={() => (activeTab = 'pending')}
+					class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'pending' ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}"
+				>
+					<span>⏳ Pending</span>
+					<span class="px-1.5 py-0.2 rounded-md bg-slate-950/40 text-[10px]">{pendingMembers.length}</span>
 				</button>
 
 				<!-- Compact "By Role" Filter Dropdown -->
@@ -393,7 +416,7 @@
 					onclick={() => (activeTab = 'all')}
 					class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap {activeTab === 'all' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}"
 				>
-					All ({membersList.length})
+					All ({membersList.filter((m: any) => m.status !== 'deleted').length})
 				</button>
 
 				<button
@@ -402,6 +425,15 @@
 					class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'org_roles' ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-amber-400 hover:text-white'}"
 				>
 					<span>🏷️ Org Roles ({data.orgRoles?.length || 0})</span>
+				</button>
+
+				<button
+					type="button"
+					onclick={() => (activeTab = 'deleted')}
+					class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 {activeTab === 'deleted' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-400 hover:text-red-400'}"
+				>
+					<span>🗑️ Deleted</span>
+					<span class="px-1.5 py-0.2 rounded-md bg-slate-950/40 text-[10px]">{deletedMembers.length}</span>
 				</button>
 			</div>
 
@@ -518,12 +550,16 @@
 			</div>
 		{:else if filteredMembers.length === 0}
 			<div class="glass-card p-12 rounded-3xl text-center border border-slate-800">
-				<p class="text-slate-400 text-sm">No member applications match the current filter.</p>
+				{#if activeTab === 'deleted'}
+					<p class="text-slate-400 text-sm">No soft-deleted members in archive. All active records are intact.</p>
+				{:else}
+					<p class="text-slate-400 text-sm">No member applications match the current filter.</p>
+				{/if}
 			</div>
 		{:else}
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 				{#each filteredMembers as member, index (member.id)}
-					<div class="glass-card p-6 rounded-2xl flex flex-col justify-between border border-slate-800/80 hover:border-slate-700 transition-all {member.role === 'admin' ? 'ring-1 ring-amber-500/30' : ''}">
+					<div class="glass-card p-6 rounded-2xl flex flex-col justify-between border border-slate-800/80 hover:border-slate-700 transition-all {member.role === 'admin' ? 'ring-1 ring-amber-500/30' : ''} {member.status === 'deleted' ? 'border-rose-900/40 bg-slate-950/60' : ''}">
 						<div>
 							<div class="flex items-start justify-between gap-2 mb-3">
 								<div class="flex items-center gap-3">
@@ -563,9 +599,10 @@
 										class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider
 										{member.status === 'pending' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : ''}
 										{member.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : ''}
-										{member.status === 'denied' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : ''}"
+										{member.status === 'denied' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : ''}
+										{member.status === 'deleted' ? 'bg-rose-950/80 text-rose-300 border border-rose-800/80' : ''}"
 									>
-										{member.status}
+										{member.status === 'deleted' ? '🗑️ DELETED' : member.status}
 									</span>
 
 									<!-- Role Badge -->
@@ -600,20 +637,10 @@
 											{member.role || 'Member'}
 										</span>
 									{/if}
-
-									{#if activeTab === 'bod' || activeTab === 'advisory'}
-										{@const effOrder = member.display_order !== 100 ? member.display_order : (member.role_rank_order ?? 100)}
-										<span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold {member.display_order !== 100 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-900 text-slate-400 border border-slate-800'}" title="Presentation Order on /team (click Edit to change)">
-											Order #{effOrder}
-										</span>
-									{/if}
 								</div>
 							</div>
 
 							<div class="space-y-1.5 text-xs text-slate-300 mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-								{#if member.display_order && member.display_order !== 100}
-									<p><strong class="text-amber-400 font-medium">Team Order:</strong> <span class="font-mono text-amber-300 font-bold">#{member.display_order}</span> <span class="text-[10px] text-slate-500">(Custom override for /team)</span></p>
-								{/if}
 								{#if member.salutation}
 									<p><strong class="text-slate-400 font-medium">Salutation:</strong> {member.salutation}</p>
 								{/if}
@@ -690,41 +717,123 @@
 								{/if}
 							</div>
 
-							<!-- Action Controls: Approval for pending, Reset Password for existing -->
-							{#if member.status === 'pending'}
-								<div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/60">
-									<form method="POST" action="?/approve" use:enhance>
+							<!-- Action Controls: Deleted, Pending, Approved -->
+							{#if member.status === 'deleted'}
+								<div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/60">
+									<span class="text-[10px] text-rose-400 font-mono flex items-center gap-1">
+										<span>🗑️</span>
+										<span>Deleted {member.deleted_at ? new Date(member.deleted_at).toLocaleDateString() : ''}</span>
+									</span>
+									<form method="POST" action="?/restore" use:enhance>
+										<input type="hidden" name="memberId" value={member.id} />
+										<input type="hidden" name="memberEmail" value={member.email} />
+										<input type="hidden" name="targetStatus" value="approved" />
+										<button
+											type="submit"
+											onclick={(e) => {
+												if (!confirm(`Restore ${member.full_name} (${member.email}) back to active Approved members?`)) {
+													e.preventDefault();
+												}
+											}}
+											class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors shadow-md flex items-center gap-1.5 cursor-pointer"
+										>
+											<span>↺</span>
+											<span>Restore Member</span>
+										</button>
+									</form>
+								</div>
+							{:else if member.status === 'pending'}
+								<div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/60">
+									<form method="POST" action="?/softDelete" use:enhance>
 										<input type="hidden" name="memberId" value={member.id} />
 										<input type="hidden" name="memberEmail" value={member.email} />
 										<button
 											type="submit"
-											class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors shadow-md"
+											onclick={(e) => {
+												if (!confirm(`Move pending application from ${member.full_name} to Deleted archive?`)) {
+													e.preventDefault();
+												}
+											}}
+											class="px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-950/40 border border-slate-800 hover:border-red-800/50 text-xs transition-colors flex items-center gap-1 cursor-pointer"
+											title="Soft-delete application"
 										>
-											Approve ✓
+											<span>🗑️</span>
 										</button>
 									</form>
 
-									<form method="POST" action="?/deny" use:enhance>
-										<input type="hidden" name="memberId" value={member.id} />
-										<button
-											type="submit"
-											class="px-3 py-1.5 rounded-lg bg-red-600/80 hover:bg-red-500 text-white text-xs font-bold transition-colors"
-										>
-											Deny ✕
-										</button>
-									</form>
+									<div class="flex items-center gap-2">
+										<form method="POST" action="?/deny" use:enhance>
+											<input type="hidden" name="memberId" value={member.id} />
+											<button
+												type="submit"
+												class="px-3 py-1.5 rounded-lg bg-red-600/80 hover:bg-red-500 text-white text-xs font-bold transition-colors cursor-pointer"
+											>
+												Deny ✕
+											</button>
+										</form>
+
+										<form method="POST" action="?/approve" use:enhance>
+											<input type="hidden" name="memberId" value={member.id} />
+											<input type="hidden" name="memberEmail" value={member.email} />
+											<button
+												type="submit"
+												class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors shadow-md cursor-pointer"
+											>
+												Approve ✓
+											</button>
+										</form>
+									</div>
 								</div>
 							{:else}
-								<div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/60">
-									<div class="flex items-center gap-1.5">
+								<div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/60 flex-wrap">
+									<div class="flex items-center gap-1.5 flex-wrap">
 										<button
 											type="button"
 											onclick={() => openEditModal(member)}
-											class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-750 hover:text-white border border-slate-700 transition-colors flex items-center gap-1"
+											class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-750 hover:text-white border border-slate-700 transition-colors flex items-center gap-1 cursor-pointer"
 										>
 											<span>✏️</span>
 											<span>Edit</span>
 										</button>
+
+										{#if member.id !== data.currentUserId}
+											<!-- Unapprove Button -->
+											<form method="POST" action="?/unapprove" use:enhance>
+												<input type="hidden" name="memberId" value={member.id} />
+												<input type="hidden" name="memberEmail" value={member.email} />
+												<button
+													type="submit"
+													onclick={(e) => {
+														if (!confirm(`Revert ${member.full_name} back to Pending? Their login access will be suspended until re-approved.`)) {
+															e.preventDefault();
+														}
+													}}
+													class="px-2.5 py-1 rounded-lg text-xs font-semibold text-amber-300 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/50 transition-colors flex items-center gap-1 cursor-pointer"
+													title="Revert to Pending status"
+												>
+													<span>↩</span>
+													<span>Unapprove</span>
+												</button>
+											</form>
+
+											<!-- Soft Delete Button -->
+											<form method="POST" action="?/softDelete" use:enhance>
+												<input type="hidden" name="memberId" value={member.id} />
+												<input type="hidden" name="memberEmail" value={member.email} />
+												<button
+													type="submit"
+													onclick={(e) => {
+														if (!confirm(`Move ${member.full_name} to Deleted archive? You can restore them at any time from the Deleted tab.`)) {
+															e.preventDefault();
+														}
+													}}
+													class="px-2 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-red-400 hover:bg-red-950/40 border border-slate-800 hover:border-red-800/50 transition-colors flex items-center gap-1 cursor-pointer"
+													title="Soft-delete member"
+												>
+													<span>🗑️</span>
+												</button>
+											</form>
+										{/if}
 
 										<!-- Move Up / Down Buttons for BOD and Advisory tabs -->
 										{#if activeTab === 'bod' || activeTab === 'advisory'}
@@ -786,7 +895,7 @@
 													e.preventDefault();
 												}
 											}}
-											class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/10 hover:bg-amber-500 text-amber-300 hover:text-slate-950 border border-amber-500/30 transition-all flex items-center gap-1.5 disabled:opacity-50 shadow-sm"
+											class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/10 hover:bg-amber-500 text-amber-300 hover:text-slate-950 border border-amber-500/30 transition-all flex items-center gap-1.5 disabled:opacity-50 shadow-sm cursor-pointer"
 											title="Generates a new password, displays it on screen, and emails credentials to member"
 										>
 											{#if resettingPasswordId === member.id}

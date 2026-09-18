@@ -7,7 +7,12 @@ import {
 	updateMemberRole,
 	updateMemberStatus,
 	getOrganizationalRoles,
-	upsertOrganizationalRole
+	upsertOrganizationalRole,
+	getAdminEmails,
+	createMember,
+	softDeleteMember,
+	restoreMember,
+	unapproveMember
 } from './db';
 
 describe('In-Memory & Local Database Operations Unit Tests', () => {
@@ -87,5 +92,66 @@ describe('In-Memory & Local Database Operations Unit Tests', () => {
 		const savedChild = refreshedRoles.find((r) => r.id === 'org_finance_lead');
 		expect(savedChild?.parent_role_id).toBe('org_treasurer');
 		expect(savedChild?.parent_title).toBe('Treasurer');
+	});
+
+	it('retrieves admin emails including info@canfacs.org and active admins', async () => {
+		const adminEmails = await getAdminEmails(null);
+		expect(adminEmails).toContain('info@canfacs.org');
+		expect(adminEmails.length).toBeGreaterThanOrEqual(1);
+	});
+
+	it('supports unapproving an approved member back to pending', async () => {
+		const testMember = await createMember(null, {
+			full_name: 'Unapprove Test User',
+			email: 'unapprove.test@canfacs.org',
+			phone: null,
+			profession: null,
+			city: 'Vancouver',
+			province: 'BC',
+			bio: null
+		});
+
+		// Approve member
+		await updateMemberStatus(null, testMember.id, 'approved');
+		let member = await getMemberById(null, testMember.id);
+		expect(member?.status).toBe('approved');
+
+		// Unapprove member
+		await unapproveMember(null, testMember.id);
+		member = await getMemberById(null, testMember.id);
+		expect(member?.status).toBe('pending');
+		expect(member?.approved_at).toBeNull();
+	});
+
+	it('supports soft-deleting a member and restoring them', async () => {
+		const testMember = await createMember(null, {
+			full_name: 'Soft Delete User',
+			email: 'softdelete.test@canfacs.org',
+			phone: null,
+			profession: null,
+			city: 'Burnaby',
+			province: 'BC',
+			bio: null
+		});
+
+		// Soft delete
+		await softDeleteMember(null, testMember.id);
+		let member = await getMemberById(null, testMember.id);
+		expect(member?.status).toBe('deleted');
+		expect(member?.deleted_at).toBeDefined();
+
+		// Default getAllMembers must exclude deleted member
+		const activeMembers = await getAllMembers(null);
+		expect(activeMembers.some((m) => m.id === testMember.id)).toBe(false);
+
+		// getAllMembers with includeDeleted must include deleted member
+		const allWithDeleted = await getAllMembers(null, undefined, true);
+		expect(allWithDeleted.some((m) => m.id === testMember.id)).toBe(true);
+
+		// Restore member
+		await restoreMember(null, testMember.id, 'approved');
+		member = await getMemberById(null, testMember.id);
+		expect(member?.status).toBe('approved');
+		expect(member?.deleted_at).toBeNull();
 	});
 });

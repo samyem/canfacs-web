@@ -494,4 +494,351 @@ Email: info@canfacs.org
 	);
 }
 
+export interface NewMemberApplicantData {
+	id?: string;
+	full_name: string;
+	email: string;
+	phone?: string | null;
+	profession?: string | null;
+	city?: string | null;
+	province?: string | null;
+	country?: string | null;
+	bio?: string | null;
+	created_at?: string;
+}
+
+export interface NewMemberAdminNotificationData {
+	applicant: NewMemberApplicantData;
+	adminEmails: string[];
+	reviewUrl?: string;
+}
+
+export async function sendNewMemberAdminNotificationEmail(
+	data: NewMemberAdminNotificationData,
+	env?: Record<string, any>
+): Promise<{ success: boolean; sentCount: number; errors?: string[] }> {
+	const reviewUrl = data.reviewUrl || 'https://canfacs.org/admin/members?tab=pending';
+	const recipientEmails = Array.from(
+		new Set(
+			(data.adminEmails || [])
+				.map((e) => e.trim().toLowerCase())
+				.filter((e) => e && e.includes('@'))
+		)
+	);
+
+	if (recipientEmails.length === 0) {
+		recipientEmails.push('info@canfacs.org');
+	}
+
+	const dateFormatted = new Date().toLocaleDateString('en-CA', {
+		year: 'numeric',
+		month: 'long',
+		day: 'numeric',
+		hour: '2-digit',
+		minute: '2-digit',
+		timeZone: 'America/Toronto'
+	});
+
+	const locationText = [data.applicant.city, data.applicant.province, data.applicant.country || 'Canada']
+		.filter(Boolean)
+		.join(', ');
+
+	const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0f19; color: #f8fafc; margin: 0; padding: 24px; }
+    .card { max-width: 620px; margin: 0 auto; background: #111827; border-radius: 20px; border: 1px solid #1f2937; padding: 36px; box-shadow: 0 16px 36px rgba(0,0,0,0.6); }
+    .header { text-align: center; border-bottom: 1px solid #1f2937; padding-bottom: 24px; margin-bottom: 24px; }
+    .badge { display: inline-block; background: #f59e0b; color: #0f172a; padding: 5px 14px; border-radius: 9999px; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; }
+    h1 { margin: 0 0 6px; color: #ffffff; font-size: 22px; font-weight: 800; }
+    .subtitle { color: #94a3b8; font-size: 13px; margin: 0; }
+    .box { background: #0b0f19; border: 1px solid #1f2937; border-radius: 14px; padding: 20px; margin: 24px 0; }
+    .details-table { width: 100%; border-collapse: collapse; }
+    .details-table td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #1e293b; }
+    .details-table tr:last-child td { border-bottom: none; }
+    .label { color: #94a3b8; width: 35%; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
+    .value { color: #f8fafc; font-weight: 500; }
+    .btn-container { text-align: center; margin: 28px 0 20px; }
+    .btn { display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a !important; padding: 14px 28px; border-radius: 12px; font-weight: 800; font-size: 14px; text-decoration: none; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4); }
+    .footer { text-align: center; font-size: 12px; color: #64748b; margin-top: 32px; border-top: 1px solid #1f2937; padding-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <span class="badge">⏳ Pending Application Review</span>
+      <h1>New Member Application Received</h1>
+      <p class="subtitle">Canada-Nepal Friendship & Cultural Society • Admin Notice</p>
+    </div>
+
+    <p style="font-size: 15px; color: #ffffff; margin-bottom: 12px;">Hello CANFACS Administrators,</p>
+
+    <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6; margin: 0 0 16px;">
+      A new prospective member has submitted an application to join the society via the website portal. It is currently waiting under the <strong>⏳ Pending</strong> queue in the Admin Control Center for review.
+    </p>
+
+    <div class="box">
+      <table class="details-table">
+        <tr>
+          <td class="label">Full Name</td>
+          <td class="value"><strong>${data.applicant.full_name}</strong></td>
+        </tr>
+        <tr>
+          <td class="label">Email Address</td>
+          <td class="value"><a href="mailto:${data.applicant.email}" style="color: #38bdf8;">${data.applicant.email}</a></td>
+        </tr>
+        <tr>
+          <td class="label">Phone</td>
+          <td class="value">${data.applicant.phone || '—'}</td>
+        </tr>
+        <tr>
+          <td class="label">Location</td>
+          <td class="value">${locationText || '—'}</td>
+        </tr>
+        <tr>
+          <td class="label">Profession</td>
+          <td class="value">${data.applicant.profession || '—'}</td>
+        </tr>
+        ${
+					data.applicant.bio
+						? `<tr><td class="label">Biodata / Notes</td><td class="value" style="font-style: italic; color: #cbd5e1;">"${data.applicant.bio}"</td></tr>`
+						: ''
+				}
+        <tr>
+          <td class="label">Submitted</td>
+          <td class="value font-mono" style="font-size: 12px; color: #94a3b8;">${dateFormatted}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="btn-container">
+      <a href="${reviewUrl}" class="btn">Open Admin Control Center & Review &rarr;</a>
+    </div>
+
+    <p style="font-size: 12px; color: #94a3b8; line-height: 1.6; text-align: center; margin-top: 16px;">
+      In the Admin Control Center, you can approve the applicant with 1 click, assign organizational governance roles, or generate access credentials.
+    </p>
+
+    <div class="footer">
+      <p style="margin: 0 0 4px;">Canada-Nepal Friendship & Cultural Society (CANFACS)</p>
+      <p style="margin: 0 0 4px;">Website: <a href="https://canfacs.org" style="color: #38bdf8;">canfacs.org</a> • Email: <a href="mailto:info@canfacs.org" style="color: #38bdf8;">info@canfacs.org</a></p>
+      <p style="font-size: 11px; color: #475569; margin-top: 8px;">Automated notification sent to all CANFACS Administrators.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+	const text = `
+CANADA-NEPAL FRIENDSHIP & CULTURAL SOCIETY (CANFACS)
+Admin Notification: New Member Application Received
+
+Hello Administrators,
+
+A new membership application has been submitted and is pending review:
+
+APPLICANT DETAILS:
+- Full Name: ${data.applicant.full_name}
+- Email: ${data.applicant.email}
+- Phone: ${data.applicant.phone || 'Not provided'}
+- Location: ${locationText || 'Not specified'}
+- Profession: ${data.applicant.profession || 'Not provided'}
+${data.applicant.bio ? `- Biodata: "${data.applicant.bio}"\n` : ''}- Submitted: ${dateFormatted}
+
+REVIEW IN ADMIN CONTROL CENTER:
+Please log in to review and approve this member: ${reviewUrl}
+
+Canada-Nepal Friendship & Cultural Society (CANFACS)
+https://canfacs.org | info@canfacs.org
+`;
+
+	const subject = `[CANFACS Admin] New Member Application: ${data.applicant.full_name}`;
+	const errors: string[] = [];
+	let sentCount = 0;
+
+	for (const adminEmail of recipientEmails) {
+		try {
+			const res = await sendCustomEmail(
+				{
+					to: adminEmail,
+					subject,
+					html,
+					text
+				},
+				env
+			);
+			if (res.success) {
+				sentCount++;
+			} else if (res.error) {
+				errors.push(`${adminEmail}: ${res.error}`);
+			}
+		} catch (e: any) {
+			errors.push(`${adminEmail}: ${e?.message || 'Dispatch error'}`);
+		}
+	}
+
+	return {
+		success: sentCount > 0,
+		sentCount,
+		errors: errors.length > 0 ? errors : undefined
+	};
+}
+
+export interface PendingMemberConfirmationData {
+	applicant: NewMemberApplicantData;
+}
+
+export async function sendPendingMemberConfirmationEmail(
+	data: PendingMemberConfirmationData,
+	env?: Record<string, any>
+): Promise<{ success: boolean; error?: string; delivered?: boolean }> {
+	const recipientName = data.applicant.full_name || 'Valued Member';
+	const recipientEmail = data.applicant.email;
+
+	if (!recipientEmail || !recipientEmail.includes('@')) {
+		return { success: false, error: 'Applicant email address missing or invalid' };
+	}
+
+	const dateFormatted = new Date().toLocaleDateString('en-CA', {
+		year: 'numeric',
+		month: 'long',
+		day: 'numeric',
+		timeZone: 'America/Toronto'
+	});
+
+	const locationText = [data.applicant.city, data.applicant.province, data.applicant.country || 'Canada']
+		.filter(Boolean)
+		.join(', ');
+
+	const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0f19; color: #f8fafc; margin: 0; padding: 24px; }
+    .card { max-width: 600px; margin: 0 auto; background: #111827; border-radius: 20px; border: 1px solid #1f2937; padding: 36px; box-shadow: 0 16px 36px rgba(0,0,0,0.6); }
+    .header { text-align: center; border-bottom: 1px solid #1f2937; padding-bottom: 24px; margin-bottom: 24px; }
+    .badge { display: inline-block; background: #dc2626; color: #ffffff; padding: 5px 14px; border-radius: 9999px; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; }
+    h1 { margin: 0 0 6px; color: #ffffff; font-size: 22px; font-weight: 800; }
+    .subtitle { color: #94a3b8; font-size: 13px; margin: 0; }
+    .box { background: #0b0f19; border: 1px solid #1f2937; border-radius: 14px; padding: 20px; margin: 24px 0; }
+    .details-table { width: 100%; border-collapse: collapse; }
+    .details-table td { padding: 9px 12px; font-size: 13px; border-bottom: 1px solid #1e293b; }
+    .details-table tr:last-child td { border-bottom: none; }
+    .label { color: #94a3b8; width: 35%; font-weight: 600; font-size: 12px; }
+    .value { color: #f8fafc; }
+    .status-badge { display: inline-block; background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+    .step-box { background: #1e1b4b; border: 1px solid #4338ca; border-radius: 12px; padding: 18px; margin: 24px 0; font-size: 13px; color: #c7d2fe; line-height: 1.6; }
+    .btn-container { text-align: center; margin: 28px 0 20px; }
+    .btn { display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: #ffffff !important; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 14px; text-decoration: none; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4); }
+    .footer { text-align: center; font-size: 12px; color: #64748b; margin-top: 32px; border-top: 1px solid #1f2937; padding-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <span class="badge">Application Received</span>
+      <h1>Canada-Nepal Friendship & Cultural Society</h1>
+      <p class="subtitle">CANFACS • Federal Non-Profit Society • Established 2016</p>
+    </div>
+
+    <p style="font-size: 15px; color: #ffffff; margin-bottom: 12px;">Dear <strong>${recipientName}</strong>,</p>
+
+    <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6; margin: 0 0 16px;">
+      Thank you for your interest in joining the <strong>Canada-Nepal Friendship & Cultural Society (CANFACS)</strong>! We are pleased to confirm that your membership registration has been received successfully.
+    </p>
+
+    <div class="step-box">
+      <strong style="color: #ffffff; font-size: 14px;">📋 What Happens Next?</strong>
+      <ol style="margin: 8px 0 0; padding-left: 20px; color: #e0e7ff;">
+        <li>Our Executive Administration and Board of Directors will review your application.</li>
+        <li>Once approved, you will receive an official notification email with your login credentials to access the <strong>CANFACS Member Portal</strong> and community directory.</li>
+        <li>You will be able to connect with fellow members, participate in cultural and bilateral initiatives, and join general society meetings.</li>
+      </ol>
+    </div>
+
+    <div class="box">
+      <table class="details-table">
+        <tr>
+          <td class="label">Applicant Name</td>
+          <td class="value"><strong>${recipientName}</strong></td>
+        </tr>
+        <tr>
+          <td class="label">Registered Email</td>
+          <td class="value">${recipientEmail}</td>
+        </tr>
+        ${locationText ? `<tr><td class="label">Location</td><td class="value">${locationText}</td></tr>` : ''}
+        ${data.applicant.profession ? `<tr><td class="label">Profession</td><td class="value">${data.applicant.profession}</td></tr>` : ''}
+        <tr>
+          <td class="label">Application Date</td>
+          <td class="value">${dateFormatted}</td>
+        </tr>
+        <tr>
+          <td class="label">Current Status</td>
+          <td class="value"><span class="status-badge">⏳ Pending Approval</span></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="btn-container">
+      <a href="https://canfacs.org/our-story" class="btn">Explore CANFACS Programs & History &rarr;</a>
+    </div>
+
+    <p style="font-size: 13px; color: #94a3b8; line-height: 1.6; text-align: center; margin-top: 20px;">
+      If you have any questions or would like to provide additional details regarding your application, feel free to reply directly to <a href="mailto:info@canfacs.org" style="color: #38bdf8;">info@canfacs.org</a>.
+    </p>
+
+    <div class="footer">
+      <p style="margin: 0 0 4px;">Canada-Nepal Friendship & Cultural Society (CANFACS)</p>
+      <p style="margin: 0 0 4px;">Website: <a href="https://canfacs.org" style="color: #38bdf8;">canfacs.org</a> • Email: <a href="mailto:info@canfacs.org" style="color: #38bdf8;">info@canfacs.org</a></p>
+      <p style="font-size: 11px; color: #475569; margin-top: 8px;">Non-profit Society #S0066426 • Dedicated to bilateral cultural appreciation since 1965.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+	const text = `
+CANADA-NEPAL FRIENDSHIP & CULTURAL SOCIETY (CANFACS)
+Membership Application Received
+
+Dear ${recipientName},
+
+Thank you for your interest in joining the Canada-Nepal Friendship & Cultural Society (CANFACS)! We have successfully received your membership application.
+
+WHAT HAPPENS NEXT:
+1. Our Executive Administration and Board of Directors will review your application.
+2. Once approved, you will receive an official notification email with your login credentials to access the CANFACS Member Portal and community directory.
+3. You will be able to connect with fellow members, participate in cultural and bilateral initiatives, and join general society meetings.
+
+APPLICATION SUMMARY:
+- Name: ${recipientName}
+- Email: ${recipientEmail}
+${locationText ? `- Location: ${locationText}\n` : ''}${data.applicant.profession ? `- Profession: ${data.applicant.profession}\n` : ''}- Date: ${dateFormatted}
+- Status: Pending Approval
+
+If you have any questions, feel free to contact us at info@canfacs.org.
+
+Warm regards,
+Canada-Nepal Friendship & Cultural Society (CANFACS)
+Website: https://canfacs.org
+Email: info@canfacs.org
+`;
+
+	return await sendCustomEmail(
+		{
+			to: recipientEmail,
+			subject: 'Your CANFACS Membership Application Has Been Received',
+			html,
+			text
+		},
+		env
+	);
+}
+
+
 

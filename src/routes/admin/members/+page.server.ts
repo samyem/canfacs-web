@@ -8,7 +8,10 @@ import {
 	getOrganizationalRoles,
 	getAllMemberOrganizationalRoles,
 	assignMemberOrganizationalRole,
-	removeMemberOrganizationalRole
+	removeMemberOrganizationalRole,
+	softDeleteMember,
+	restoreMember,
+	unapproveMember
 } from '$lib/server/db';
 import { generateTempPassword, hashPassword } from '$lib/server/auth';
 import { sendPasswordResetEmail } from '$lib/server/email';
@@ -19,7 +22,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 	}
 
 	const db = getDb(platform, locals);
-	const members = await getAllMembers(db);
+	const members = await getAllMembers(db, undefined, true);
 	const orgRoles = await getOrganizationalRoles(db);
 	const memberOrgRoles = await getAllMemberOrganizationalRoles(db, false);
 
@@ -92,6 +95,81 @@ export const actions: Actions = {
 		return {
 			success: true,
 			message: 'Member application denied.'
+		};
+	},
+
+	unapprove: async ({ request, locals, platform }) => {
+		if (!locals.user || locals.user.role !== 'admin') {
+			return fail(403, { error: 'Unauthorized' });
+		}
+
+		const formData = await request.formData();
+		const memberId = formData.get('memberId')?.toString();
+		const memberEmail = formData.get('memberEmail')?.toString();
+
+		if (!memberId) {
+			return fail(400, { error: 'Missing member ID' });
+		}
+
+		if (locals.user.id === memberId) {
+			return fail(400, { error: 'You cannot unapprove your own administrator account.' });
+		}
+
+		const db = getDb(platform, locals);
+		await unapproveMember(db, memberId);
+
+		return {
+			success: true,
+			message: `Member ${memberEmail || memberId} reverted to Pending status.`
+		};
+	},
+
+	softDelete: async ({ request, locals, platform }) => {
+		if (!locals.user || locals.user.role !== 'admin') {
+			return fail(403, { error: 'Unauthorized' });
+		}
+
+		const formData = await request.formData();
+		const memberId = formData.get('memberId')?.toString();
+		const memberEmail = formData.get('memberEmail')?.toString();
+
+		if (!memberId) {
+			return fail(400, { error: 'Missing member ID' });
+		}
+
+		if (locals.user.id === memberId) {
+			return fail(400, { error: 'You cannot delete your own administrator account.' });
+		}
+
+		const db = getDb(platform, locals);
+		await softDeleteMember(db, memberId);
+
+		return {
+			success: true,
+			message: `Member ${memberEmail || memberId} moved to Deleted archive.`
+		};
+	},
+
+	restore: async ({ request, locals, platform }) => {
+		if (!locals.user || locals.user.role !== 'admin') {
+			return fail(403, { error: 'Unauthorized' });
+		}
+
+		const formData = await request.formData();
+		const memberId = formData.get('memberId')?.toString();
+		const memberEmail = formData.get('memberEmail')?.toString();
+		const targetStatus = (formData.get('targetStatus')?.toString() || 'approved') as 'approved' | 'pending';
+
+		if (!memberId) {
+			return fail(400, { error: 'Missing member ID' });
+		}
+
+		const db = getDb(platform, locals);
+		await restoreMember(db, memberId, targetStatus);
+
+		return {
+			success: true,
+			message: `Member ${memberEmail || memberId} restored to ${targetStatus === 'approved' ? 'Approved' : 'Pending'}.`
 		};
 	},
 
