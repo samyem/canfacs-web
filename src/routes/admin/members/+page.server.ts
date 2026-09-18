@@ -10,6 +10,7 @@ import {
 	assignMemberOrganizationalRole,
 	removeMemberOrganizationalRole,
 	softDeleteMember,
+	permanentlyDeleteMember,
 	restoreMember,
 	unapproveMember
 } from '$lib/server/db';
@@ -170,6 +171,32 @@ export const actions: Actions = {
 		return {
 			success: true,
 			message: `Member ${memberEmail || memberId} restored to ${targetStatus === 'approved' ? 'Approved' : 'Pending'}.`
+		};
+	},
+
+	permanentlyDelete: async ({ request, locals, platform }) => {
+		if (!locals.user || locals.user.role !== 'admin') {
+			return fail(403, { error: 'Unauthorized' });
+		}
+
+		const formData = await request.formData();
+		const memberId = formData.get('memberId')?.toString();
+		const memberEmail = formData.get('memberEmail')?.toString();
+
+		if (!memberId) {
+			return fail(400, { error: 'Missing member ID' });
+		}
+
+		if (locals.user.id === memberId) {
+			return fail(400, { error: 'You cannot delete your own administrator account.' });
+		}
+
+		const db = getDb(platform, locals);
+		await permanentlyDeleteMember(db, memberId);
+
+		return {
+			success: true,
+			message: `Member ${memberEmail || memberId} permanently erased from database.`
 		};
 	},
 

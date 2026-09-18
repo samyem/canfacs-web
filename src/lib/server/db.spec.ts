@@ -11,6 +11,7 @@ import {
 	getAdminEmails,
 	createMember,
 	softDeleteMember,
+	permanentlyDeleteMember,
 	restoreMember,
 	unapproveMember
 } from './db';
@@ -153,5 +154,34 @@ describe('In-Memory & Local Database Operations Unit Tests', () => {
 		member = await getMemberById(null, testMember.id);
 		expect(member?.status).toBe('approved');
 		expect(member?.deleted_at).toBeNull();
+	});
+
+	it('supports permanently deleting a spam member', async () => {
+		const spamMember = await createMember(null, {
+			full_name: 'Spam Bot Account',
+			email: 'spambot@invalid-domain.com',
+			phone: null,
+			profession: null,
+			city: 'Nowhere',
+			province: 'BC',
+			bio: 'Casino promo link'
+		});
+
+		// Verify created
+		let member = await getMemberById(null, spamMember.id);
+		expect(member).toBeDefined();
+
+		// Soft-delete / deny first
+		await softDeleteMember(null, spamMember.id);
+
+		// Permanently delete
+		await permanentlyDeleteMember(null, spamMember.id);
+
+		// Verify completely gone
+		member = await getMemberById(null, spamMember.id);
+		expect(member).toBeNull();
+
+		const allWithDeleted = await getAllMembers(null, undefined, true);
+		expect(allWithDeleted.some((m) => m.id === spamMember.id)).toBe(false);
 	});
 });

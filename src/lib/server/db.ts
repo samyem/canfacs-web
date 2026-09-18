@@ -742,6 +742,26 @@ export async function softDeleteMember(db: any, id: string): Promise<void> {
 	invalidateTeamLeadershipCache();
 }
 
+export async function permanentlyDeleteMember(db: any, id: string): Promise<void> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await db.batch([
+			db.prepare(`DELETE FROM member_organizational_roles WHERE member_id = ?`).bind(id),
+			db.prepare(`DELETE FROM post_reactions WHERE member_id = ?`).bind(id),
+			db.prepare(`DELETE FROM post_reshares WHERE reshared_by_id = ?`).bind(id),
+			db.prepare(`DELETE FROM comments WHERE author_id = ?`).bind(id),
+			db.prepare(`DELETE FROM posts WHERE author_id = ?`).bind(id),
+			db.prepare(`DELETE FROM members WHERE id = ?`).bind(id)
+		]);
+	} else {
+		const idx = memoryMembers.findIndex((m) => m.id === id);
+		if (idx !== -1) {
+			memoryMembers.splice(idx, 1);
+		}
+	}
+	invalidateTeamLeadershipCache();
+}
+
 export async function restoreMember(
 	db: any,
 	id: string,

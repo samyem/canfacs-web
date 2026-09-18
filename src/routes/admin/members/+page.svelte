@@ -757,6 +757,24 @@
 												<span>{member.status === 'denied' ? 'Approve Member' : 'Restore Member'}</span>
 											</button>
 										</form>
+
+										<form method="POST" action="?/permanentlyDelete" use:enhance>
+											<input type="hidden" name="memberId" value={member.id} />
+											<input type="hidden" name="memberEmail" value={member.email} />
+											<button
+												type="submit"
+												onclick={(e) => {
+													if (!confirm(`PERMANENTLY delete ${member.full_name} (${member.email})? This action CANNOT be undone and will completely erase this record from the database.`)) {
+														e.preventDefault();
+													}
+												}}
+												class="px-2.5 py-1.5 rounded-lg bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800/80 text-xs font-bold transition-colors shadow-sm flex items-center gap-1 cursor-pointer"
+												title="Permanently erase spam/invalid account"
+											>
+												<span>✕</span>
+												<span>Delete Permanently</span>
+											</button>
+										</form>
 									</div>
 								</div>
 							{:else if member.status === 'pending'}
