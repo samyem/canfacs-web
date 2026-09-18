@@ -11,6 +11,7 @@ declare global {
 				role: 'admin' | 'bod' | 'member' | 'partner' | string;
 				status: 'pending' | 'approved' | 'denied';
 			} | null;
+			db?: any;
 		}
 		interface Platform {
 			env: {

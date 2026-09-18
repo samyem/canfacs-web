@@ -300,15 +300,6 @@
 							<div class="pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs">
 								<span class="text-slate-400 font-medium">Member</span>
 								<div class="flex items-center gap-2.5">
-									{#if data.user?.role === 'admin'}
-										<a
-											href="/admin/members?edit={member.id}"
-											class="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-semibold transition-all flex items-center gap-1"
-											title="Edit Member Details in Admin Center"
-										>
-											✏️ Edit
-										</a>
-									{/if}
 									{#if member.email}
 										<a href="mailto:{member.email}" class="text-blue-400 hover:underline font-semibold flex items-center gap-1">
 											✉️ Contact
@@ -390,15 +381,6 @@
 										</td>
 										<td class="py-3.5 px-5 text-right whitespace-nowrap">
 											<div class="inline-flex items-center gap-2">
-												{#if data.user?.role === 'admin'}
-													<a
-														href="/admin/members?edit={member.id}"
-														class="px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold transition-all text-xs"
-														title="Edit Member Details in Admin Center"
-													>
-														✏️ Edit
-													</a>
-												{/if}
 												{#if member.email}
 													<a
 														href="mailto:{member.email}"

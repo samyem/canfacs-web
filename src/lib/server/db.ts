@@ -1,4 +1,5 @@
 import { hashPassword } from './auth';
+import { dev } from '$app/environment';
 
 export interface MemberRow {
 	id: string;
@@ -174,6 +175,37 @@ let memoryEmailLogs: EmailLogRow[] = [];
 let memoryEmailTemplates: EmailTemplateRow[] = [];
 let memoryOrgRoles: OrganizationalRoleRow[] = [];
 let memoryMemberOrgRoles: MemberOrganizationalRoleRow[] = [];
+
+async function ensureDbDefaultAdmin(db: any) {
+	if (!dev) return;
+	try {
+		const adminEmail = 'info@canfacs.org';
+		const existing = await db.prepare(`SELECT id FROM members WHERE LOWER(email) = ?`).bind(adminEmail).first();
+		if (!existing) {
+			const adminHash = await hashPassword('CANFACS2026!2437');
+			await db.prepare(
+				`INSERT INTO members (id, email, password_hash, full_name, phone, profession, city, province, bio, status, role, created_at, approved_at)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			).bind(
+				'admin-001',
+				adminEmail,
+				adminHash,
+				'CANFACS Executive Admin',
+				'604-555-0199',
+				'System Administrator',
+				'Vancouver',
+				'BC',
+				'Official Administrative Account for Canada-Nepal Friendship and Cultural Society.',
+				'approved',
+				'admin',
+				new Date().toISOString(),
+				new Date().toISOString()
+			).run();
+		}
+	} catch (e) {
+		console.warn('Failed to ensure default admin in D1:', e);
+	}
+}
 
 async function ensureLocalDefaultAdmin() {
 	if (localStoreInitialized) return;
@@ -596,8 +628,8 @@ async function ensureLocalDefaultAdmin() {
 	);
 }
 
-export function getDb(platform?: App.Platform) {
-	const db = platform?.env?.DB;
+export function getDb(platform?: App.Platform, locals?: App.Locals) {
+	const db = locals?.db || platform?.env?.DB;
 	return db;
 }
 
@@ -641,7 +673,11 @@ export async function getMemberByEmail(db: any, email: string): Promise<MemberRo
 	await ensureLocalDefaultAdmin();
 	const cleanEmail = email.toLowerCase().trim();
 	if (db) {
-		const res = await db.prepare(`SELECT * FROM members WHERE LOWER(email) = ?`).bind(cleanEmail).first();
+		let res = await db.prepare(`SELECT * FROM members WHERE LOWER(email) = ?`).bind(cleanEmail).first();
+		if (!res && cleanEmail === 'info@canfacs.org' && dev) {
+			await ensureDbDefaultAdmin(db);
+			res = await db.prepare(`SELECT * FROM members WHERE LOWER(email) = ?`).bind(cleanEmail).first();
+		}
 		return res as MemberRow | null;
 	}
 	return memoryMembers.find((m) => m.email.toLowerCase() === cleanEmail) || null;
@@ -1961,6 +1997,95 @@ export async function assignMemberOrganizationalRole(
 	}
 	invalidateTeamLeadershipCache();
 	return newRow;
+}
+
+export async function syncMemberOrganizationalRole(
+	db: any,
+	memberId: string,
+	roleId: string | null | undefined,
+	startDate: string | null = null,
+	endDate: string | null = null,
+	isActive: boolean = true,
+	notes: string | null = null
+): Promise<void> {
+	await ensureLocalDefaultAdmin();
+	const cleanRoleId = roleId && roleId.trim() ? roleId.trim() : null;
+
+	if (db) {
+		await ensureOrgRolesTables(db);
+		if (cleanRoleId) {
+			// Deactivate any other active role assignments for this member
+			await db.prepare(`
+				UPDATE member_organizational_roles
+				SET is_active = 0
+				WHERE member_id = ? AND role_id != ?
+			`).bind(memberId, cleanRoleId).run();
+
+			// Upsert active role assignment with stable primary key mor_${memberId}
+			await db.prepare(`
+				INSERT INTO member_organizational_roles (id, member_id, role_id, start_date, end_date, is_active, notes, created_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+				ON CONFLICT(id) DO UPDATE SET
+					role_id = excluded.role_id,
+					start_date = excluded.start_date,
+					end_date = excluded.end_date,
+					is_active = excluded.is_active,
+					notes = excluded.notes
+			`).bind(
+				`mor_${memberId}`,
+				memberId,
+				cleanRoleId,
+				startDate || null,
+				endDate || null,
+				isActive ? 1 : 0,
+				notes || null,
+				new Date().toISOString()
+			).run();
+		} else {
+			// Clear / deactivate all role assignments for this member
+			await db.prepare(`
+				UPDATE member_organizational_roles
+				SET is_active = 0, end_date = COALESCE(end_date, DATE('now'))
+				WHERE member_id = ? AND is_active = 1
+			`).bind(memberId).run();
+		}
+	}
+
+	// Always sync in-memory store (for local dev fallback when D1 is unattached)
+	for (const mor of memoryMemberOrgRoles) {
+		if (mor.member_id === memberId) {
+			mor.is_active = 0;
+		}
+	}
+
+	if (cleanRoleId) {
+		const roleMeta = memoryOrgRoles.find((r) => r.id === cleanRoleId);
+		const parentMeta = roleMeta?.parent_role_id ? memoryOrgRoles.find((r) => r.id === roleMeta.parent_role_id) : null;
+		const existingIdx = memoryMemberOrgRoles.findIndex((mor) => mor.member_id === memberId && mor.role_id === cleanRoleId);
+		const rowData: MemberOrganizationalRoleRow = {
+			id: `mor_${memberId}`,
+			member_id: memberId,
+			role_id: cleanRoleId,
+			title: roleMeta?.title || cleanRoleId,
+			category: roleMeta?.category || 'board',
+			rank_order: roleMeta?.rank_order || 100,
+			parent_role_id: roleMeta?.parent_role_id || null,
+			parent_title: parentMeta?.title || null,
+			start_date: startDate || null,
+			end_date: endDate || null,
+			is_active: isActive ? 1 : 0,
+			notes: notes || null,
+			created_at: new Date().toISOString()
+		};
+
+		if (existingIdx !== -1) {
+			memoryMemberOrgRoles[existingIdx] = rowData;
+		} else {
+			memoryMemberOrgRoles.push(rowData);
+		}
+	}
+
+	invalidateTeamLeadershipCache();
 }
 
 export async function upsertOrganizationalRole(

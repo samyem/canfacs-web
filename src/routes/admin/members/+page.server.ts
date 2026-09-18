@@ -18,7 +18,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		throw redirect(303, '/login');
 	}
 
-	const db = getDb(platform);
+	const db = getDb(platform, locals);
 	const members = await getAllMembers(db);
 	const orgRoles = await getOrganizationalRoles(db);
 	const memberOrgRoles = await getAllMemberOrganizationalRoles(db, false);
@@ -61,7 +61,7 @@ export const actions: Actions = {
 
 		const tempPassword = generateTempPassword();
 		const passwordHash = await hashPassword(tempPassword);
-		const db = getDb(platform);
+		const db = getDb(platform, locals);
 
 		await updateMemberStatus(db, memberId, 'approved', passwordHash);
 
@@ -86,7 +86,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Missing member ID' });
 		}
 
-		const db = getDb(platform);
+		const db = getDb(platform, locals);
 		await updateMemberStatus(db, memberId, 'denied');
 
 		return {
@@ -113,7 +113,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'You cannot remove your own admin privileges.' });
 		}
 
-		const db = getDb(platform);
+		const db = getDb(platform, locals);
 		await updateMemberRole(db, memberId, newRole);
 
 		return {
@@ -139,7 +139,7 @@ export const actions: Actions = {
 
 		const tempPassword = customPassword || generateTempPassword();
 		const passwordHash = await hashPassword(tempPassword);
-		const db = getDb(platform);
+		const db = getDb(platform, locals);
 
 		if (db) {
 			await db.prepare(`
@@ -212,17 +212,15 @@ export const actions: Actions = {
 		const org_role_notes = data.get('org_role_notes')?.toString();
 		const org_role_active = data.get('org_role_active') !== '0';
 
-		const db = getDb(platform);
-		const { updateMemberProfile, getOrganizationalRoles } = await import('$lib/server/db');
+		const db = getDb(platform, locals);
+		const { updateMemberProfile, getOrganizationalRoles, syncMemberOrganizationalRole } = await import('$lib/server/db');
 
-		// If org_role_id provided, sync organizational_role title
-		let resolvedOrgRoleTitle = organizational_role || null;
+		// Resolve organizational role title based on org_role_id selection
+		let resolvedOrgRoleTitle: string | null = null;
 		if (org_role_id) {
 			const allOrgRoles = await getOrganizationalRoles(db);
 			const matched = allOrgRoles.find((r) => r.id === org_role_id);
-			if (matched) {
-				resolvedOrgRoleTitle = matched.title;
-			}
+			resolvedOrgRoleTitle = matched ? matched.title : org_role_id;
 		}
 
 		await updateMemberProfile(db, memberId, {
@@ -248,40 +246,43 @@ export const actions: Actions = {
 			...(role ? { role } : {})
 		});
 
-		// Sync relational table member_organizational_roles
-		if (db) {
-			if (org_role_id) {
-				await db.prepare(`
-					INSERT INTO member_organizational_roles (id, member_id, role_id, start_date, end_date, is_active, notes, created_at)
-					VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-					ON CONFLICT(id) DO UPDATE SET
-						role_id = excluded.role_id,
-						start_date = excluded.start_date,
-						end_date = excluded.end_date,
-						is_active = excluded.is_active,
-						notes = excluded.notes
-				`).bind(
-					`mor_${memberId}`,
-					memberId,
-					org_role_id,
-					role_start_date || null,
-					role_end_date || null,
-					org_role_active ? 1 : 0,
-					org_role_notes || null,
-					new Date().toISOString()
-				).run();
-			} else {
-				// Mark any existing active role assignment inactive
-				await db.prepare(`
-					UPDATE member_organizational_roles
-					SET is_active = 0, end_date = COALESCE(end_date, DATE('now'))
-					WHERE member_id = ? AND is_active = 1
-				`).bind(memberId).run();
-			}
-		}
+		// Sync relational role assignment in both D1 and in-memory store
+		await syncMemberOrganizationalRole(
+			db,
+			memberId,
+			org_role_id,
+			role_start_date || null,
+			role_end_date || null,
+			org_role_active,
+			org_role_notes || null
+		);
 
 		return {
 			success: true,
+			updatedMember: {
+				id: memberId,
+				...(full_name !== undefined ? { full_name } : {}),
+				salutation: salutation || null,
+				phone: phone || null,
+				phone_secondary: phone_secondary || null,
+				profession: profession || null,
+				organizational_role: resolvedOrgRoleTitle,
+				org_role_id: org_role_id || null,
+				role_start_date: role_start_date || null,
+				role_end_date: role_end_date || null,
+				address_street: address_street || null,
+				city: city || null,
+				province: province || null,
+				country: country || 'Canada',
+				postal_code: postal_code || null,
+				facebook_id: facebook_id || null,
+				instagram_id: instagram_id || null,
+				associated_organizations: associated_organizations || null,
+				google_login_enabled,
+				avatar_url: avatar_url || null,
+				...(display_order !== undefined && !isNaN(display_order) ? { display_order } : {}),
+				...(role ? { role } : {})
+			},
 			message: `Member profile & organizational roles updated successfully.`
 		};
 	},
@@ -303,7 +304,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Organizational role title is required.' });
 		}
 
-		const db = getDb(platform);
+		const db = getDb(platform, locals);
 		const { upsertOrganizationalRole } = await import('$lib/server/db');
 
 		const saved = await upsertOrganizationalRole(db, {
@@ -333,7 +334,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Role ID is required to delete.' });
 		}
 
-		const db = getDb(platform);
+		const db = getDb(platform, locals);
 		const { deleteOrganizationalRole } = await import('$lib/server/db');
 
 		await deleteOrganizationalRole(db, roleId);
@@ -370,7 +371,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Full name and email address are required.' });
 		}
 
-		const db = getDb(platform);
+		const db = getDb(platform, locals);
 		const { getMemberByEmail, updateMemberProfile, getOrganizationalRoles } = await import('$lib/server/db');
 		const existing = await getMemberByEmail(db, email);
 		if (existing) {
@@ -431,7 +432,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Missing reordering target' });
 		}
 
-		const db = getDb(platform);
+		const db = getDb(platform, locals);
 		const { getAllMembers, getOrganizationalRoles, getAllMemberOrganizationalRoles } = await import('$lib/server/db');
 
 		const members = await getAllMembers(db, 'approved');

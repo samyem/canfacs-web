@@ -1,9 +1,20 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import { page } from '$app/state';
 
 	let { data, form } = $props();
 
-	import { page } from '$app/state';
+	let membersList = $state<any[]>([]);
+	let memberOrgRolesList = $state<any[]>([]);
+
+	$effect(() => {
+		membersList = data.members ? [...data.members] : [];
+	});
+
+	$effect(() => {
+		memberOrgRolesList = data.memberOrgRoles ? [...data.memberOrgRoles] : [];
+	});
 
 	let activeTab = $state<'pending' | 'approved' | 'admins' | 'bod' | 'advisory' | 'partners' | 'all' | 'org_roles'>('pending');
 	let searchQuery = $state('');
@@ -41,8 +52,8 @@
 
 	$effect(() => {
 		const editId = page.url.searchParams.get('edit');
-		if (editId && !editingMember && data.members) {
-			const target = data.members.find((m: any) => m.id === editId);
+		if (editId && !editingMember && membersList.length > 0) {
+			const target = membersList.find((m: any) => m.id === editId);
 			if (target) {
 				openEditModal(target);
 			}
@@ -50,12 +61,12 @@
 	});
 
 	function openEditModal(m: any) {
-		const existingAssigned = data.memberOrgRoles?.find((mor: any) => mor.member_id === m.id && (mor.is_active === 1 || mor.is_active === true));
+		const existingAssigned = memberOrgRolesList?.find((mor: any) => mor.member_id === m.id && (mor.is_active === 1 || mor.is_active === true));
 		const matchingRole = data.orgRoles?.find((r: any) => r.title.toLowerCase() === (m.organizational_role || '').toLowerCase());
 		editingMember = {
 			...m,
 			display_order: m.display_order ?? 100,
-			selected_org_role_id: existingAssigned?.role_id || matchingRole?.id || ''
+			selected_org_role_id: m.org_role_id || existingAssigned?.role_id || matchingRole?.id || ''
 		};
 		isCreatingMember = false;
 		avatarUploadError = '';
@@ -97,16 +108,16 @@
 	}
 
 	const pendingMembers = $derived(
-		data.members.filter((m: any) => m.status === 'pending')
+		membersList.filter((m: any) => m.status === 'pending')
 	);
 	const approvedMembers = $derived(
-		data.members.filter((m: any) => m.status === 'approved')
+		membersList.filter((m: any) => m.status === 'approved')
 	);
 	const adminMembers = $derived(
-		data.members.filter((m: any) => m.role === 'admin' || m.org_role_id === 'org_admin')
+		membersList.filter((m: any) => m.role === 'admin' || m.org_role_id === 'org_admin')
 	);
 	const bodMembers = $derived(
-		data.members.filter((m: any) => {
+		membersList.filter((m: any) => {
 			const isAdv = m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor');
 			return !isAdv && (
 				m.role === 'bod' ||
@@ -123,14 +134,14 @@
 		})
 	);
 	const advisoryMembers = $derived(
-		data.members.filter((m: any) => m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul'))
+		membersList.filter((m: any) => m.role === 'advisory' || m.org_category === 'advisory' || m.organizational_role?.toLowerCase().includes('advisor') || m.organizational_role?.toLowerCase().includes('founder') || m.organizational_role?.toLowerCase().includes('consul'))
 	);
 	const partnerMembers = $derived(
-		data.members.filter((m: any) => m.role === 'partner')
+		membersList.filter((m: any) => m.role === 'partner')
 	);
 
 	const filteredMembers = $derived(
-		data.members
+		membersList
 			.filter((m: any) => {
 				let matchesTab = true;
 				if (activeTab === 'pending') matchesTab = m.status === 'pending';
@@ -368,7 +379,7 @@
 					onclick={() => (activeTab = 'all')}
 					class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap {activeTab === 'all' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}"
 				>
-					All ({data.members.length})
+					All ({membersList.length})
 				</button>
 
 				<button
@@ -812,8 +823,39 @@
 				method="POST"
 				action={isCreatingMember ? '?/createMember' : '?/updateProfile'}
 				use:enhance={() => {
-					return async ({ update }) => {
-						await update();
+					return async ({ result, update }) => {
+						if (result.type === 'success' && (result.data as any)?.updatedMember) {
+							const updated = (result.data as any).updatedMember;
+							const idx = membersList.findIndex((m: any) => m.id === updated.id);
+							if (idx !== -1) {
+								membersList[idx] = {
+									...membersList[idx],
+									...updated
+								};
+								membersList = [...membersList];
+							}
+							if (memberOrgRolesList) {
+								const morIdx = memberOrgRolesList.findIndex((mor: any) => mor.member_id === updated.id);
+								if (morIdx !== -1) {
+									if (updated.org_role_id) {
+										memberOrgRolesList[morIdx] = {
+											...memberOrgRolesList[morIdx],
+											role_id: updated.org_role_id,
+											title: updated.organizational_role,
+											is_active: 1
+										};
+									} else {
+										memberOrgRolesList[morIdx] = {
+											...memberOrgRolesList[morIdx],
+											is_active: 0
+										};
+									}
+									memberOrgRolesList = [...memberOrgRolesList];
+								}
+							}
+						}
+						await update({ reset: false });
+						await invalidateAll();
 						closeEditModal();
 					};
 				}}
@@ -1052,7 +1094,7 @@
 						<input
 							type="hidden"
 							name="organizational_role"
-							value={data.orgRoles?.find((r: any) => r.id === editingMember.selected_org_role_id)?.title || editingMember.organizational_role || ''}
+							value={data.orgRoles?.find((r: any) => r.id === editingMember.selected_org_role_id)?.title || ''}
 						/>
 					</div>
 
