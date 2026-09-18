@@ -1139,8 +1139,8 @@
 					</div>
 				</div>
 
-				<!-- Row 3: Address Fields -->
-				<div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+				<!-- Row 3: Address & Location Fields -->
+				<div class="grid grid-cols-1 sm:grid-cols-6 gap-3">
 					<div class="sm:col-span-2">
 						<label for="mStreet" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">Street Address</label>
 						<input
@@ -1164,6 +1164,17 @@
 						/>
 					</div>
 					<div>
+						<label for="mProvince" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">Province / State</label>
+						<input
+							id="mProvince"
+							type="text"
+							name="province"
+							bind:value={editingMember.province}
+							placeholder="e.g. BC, ON, AB"
+							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+						/>
+					</div>
+					<div>
 						<label for="mCountry" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">Country</label>
 						<input
 							id="mCountry"
@@ -1171,6 +1182,17 @@
 							name="country"
 							bind:value={editingMember.country}
 							placeholder="Canada"
+							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+						/>
+					</div>
+					<div>
+						<label for="mPostal" class="block text-[11px] font-semibold uppercase text-slate-400 mb-1">Postal Code</label>
+						<input
+							id="mPostal"
+							type="text"
+							name="postal_code"
+							bind:value={editingMember.postal_code}
+							placeholder="e.g. V6B 1A1"
 							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
 						/>
 					</div>
@@ -1257,6 +1279,24 @@
 							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
 						/>
 					</div>
+				</div>
+
+				<!-- Row 6: Biodata & Leadership Summary -->
+				<div>
+					<div class="flex items-center justify-between mb-1">
+						<label for="mBio" class="block text-[11px] font-semibold uppercase text-slate-400">
+							Biodata & Professional Summary
+						</label>
+						<span class="text-[10px] text-slate-500">Displayed on public <code class="text-amber-400">/team</code> page & directory</span>
+					</div>
+					<textarea
+						id="mBio"
+						name="bio"
+						bind:value={editingMember.bio}
+						rows="3"
+						placeholder="Brief biography, career achievements, and contributions to Canada-Nepal friendship and community wellness..."
+						class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 leading-relaxed"
+					></textarea>
 				</div>
 
 				<!-- Row 6: Google Login Enabled Switch -->

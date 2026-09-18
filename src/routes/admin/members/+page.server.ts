@@ -199,6 +199,7 @@ export const actions: Actions = {
 		const province = data.get('province')?.toString();
 		const country = data.get('country')?.toString();
 		const postal_code = data.get('postal_code')?.toString();
+		const bio = data.get('bio')?.toString();
 		const facebook_id = data.get('facebook_id')?.toString();
 		const instagram_id = data.get('instagram_id')?.toString();
 		const associated_organizations = data.get('associated_organizations')?.toString();
@@ -237,6 +238,7 @@ export const actions: Actions = {
 			province: province || null,
 			country: country || 'Canada',
 			postal_code: postal_code || null,
+			bio: bio !== undefined ? (bio.trim() || null) : null,
 			facebook_id: facebook_id || null,
 			instagram_id: instagram_id || null,
 			associated_organizations: associated_organizations || null,
@@ -275,6 +277,7 @@ export const actions: Actions = {
 				province: province || null,
 				country: country || 'Canada',
 				postal_code: postal_code || null,
+				bio: bio !== undefined ? (bio.trim() || null) : null,
 				facebook_id: facebook_id || null,
 				instagram_id: instagram_id || null,
 				associated_organizations: associated_organizations || null,
