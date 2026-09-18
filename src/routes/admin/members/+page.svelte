@@ -796,9 +796,10 @@
 
 <!-- Edit Member Extended Attributes Modal -->
 {#if editingMember}
-	<div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-		<div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 space-y-5 shadow-2xl text-slate-100 my-8">
-			<div class="flex items-start justify-between border-b border-slate-800 pb-3">
+	<div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+		<div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl text-slate-100 overflow-hidden">
+			<!-- Pinned Header -->
+			<div class="flex items-start justify-between border-b border-slate-800 px-6 py-4 flex-shrink-0 bg-slate-900">
 				<div>
 					<span class="text-[10px] font-mono uppercase text-amber-400">
 						{isCreatingMember ? 'NEW MEMBER REGISTRATION' : `ID: ${editingMember.id}`}
@@ -813,7 +814,8 @@
 				<button
 					type="button"
 					onclick={closeEditModal}
-					class="text-slate-400 hover:text-white text-lg p-1"
+					class="text-slate-400 hover:text-white text-lg p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+					aria-label="Close dialog"
 				>
 					✕
 				</button>
@@ -859,8 +861,10 @@
 						closeEditModal();
 					};
 				}}
-				class="space-y-4"
+				class="flex flex-col flex-1 min-h-0 overflow-hidden"
 			>
+				<!-- Scrollable Body -->
+				<div class="flex-1 overflow-y-auto p-6 space-y-4">
 				<input type="hidden" name="memberId" value={editingMember.id} />
 				<input type="hidden" name="memberEmail" value={editingMember.email} />
 				<input type="hidden" name="memberName" value={editingMember.full_name} />
@@ -1343,11 +1347,14 @@
 					</div>
 				{/if}
 
-				<div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+				</div>
+
+				<!-- Pinned Footer -->
+				<div class="flex items-center justify-end gap-3 px-6 py-3.5 border-t border-slate-800 flex-shrink-0 bg-slate-950/90 backdrop-blur-sm">
 					<button
 						type="button"
 						onclick={closeEditModal}
-						class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300"
+						class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition-colors"
 					>
 						Cancel
 					</button>
@@ -1365,9 +1372,10 @@
 
 <!-- Define / Edit Organizational Role Modal -->
 {#if editingOrgRole}
-	<div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-		<div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl text-slate-100 my-8">
-			<div class="flex items-start justify-between border-b border-slate-800 pb-3">
+	<div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+		<div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl text-slate-100 overflow-hidden">
+			<!-- Pinned Header -->
+			<div class="flex items-start justify-between border-b border-slate-800 px-6 py-4 flex-shrink-0 bg-slate-900">
 				<div>
 					<span class="text-[10px] font-mono uppercase text-amber-400">
 						{editingOrgRole.id ? `ID: ${editingOrgRole.id}` : 'NEW ROLE'}
@@ -1380,7 +1388,8 @@
 				<button
 					type="button"
 					onclick={() => (editingOrgRole = null)}
-					class="text-slate-400 hover:text-white text-lg p-1"
+					class="text-slate-400 hover:text-white text-lg p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+					aria-label="Close dialog"
 				>
 					✕
 				</button>
@@ -1395,94 +1404,98 @@
 						editingOrgRole = null;
 					};
 				}}
-				class="space-y-4"
+				class="flex flex-col flex-1 min-h-0 overflow-hidden"
 			>
-				{#if editingOrgRole.id}
-					<input type="hidden" name="roleId" value={editingOrgRole.id} />
-				{/if}
-
-				<div>
-					<label for="orgTitle" class="block text-xs font-semibold uppercase text-slate-400 mb-1">Role Title</label>
-					<input
-						id="orgTitle"
-						type="text"
-						name="title"
-						bind:value={editingOrgRole.title}
-						required
-						placeholder="e.g. Vice President, Director of Culture"
-						class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
-					/>
-				</div>
-
-				<div class="grid grid-cols-2 gap-3">
-					<div>
-						<label for="orgCategory" class="block text-xs font-semibold uppercase text-slate-400 mb-1">Category</label>
-						<select
-							id="orgCategory"
-							name="category"
-							bind:value={editingOrgRole.category}
-							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
-						>
-							<option value="executive">⚡ Executive Committee</option>
-							<option value="board">🏛️ Board of Directors</option>
-							<option value="committee">🤝 Working Committee</option>
-							<option value="advisory">📜 Advisory Council</option>
-						</select>
-					</div>
+				<!-- Scrollable Body -->
+				<div class="flex-1 overflow-y-auto p-6 space-y-4">
+					{#if editingOrgRole.id}
+						<input type="hidden" name="roleId" value={editingOrgRole.id} />
+					{/if}
 
 					<div>
-						<label for="orgRank" class="block text-xs font-semibold uppercase text-slate-400 mb-1">Display Rank Order</label>
+						<label for="orgTitle" class="block text-xs font-semibold uppercase text-slate-400 mb-1">Role Title</label>
 						<input
-							id="orgRank"
-							type="number"
-							name="rank_order"
-							bind:value={editingOrgRole.rank_order}
-							min="1"
-							max="999"
+							id="orgTitle"
+							type="text"
+							name="title"
+							bind:value={editingOrgRole.title}
+							required
+							placeholder="e.g. Vice President, Director of Culture"
 							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
 						/>
 					</div>
+
+					<div class="grid grid-cols-2 gap-3">
+						<div>
+							<label for="orgCategory" class="block text-xs font-semibold uppercase text-slate-400 mb-1">Category</label>
+							<select
+								id="orgCategory"
+								name="category"
+								bind:value={editingOrgRole.category}
+								class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+							>
+								<option value="executive">⚡ Executive Committee</option>
+								<option value="board">🏛️ Board of Directors</option>
+								<option value="committee">🤝 Working Committee</option>
+								<option value="advisory">📜 Advisory Council</option>
+							</select>
+						</div>
+
+						<div>
+							<label for="orgRank" class="block text-xs font-semibold uppercase text-slate-400 mb-1">Display Rank Order</label>
+							<input
+								id="orgRank"
+								type="number"
+								name="rank_order"
+								bind:value={editingOrgRole.rank_order}
+								min="1"
+								max="999"
+								class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+							/>
+						</div>
+					</div>
+
+					<div>
+						<label for="orgParentRole" class="block text-xs font-semibold uppercase text-slate-400 mb-1">
+							Parent Role (Hierarchy / Subset of)
+						</label>
+						<select
+							id="orgParentRole"
+							name="parent_role_id"
+							bind:value={editingOrgRole.parent_role_id}
+							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+						>
+							<option value="">-- No Parent Role (Top Level / Standalone) --</option>
+							{#each (data.orgRoles || []).filter((r: any) => r.id !== editingOrgRole?.id) as r}
+								<option value={r.id}>
+									↳ Subset of {r.title} ({r.category})
+								</option>
+							{/each}
+						</select>
+						<p class="text-[11px] text-slate-500 mt-1">
+							e.g. Set "Administrator" or "President" as a child / subset of "Board Director (BOD)" to inherit BOD governance.
+						</p>
+					</div>
+
+					<div>
+						<label for="orgDesc" class="block text-xs font-semibold uppercase text-slate-400 mb-1">Role Description / Mandate</label>
+						<textarea
+							id="orgDesc"
+							name="description"
+							rows="3"
+							bind:value={editingOrgRole.description}
+							placeholder="Describe the mandate, powers, and responsibilities associated with this society office..."
+							class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+						></textarea>
+					</div>
 				</div>
 
-				<div>
-					<label for="orgParentRole" class="block text-xs font-semibold uppercase text-slate-400 mb-1">
-						Parent Role (Hierarchy / Subset of)
-					</label>
-					<select
-						id="orgParentRole"
-						name="parent_role_id"
-						bind:value={editingOrgRole.parent_role_id}
-						class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
-					>
-						<option value="">-- No Parent Role (Top Level / Standalone) --</option>
-						{#each (data.orgRoles || []).filter((r: any) => r.id !== editingOrgRole?.id) as r}
-							<option value={r.id}>
-								↳ Subset of {r.title} ({r.category})
-							</option>
-						{/each}
-					</select>
-					<p class="text-[11px] text-slate-500 mt-1">
-						e.g. Set "Administrator" or "President" as a child / subset of "Board Director (BOD)" to inherit BOD governance.
-					</p>
-				</div>
-
-				<div>
-					<label for="orgDesc" class="block text-xs font-semibold uppercase text-slate-400 mb-1">Role Description / Mandate</label>
-					<textarea
-						id="orgDesc"
-						name="description"
-						rows="3"
-						bind:value={editingOrgRole.description}
-						placeholder="Describe the mandate, powers, and responsibilities associated with this society office..."
-						class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-					></textarea>
-				</div>
-
-				<div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+				<!-- Pinned Footer -->
+				<div class="flex items-center justify-end gap-3 px-6 py-3.5 border-t border-slate-800 flex-shrink-0 bg-slate-950/90 backdrop-blur-sm">
 					<button
 						type="button"
 						onclick={() => (editingOrgRole = null)}
-						class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300"
+						class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition-colors"
 					>
 						Cancel
 					</button>

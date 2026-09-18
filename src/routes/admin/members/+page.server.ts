@@ -364,6 +364,7 @@ export const actions: Actions = {
 		const city = data.get('city')?.toString().trim() || null;
 		const province = data.get('province')?.toString().trim() || null;
 		const country = data.get('country')?.toString().trim() || 'Canada';
+		const postal_code = data.get('postal_code')?.toString().trim() || null;
 		const bio = data.get('bio')?.toString().trim() || null;
 		const avatar_url = data.get('avatar_url')?.toString().trim() || null;
 
@@ -397,12 +398,12 @@ export const actions: Actions = {
 			await db.prepare(`
 				INSERT INTO members (
 					id, email, password_hash, full_name, salutation, phone, profession,
-					organizational_role, city, province, country, bio, avatar_url,
+					organizational_role, city, province, country, postal_code, bio, avatar_url,
 					display_order, status, role, google_login_enabled, created_at, approved_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', ?, 1, ?, ?)
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', ?, 1, ?, ?)
 			`).bind(
 				id, email, passwordHash, full_name, salutation, phone, profession,
-				resolvedOrgRoleTitle, city, province, country, bio, avatar_url,
+				resolvedOrgRoleTitle, city, province, country, postal_code, bio, avatar_url,
 				display_order, role, now, now
 			).run();
 
