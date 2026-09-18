@@ -191,7 +191,21 @@
 		copiedPassword = true;
 		setTimeout(() => (copiedPassword = false), 2500);
 	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			if (editingMember) {
+				closeEditModal();
+			} else if (editingOrgRole) {
+				editingOrgRole = null;
+			} else if (isRoleDropdownOpen) {
+				isRoleDropdownOpen = false;
+			}
+		}
+	}
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <svelte:head>
 	<title>Admin Dashboard - Member Governance & Permissions - CANFACS</title>
@@ -796,7 +810,11 @@
 
 <!-- Edit Member Extended Attributes Modal -->
 {#if editingMember}
-	<div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+	<div
+		class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5"
+		role="presentation"
+		onclick={(e) => { if (e.target === e.currentTarget) closeEditModal(); }}
+	>
 		<div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl text-slate-100 overflow-hidden">
 			<!-- Pinned Header -->
 			<div class="flex items-start justify-between border-b border-slate-800 px-6 py-4 flex-shrink-0 bg-slate-900">
@@ -1372,7 +1390,11 @@
 
 <!-- Define / Edit Organizational Role Modal -->
 {#if editingOrgRole}
-	<div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+	<div
+		class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5"
+		role="presentation"
+		onclick={(e) => { if (e.target === e.currentTarget) editingOrgRole = null; }}
+	>
 		<div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl text-slate-100 overflow-hidden">
 			<!-- Pinned Header -->
 			<div class="flex items-start justify-between border-b border-slate-800 px-6 py-4 flex-shrink-0 bg-slate-900">
