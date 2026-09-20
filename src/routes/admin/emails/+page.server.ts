@@ -4,6 +4,8 @@ import {
 	getDb,
 	getAllMembers,
 	getDonations,
+	getAllDonations,
+	getCampaigns,
 	getEmailBatches,
 	getEmailLogsByBatch,
 	getEmailTemplates,
@@ -33,22 +35,109 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 	// Load member directory for easy recipient picking
 	const members = await getAllMembers(db);
 
-	// Load unique donors
-	const rawDonations = await getDonations(db);
-	const donorMap = new Map<string, { email: string; name: string; totalAmount: number }>();
-	for (const don of rawDonations) {
+	// Load campaigns and compute active fundraising initiative donors
+	const rawCampaigns = await getCampaigns(db);
+	const activeCampaigns = rawCampaigns.filter((c) => c.is_active);
+
+	const activeInitiatives = await Promise.all(
+		activeCampaigns.map(async (c) => {
+			const cDonations = await getDonations(db, c.id);
+			const cDonorMap = new Map<
+				string,
+				{
+					email: string;
+					name: string;
+					totalAmount: number;
+					donationCount: number;
+					campaignId: string;
+					campaignTitle: string;
+				}
+			>();
+			let cWithoutEmailCount = 0;
+			let cDuplicateEmailsCount = 0;
+
+			for (const don of cDonations) {
+				if (don.email && don.email.includes('@')) {
+					const em = don.email.toLowerCase().trim();
+					const existing = cDonorMap.get(em);
+					if (existing) {
+						existing.totalAmount += Number(don.amount) || 0;
+						existing.donationCount += 1;
+						cDuplicateEmailsCount += 1;
+						if (existing.name === 'Anonymous Donor' && don.donor_name && don.donor_name !== 'Anonymous Donor') {
+							existing.name = don.donor_name;
+						}
+					} else {
+						cDonorMap.set(em, {
+							email: em,
+							name: don.donor_name || 'Generous Donor',
+							totalAmount: Number(don.amount) || 0,
+							donationCount: 1,
+							campaignId: c.id,
+							campaignTitle: c.title
+						});
+					}
+				} else {
+					cWithoutEmailCount += 1;
+				}
+			}
+
+			const initiativeDonors = Array.from(cDonorMap.values());
+			return {
+				id: c.id,
+				title: c.title,
+				subtitle: c.subtitle,
+				target_goal: c.target_goal,
+				totalDonationsCount: cDonations.length,
+				emailDonorsCount: initiativeDonors.length,
+				withoutEmailCount: cWithoutEmailCount,
+				duplicateEmailsCount: cDuplicateEmailsCount,
+				totalRaised: cDonations.reduce((sum, d) => sum + (Number(d.amount) || 0), 0),
+				donors: initiativeDonors
+			};
+		})
+	);
+
+	// Load unique donors across all initiatives
+	const allRawDonations = await getAllDonations(db);
+	const donorMap = new Map<
+		string,
+		{
+			email: string;
+			name: string;
+			totalAmount: number;
+			donationCount: number;
+			campaigns: string[];
+		}
+	>();
+	let allWithoutEmailCount = 0;
+	let allDuplicateEmailsCount = 0;
+
+	for (const don of allRawDonations) {
 		if (don.email && don.email.includes('@')) {
 			const em = don.email.toLowerCase().trim();
 			const existing = donorMap.get(em);
 			if (existing) {
 				existing.totalAmount += Number(don.amount) || 0;
+				existing.donationCount += 1;
+				allDuplicateEmailsCount += 1;
+				if (existing.name === 'Anonymous Donor' && don.donor_name && don.donor_name !== 'Anonymous Donor') {
+					existing.name = don.donor_name;
+				}
+				if (don.campaign_id && !existing.campaigns.includes(don.campaign_id)) {
+					existing.campaigns.push(don.campaign_id);
+				}
 			} else {
 				donorMap.set(em, {
 					email: em,
 					name: don.donor_name || 'Generous Donor',
-					totalAmount: Number(don.amount) || 0
+					totalAmount: Number(don.amount) || 0,
+					donationCount: 1,
+					campaigns: don.campaign_id ? [don.campaign_id] : []
 				});
 			}
+		} else {
+			allWithoutEmailCount += 1;
 		}
 	}
 	const donors = Array.from(donorMap.values());
@@ -104,7 +193,11 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 		}),
 		orgRoles,
 		memberOrgRoles,
+		activeInitiatives,
 		donors,
+		allDonationsCount: allRawDonations.length,
+		allWithoutEmailCount,
+		allDuplicateEmailsCount,
 		batches,
 		inspectBatchId,
 		batchLogs,

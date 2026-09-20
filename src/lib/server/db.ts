@@ -625,6 +625,114 @@ async function ensureLocalDefaultAdmin() {
 			status: 'received',
 			is_anonymous: false,
 			created_at: '2026-08-30T18:38:00Z'
+		},
+		{
+			id: 'don_095536d0',
+			campaign_id: 'nepal-flood-2026',
+			donor_name: 'Samyem Tuladhar',
+			email: 'samyem@gmail.com',
+			amount: 100,
+			currency: 'CAD',
+			message: 'Standing together to rebuild lives and support flood victims.',
+			status: 'received',
+			is_anonymous: false,
+			created_at: '2026-08-30T12:57:35.148Z'
+		},
+		{
+			id: 'don_f5fc799e',
+			campaign_id: 'nepal-flood-2026',
+			donor_name: 'Purushottam Thapa',
+			email: 'thapapu@gmail.com',
+			amount: 100,
+			currency: 'CAD',
+			message: 'My heartfelt condolences to all those who have lost their loved ones.',
+			status: 'received',
+			is_anonymous: false,
+			created_at: '2026-08-30T14:17:37.588Z'
+		},
+		{
+			id: 'sq_5u9OSClgHNUeqcO2SQbB8nqSNKFZY',
+			campaign_id: 'nepal-flood-2026',
+			donor_name: 'Vinay Phounsy',
+			email: 'vinay@accustomwoods.com',
+			amount: 200,
+			currency: 'CAD',
+			message: 'Supporting emergency relief.',
+			status: 'received',
+			is_anonymous: false,
+			created_at: '2026-09-01T19:20:46.598Z'
+		},
+		{
+			id: 'sq_N4FKMr50i6MNF5Kq1z4cqqn4mcaZY',
+			campaign_id: 'nepal-flood-2026',
+			donor_name: 'Grishma Bajracharya',
+			email: 'grisbajra@gmail.com',
+			amount: 50,
+			currency: 'CAD',
+			message: 'My small contribution to support those affected by the disaster.',
+			status: 'received',
+			is_anonymous: false,
+			created_at: '2026-09-02T02:42:34.569Z'
+		},
+		{
+			id: 'don_703e473d',
+			campaign_id: 'nepal-flood-2026',
+			donor_name: 'Mr. Mankajee Shrestha',
+			email: null,
+			amount: 100,
+			currency: 'CAD',
+			message: 'In solidarity with Nepal',
+			status: 'received',
+			is_anonymous: false,
+			created_at: '2026-09-02T16:43:07.758Z'
+		},
+		{
+			id: 'sq_xCFaheRnuhjdZQKgwNp8Rv8om3eZY',
+			campaign_id: 'nepal-flood-2026',
+			donor_name: 'Anonymous Donor',
+			email: 'pkakho@gmail.com',
+			amount: 100,
+			currency: 'CAD',
+			message: null,
+			status: 'received',
+			is_anonymous: true,
+			created_at: '2026-09-03T02:31:40.442Z'
+		},
+		{
+			id: 'sq_ZMk0B8AJiEEl7rxD7vJhQmYio1CZY',
+			campaign_id: 'nepal-flood-2026',
+			donor_name: 'Bogdan Pankovsky',
+			email: 'pankovsky@gmail.com',
+			amount: 15.4,
+			currency: 'CAD',
+			message: 'All the best wishes and prayers!',
+			status: 'received',
+			is_anonymous: false,
+			created_at: '2026-09-03T17:47:46.969Z'
+		},
+		{
+			id: 'sq_r7rKfkzM4l3c3CoqlkhZmXBw6hDZY',
+			campaign_id: 'nepal-flood-2026',
+			donor_name: 'Anonymous Donor',
+			email: 'pankovsky@gmail.com',
+			amount: 2.99,
+			currency: 'CAD',
+			message: 'All the best wishes!',
+			status: 'received',
+			is_anonymous: true,
+			created_at: '2026-09-03T17:52:08.137Z'
+		},
+		{
+			id: 'don_c2caf5ba',
+			campaign_id: 'nepal-flood-2026',
+			donor_name: 'Nepal Sahyatya Samaj',
+			email: null,
+			amount: 50,
+			currency: 'CAD',
+			message: 'In solidarity',
+			status: 'received',
+			is_anonymous: false,
+			created_at: '2026-09-10T11:22:02.384Z'
 		}
 	);
 }
@@ -1306,8 +1414,26 @@ export async function updateCampaign(
 }
 
 // DONATION QUERIES
-export async function getDonations(db: any, campaignId = 'nepal-flood-2026'): Promise<DonationRow[]> {
+export async function getAllDonations(db: any): Promise<DonationRow[]> {
 	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureDonationsTable(db);
+		const res = await db.prepare(`SELECT * FROM donations ORDER BY created_at DESC`).all();
+		return (res.results || []).map((r: any) => ({
+			...r,
+			status: (r.status as 'pledged' | 'received') || 'received',
+			is_anonymous: Boolean(r.is_anonymous)
+		})) as DonationRow[];
+	}
+
+	return [...memoryDonations].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export async function getDonations(db: any, campaignId?: string): Promise<DonationRow[]> {
+	await ensureLocalDefaultAdmin();
+	if (!campaignId || campaignId === 'all') {
+		return getAllDonations(db);
+	}
 	const isFloodCampaign = campaignId === 'nepal-flood-2026' || campaignId === 'nepal-flood-2024';
 
 	if (db) {
@@ -1331,7 +1457,7 @@ export async function getDonations(db: any, campaignId = 'nepal-flood-2026'): Pr
 	}
 
 	return memoryDonations
-		.filter((d) => isFloodCampaign ? (d.campaign_id === 'nepal-flood-2026' || d.campaign_id === 'nepal-flood-2024') : d.campaign_id === campaignId)
+		.filter((d) => (isFloodCampaign ? d.campaign_id === 'nepal-flood-2026' || d.campaign_id === 'nepal-flood-2024' : d.campaign_id === campaignId))
 		.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 

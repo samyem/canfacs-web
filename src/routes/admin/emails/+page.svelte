@@ -224,8 +224,29 @@
 	}
 
 	function importDonors() {
-		const list = data.donors.map((d: any) => `${d.name}, ${d.email}`).join('\n');
-		recipientsRaw = list;
+		const formatted = (data.donors || []).map((d: any) => ({
+			name: d.name,
+			email: d.email,
+			role: 'Donor',
+			organizational_role: d.totalAmount ? `Donor ($${Number(d.totalAmount).toFixed(2)} CAD)` : 'Donor',
+			amount: d.totalAmount,
+			campaign: 'Fundraising Initiatives'
+		}));
+		recipientsRaw = JSON.stringify(formatted, null, 2);
+	}
+
+	function importInitiativeDonors(initiativeId: string) {
+		const initiative = (data.activeInitiatives || []).find((i: any) => i.id === initiativeId);
+		if (!initiative) return;
+		const formatted = (initiative.donors || []).map((d: any) => ({
+			name: d.name,
+			email: d.email,
+			role: 'Donor',
+			organizational_role: `${initiative.title} Donor ($${(Number(d.totalAmount) || 0).toFixed(2)} CAD)`,
+			campaign: initiative.title,
+			amount: d.totalAmount
+		}));
+		recipientsRaw = JSON.stringify(formatted, null, 2);
 	}
 
 	function addSampleAdmin() {
@@ -490,8 +511,11 @@
 							name: r.name || r.full_name || 'Member',
 							salutation: r.salutation || '',
 							email: r.email,
-							role: r.role || '',
-							org_role: r.organizational_role || r.org_role_title || '',
+							role: r.role || (r.campaign ? 'Donor' : ''),
+							org_role: r.organizational_role || r.org_role_title || (r.campaign ? `${r.campaign} Donor` : ''),
+							campaign: r.campaign || '',
+							amount: r.amount || null,
+							associated_organizations: r.associated_organizations || '',
 							city: r.city || '',
 							province: r.province || ''
 						}));
@@ -926,9 +950,11 @@
 								<button
 									type="button"
 									onclick={importDonors}
-									class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+									class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-700/50 hover:bg-emerald-900 transition-colors flex items-center gap-1"
+									title="All unique deliverable donors across campaigns ({data.donors.length} recipients, {data.allDonationsCount || data.donors.length} donations)"
 								>
-									Donors ({data.donors.length})
+									<span>💰</span>
+									<span>Donors ({data.donors.length})</span>
 								</button>
 								<button
 									type="button"
@@ -1029,6 +1055,52 @@
 							</div>
 						{/if}
 
+						<!-- Active Fundraising Initiatives Donors Filter Bar -->
+						{#if data.activeInitiatives && data.activeInitiatives.length > 0}
+							<div class="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-800/60 mt-1">
+								<div class="flex items-center gap-1 mr-1">
+									<span class="text-[10px] uppercase font-bold text-emerald-400">💰 Initiatives:</span>
+								</div>
+								{#each data.activeInitiatives as init}
+									<button
+										type="button"
+										onclick={() => importInitiativeDonors(init.id)}
+										class="group px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/25 transition-all flex items-center gap-1.5 shadow-sm"
+										title="{init.title}: {init.emailDonorsCount} deliverable email recipients out of {init.totalDonationsCount} recorded donations{init.withoutEmailCount > 0 ? ` (${init.withoutEmailCount} offline cash donations without email)` : ''}{init.duplicateEmailsCount > 0 ? `, ${init.duplicateEmailsCount} repeat` : ''}."
+									>
+										<span>🌊</span>
+										<span class="truncate max-w-[180px] sm:max-w-xs">{init.title}</span>
+										<span class="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-emerald-400/25 text-emerald-200 border border-emerald-400/30">
+											{init.emailDonorsCount} with email
+										</span>
+										{#if init.totalDonationsCount !== init.emailDonorsCount}
+											<span class="text-[9px] text-emerald-400/70 font-normal">
+												({init.totalDonationsCount} total)
+											</span>
+										{/if}
+									</button>
+								{/each}
+								<button
+									type="button"
+									onclick={importDonors}
+									class="px-2 py-1 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all flex items-center gap-1"
+									title="Import all unique donor contacts across all fundraising campaigns ({data.donors.length} recipients)"
+								>
+									<span>✨</span>
+									<span>All Donors ({data.donors.length})</span>
+								</button>
+								{#if (data.allWithoutEmailCount && data.allWithoutEmailCount > 0) || (data.allDuplicateEmailsCount && data.allDuplicateEmailsCount > 0)}
+									<span
+										class="text-[9px] text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800 flex items-center gap-1 cursor-help"
+										title="Email dispatch filters out {data.allWithoutEmailCount || 0} offline cash donations without an email, and deduplicates {data.allDuplicateEmailsCount || 0} repeat donor contributions to guarantee deliverable inboxes."
+									>
+										<span>ℹ️</span>
+										<span>{data.donors.length} deliverable ({data.allDonationsCount || data.donors.length} donations)</span>
+									</span>
+								{/if}
+							</div>
+						{/if}
+
 						<!-- View Mode Switcher -->
 						<div class="flex items-center justify-between border-t border-slate-800/80 pt-3">
 							<span class="text-xs font-semibold text-slate-300">
@@ -1097,7 +1169,11 @@
 																	🏛️ {r.associated_organizations}
 																</span>
 															{/if}
-															{#if r.org_role}
+															{#if r.campaign || r.role === 'Donor'}
+																<span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-medium" title="Fundraising Initiative Donor">
+																	🎗️ {r.org_role || 'Donor'}
+																</span>
+															{:else if r.org_role}
 																<span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30">
 																	{r.org_role}
 																</span>
@@ -1106,7 +1182,7 @@
 																	{r.role}
 																</span>
 															{/if}
-															{#if !r.associated_organizations && !r.org_role && !r.role}
+															{#if !r.associated_organizations && !r.org_role && !r.role && !r.campaign}
 																<span class="text-slate-500 text-[10px]">—</span>
 															{/if}
 														</div>
@@ -1142,7 +1218,11 @@
 													{r.salutation ? `${r.salutation} ` : ''}{r.name}
 												</div>
 												<div class="text-[11px] font-mono text-slate-400">{r.email}</div>
-												{#if r.org_role || r.city}
+												{#if r.campaign || r.role === 'Donor'}
+													<div class="text-[10px] text-emerald-400 mt-0.5 font-medium">
+														🎗️ {r.org_role || 'Donor'} {r.city ? `• ${r.city}` : ''}
+													</div>
+												{:else if r.org_role || r.city}
 													<div class="text-[10px] text-amber-400 mt-0.5">
 														{r.org_role || ''} {r.city ? `• ${r.city}` : ''}
 													</div>
