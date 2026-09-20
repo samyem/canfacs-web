@@ -81,6 +81,23 @@
 	let manualSalutation = $state('');
 	let manualOrg = $state('');
 
+	// Attachment Upload & Management State
+	interface AttachmentItem {
+		id: string;
+		key: string;
+		fileName: string;
+		fileSize: string;
+		sizeBytes: number;
+		url: string;
+		contentType: string;
+	}
+
+	let uploadedAttachments = $state<AttachmentItem[]>([]);
+	let isUploadingAttachment = $state(false);
+	let attachmentUploadError = $state('');
+	let attachmentFileInput = $state<HTMLInputElement | null>(null);
+	let attachmentCopiedId = $state('');
+
 	function addRecipientManually() {
 		if (!manualEmail || !manualEmail.includes('@')) return;
 		const newEntry = {
@@ -416,6 +433,90 @@
 			visualEditorElement.innerHTML = '';
 		}
 		aiDraftLoaded = false;
+	}
+
+	// Attachment Upload & Card Insertion Helpers
+	async function handleAttachmentUpload(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const files = input.files;
+		if (!files || files.length === 0) return;
+
+		isUploadingAttachment = true;
+		attachmentUploadError = '';
+
+		try {
+			for (let i = 0; i < files.length; i++) {
+				const file = files[i];
+				const formData = new FormData();
+				formData.append('file', file);
+
+				const res = await fetch('/api/attachments/upload', {
+					method: 'POST',
+					body: formData
+				});
+
+				const result = (await res.json()) as any;
+				if (!res.ok || !result.success) {
+					throw new Error(result.error || 'Failed to upload attachment.');
+				}
+
+				const newItem: AttachmentItem = {
+					id: `att_${crypto.randomUUID().slice(0, 8)}`,
+					key: result.key,
+					fileName: result.fileName,
+					fileSize: result.fileSize,
+					sizeBytes: result.sizeBytes,
+					url: result.url,
+					contentType: result.contentType
+				};
+
+				uploadedAttachments = [...uploadedAttachments, newItem];
+
+				// Auto-insert attachment download card into email body
+				insertAttachmentCard(newItem);
+			}
+		} catch (err: any) {
+			attachmentUploadError = err?.message || 'Error uploading file.';
+		} finally {
+			isUploadingAttachment = false;
+			if (input) input.value = '';
+		}
+	}
+
+	function insertAttachmentCard(att: AttachmentItem) {
+		const icon = getFileIcon(att.fileName);
+		const cardHtml = `<div style="margin: 24px 0; max-width: 560px;"><table cellpadding="0" cellspacing="0" border="0" style="width: 100%; background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"><tr><td style="padding: 16px 20px;"><table cellpadding="0" cellspacing="0" border="0" style="width: 100%;"><tr><td style="width: 44px; vertical-align: middle;"><div style="width: 40px; height: 40px; background-color: #0f172a; border: 1px solid #475569; border-radius: 10px; text-align: center; line-height: 40px; font-size: 20px;">${icon}</div></td><td style="padding-left: 14px; vertical-align: middle;"><div style="font-size: 14px; font-weight: bold; color: #ffffff; line-height: 1.3;">${att.fileName}</div><div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Official Document • ${att.fileSize}</div></td><td style="text-align: right; vertical-align: middle; width: 140px;"><a href="${att.url}" target="_blank" style="display: inline-block; background-color: #dc2626; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: bold;">Download &darr;</a></td></tr></table></td></tr></table></div><p><br /></p>`;
+
+		if (editorMode === 'visual') {
+			insertHtmlAtCursor(cardHtml);
+		} else {
+			applyCodeFormatting(`\n${cardHtml}\n`);
+		}
+	}
+
+	function getFileIcon(filename: string) {
+		const ext = filename.split('.').pop()?.toLowerCase() || '';
+		if (['pdf'].includes(ext)) return '📄';
+		if (['doc', 'docx', 'txt', 'rtf'].includes(ext)) return '📝';
+		if (['xls', 'xlsx', 'csv'].includes(ext)) return '📊';
+		if (['ppt', 'pptx'].includes(ext)) return '📑';
+		if (['zip', 'tar', 'gz', 'rar'].includes(ext)) return '📦';
+		if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) return '🖼️';
+		return '📎';
+	}
+
+	function removeAttachment(id: string) {
+		uploadedAttachments = uploadedAttachments.filter((a) => a.id !== id);
+	}
+
+	function copyAttachmentUrl(att: AttachmentItem) {
+		if (typeof navigator !== 'undefined' && navigator.clipboard) {
+			navigator.clipboard.writeText(att.url);
+			attachmentCopiedId = att.id;
+			setTimeout(() => {
+				attachmentCopiedId = '';
+			}, 2000);
+		}
 	}
 
 	// Preset AI prompts
@@ -1456,6 +1557,16 @@
 								</button>
 								<button
 									type="button"
+									onclick={() => attachmentFileInput?.click()}
+									disabled={isUploadingAttachment}
+									class="px-2.5 py-1 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 font-semibold border border-emerald-800/50 transition-colors flex items-center gap-1 disabled:opacity-50"
+									title="Upload document to Cloudflare R2 and insert download card"
+								>
+									<span>📎</span>
+									<span>{isUploadingAttachment ? 'Uploading...' : 'Attach'}</span>
+								</button>
+								<button
+									type="button"
 									onclick={insertDivider}
 									class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-800 text-[11px]"
 									title="Divider Line"
@@ -1478,21 +1589,20 @@
 								<div
 									bind:this={visualEditorElement}
 									contenteditable="true"
-									role="textbox"
-									aria-multiline="true"
-									aria-label="Email message visual editor"
-									data-placeholder="Write your email message here. Format text with toolbar buttons, or insert personalization tags on the left..."
 									oninput={handleVisualInput}
-									class="min-h-[220px] max-h-[500px] overflow-y-auto w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-sm font-sans text-slate-100 focus:outline-none focus:border-red-500 transition-colors leading-relaxed tracking-normal outline-none [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-white [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-white [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3 [&_li]:mb-1 [&_a]:text-cyan-400 [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-red-500 [&_blockquote]:pl-4 [&_blockquote]:italic empty:before:content-[attr(data-placeholder)] empty:before:text-slate-600 empty:before:pointer-events-none empty:before:block"
+									role="textbox"
+									tabindex="0"
+									class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-sm text-slate-100 min-h-[260px] focus:outline-none focus:border-red-500/70 transition-all font-sans leading-relaxed shadow-inner overflow-y-auto"
+									style="outline: none;"
 								></div>
 							{:else}
-								<!-- Raw HTML Code Editor -->
+								<!-- Raw HTML Code Mode -->
 								<textarea
 									id="codeEditor"
 									rows="10"
 									bind:value={bodyHtml}
-									placeholder="&lt;p&gt;Dear {`{{salutation}}`} {`{{name}}`},&lt;/p&gt;..."
-									class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs font-mono text-cyan-200 focus:outline-none focus:border-red-500 transition-colors leading-relaxed tracking-normal"
+									placeholder="Write HTML here..."
+									class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs font-mono text-cyan-200 min-h-[260px] focus:outline-none focus:border-cyan-500/70 transition-all leading-relaxed shadow-inner"
 								></textarea>
 							{/if}
 
@@ -1510,6 +1620,116 @@
 									</span>
 								{/if}
 							</div>
+						</div>
+
+						<!-- Attached Documents & Cloud Files (One-Click R2 Upload) -->
+						<div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3">
+							<div class="flex items-center justify-between">
+								<div class="flex items-center gap-2">
+									<span class="text-sm">📎</span>
+									<span class="text-xs font-bold text-slate-200">
+										Attached Documents & Cloud Files ({uploadedAttachments.length})
+									</span>
+									<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+										Cloudflare R2 Hosted
+									</span>
+								</div>
+
+								<button
+									type="button"
+									onclick={() => attachmentFileInput?.click()}
+									disabled={isUploadingAttachment}
+									class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all flex items-center gap-1.5 shadow-sm shadow-emerald-900/40 disabled:opacity-50"
+								>
+									{#if isUploadingAttachment}
+										<span class="animate-spin text-xs">⏳</span>
+										<span>Uploading...</span>
+									{:else}
+										<span>➕</span>
+										<span>Attach File</span>
+									{/if}
+								</button>
+							</div>
+
+							<!-- Hidden File Input -->
+							<input
+								type="file"
+								bind:this={attachmentFileInput}
+								onchange={handleAttachmentUpload}
+								multiple
+								class="hidden"
+								accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg,.zip"
+							/>
+
+							{#if attachmentUploadError}
+								<div class="p-2.5 rounded-xl bg-red-950/80 border border-red-800 text-red-300 text-xs flex items-center justify-between">
+									<span>⚠️ {attachmentUploadError}</span>
+									<button type="button" onclick={() => (attachmentUploadError = '')} class="text-red-400 hover:text-white text-xs font-bold">✕</button>
+								</div>
+							{/if}
+
+							{#if uploadedAttachments.length === 0}
+								<button
+									type="button"
+									onclick={() => attachmentFileInput?.click()}
+									class="w-full p-4 rounded-xl border border-dashed border-slate-800 hover:border-slate-700 bg-slate-900/30 hover:bg-slate-900/60 transition-all text-center cursor-pointer space-y-1 block"
+								>
+									<p class="text-xs text-slate-400 font-medium">
+										Click to attach documents (PDF, Word, Excel, Images, max 25 MB)
+									</p>
+									<p class="text-[10px] text-slate-500">
+										Files are uploaded to Cloudflare R2 and given unique, deliverable links with branded download cards.
+									</p>
+								</button>
+							{:else}
+								<div class="space-y-2">
+									{#each uploadedAttachments as att}
+										<div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+											<div class="flex items-center gap-2.5 min-w-0">
+												<span class="text-lg">{getFileIcon(att.fileName)}</span>
+												<div class="min-w-0">
+													<div class="text-xs font-bold text-white truncate max-w-xs sm:max-w-md">
+														{att.fileName}
+													</div>
+													<div class="text-[10px] text-slate-400 flex items-center gap-2">
+														<span>{att.fileSize}</span>
+														<span>•</span>
+														<span class="font-mono text-emerald-400 truncate max-w-[200px] sm:max-w-xs">{att.url}</span>
+													</div>
+												</div>
+											</div>
+											<div class="flex items-center gap-1.5 flex-shrink-0 self-end sm:self-auto">
+												<button
+													type="button"
+													onclick={() => insertAttachmentCard(att)}
+													class="px-2 py-1 rounded-lg bg-emerald-950 text-emerald-300 hover:bg-emerald-900 border border-emerald-800/60 text-[11px] font-bold transition-all flex items-center gap-1"
+													title="Insert download card into email message body"
+												>
+													<span>➕</span>
+													<span>Insert Card</span>
+												</button>
+												<button
+													type="button"
+													onclick={() => copyAttachmentUrl(att)}
+													class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition-all flex items-center gap-1"
+													title="Copy unique public URL"
+												>
+													<span>{attachmentCopiedId === att.id ? '✓' : '📋'}</span>
+													<span>{attachmentCopiedId === att.id ? 'Copied' : 'Link'}</span>
+												</button>
+												<button
+													type="button"
+													onclick={() => removeAttachment(att.id)}
+													class="p-1 text-slate-500 hover:text-red-400 transition-colors text-xs"
+													title="Remove from list"
+												>
+													✕
+												</button>
+											</div>
+										</div>
+									{/each}
+								</div>
+							{/if}
 						</div>
 
 						<!-- Live Preview of Merged Message -->
