@@ -1,4 +1,5 @@
 import type { RequestHandler } from './$types';
+import { getDb, getPublishedDocuments } from '$lib/server/db';
 
 const SITE_URL = 'https://canfacs.org';
 
@@ -6,6 +7,7 @@ interface SitemapEntry {
 	path: string;
 	priority: string;
 	changefreq: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+	lastmod?: string;
 }
 
 const PUBLIC_PAGES: SitemapEntry[] = [
@@ -16,6 +18,7 @@ const PUBLIC_PAGES: SitemapEntry[] = [
 	{ path: '/mission-and-vision', priority: '0.8', changefreq: 'monthly' },
 	{ path: '/team', priority: '0.8', changefreq: 'monthly' },
 	{ path: '/events', priority: '0.8', changefreq: 'weekly' },
+	{ path: '/documents', priority: '0.8', changefreq: 'weekly' },
 	{ path: '/bhetghat', priority: '0.8', changefreq: 'monthly' },
 	{ path: '/newsletters', priority: '0.7', changefreq: 'monthly' },
 	{ path: '/join-canfacs', priority: '0.8', changefreq: 'monthly' },
@@ -23,19 +26,37 @@ const PUBLIC_PAGES: SitemapEntry[] = [
 	{ path: '/terms-of-service', priority: '0.5', changefreq: 'monthly' }
 ];
 
-export const GET: RequestHandler = async () => {
-	const lastMod = new Date().toISOString().split('T')[0];
+export const GET: RequestHandler = async ({ platform, locals }) => {
+	const defaultLastMod = new Date().toISOString().split('T')[0];
+	const db = getDb(platform, locals);
+
+	let dynamicDocPages: SitemapEntry[] = [];
+	try {
+		const publishedDocs = await getPublishedDocuments(db);
+		dynamicDocPages = publishedDocs.map((doc) => ({
+			path: `/documents/${doc.slug}`,
+			priority: '0.7',
+			changefreq: 'weekly' as const,
+			lastmod: (doc.updated_at || doc.published_at || defaultLastMod).split('T')[0]
+		}));
+	} catch {
+		dynamicDocPages = [];
+	}
+
+	const allPages = [...PUBLIC_PAGES, ...dynamicDocPages];
 
 	const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${PUBLIC_PAGES.map(
-	(page) => `  <url>
+${allPages
+	.map(
+		(page) => `  <url>
     <loc>${SITE_URL}${page.path}</loc>
-    <lastmod>${lastMod}</lastmod>
+    <lastmod>${page.lastmod || defaultLastMod}</lastmod>
     <changefreq>${page.changefreq}</changefreq>
     <priority>${page.priority}</priority>
   </url>`
-).join('\n')}
+	)
+	.join('\n')}
 </urlset>`;
 
 	return new Response(xml.trim(), {
@@ -45,3 +66,4 @@ ${PUBLIC_PAGES.map(
 		}
 	});
 };
+

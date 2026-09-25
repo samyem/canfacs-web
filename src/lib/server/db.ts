@@ -161,6 +161,36 @@ export interface MemberOrganizationalRoleRow {
 	created_at: string;
 }
 
+export interface DocumentAttachment {
+	id: string;
+	key: string;
+	fileName: string;
+	fileSize: string;
+	sizeBytes: number;
+	url: string;
+	contentType: string;
+}
+
+export type DocumentVisibility = 'public' | 'members' | 'bod' | 'admin';
+
+export interface DocumentRow {
+	id: string;
+	title: string;
+	slug: string;
+	summary: string | null;
+	category: string;
+	content_html: string;
+	banner_image_url: string | null;
+	attachments: string | null; // JSON string of DocumentAttachment[]
+	status: 'published' | 'draft';
+	visibility: DocumentVisibility;
+	author_id: string | null;
+	author_name: string | null;
+	published_at: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
 // In-memory fallback store for local development when D1 binding is unattached
 let localStoreInitialized = false;
 let memoryMembers: MemberRow[] = [];
@@ -176,6 +206,7 @@ let memoryEmailLogs: EmailLogRow[] = [];
 let memoryEmailTemplates: EmailTemplateRow[] = [];
 let memoryOrgRoles: OrganizationalRoleRow[] = [];
 let memoryMemberOrgRoles: MemberOrganizationalRoleRow[] = [];
+let memoryDocuments: DocumentRow[] = [];
 
 async function ensureDbDefaultAdmin(db: any) {
 	if (!dev) return;
@@ -735,6 +766,203 @@ async function ensureLocalDefaultAdmin() {
 			created_at: '2026-09-10T11:22:02.384Z'
 		}
 	);
+
+	// Seed Sample Official Documents
+	if (memoryDocuments.length === 0) {
+		memoryDocuments.push(
+			{
+				id: 'doc_canfacs_constitution',
+				title: 'CANFACS Constitution, Bylaws & Governance Charter',
+				slug: 'constitution-and-bylaws',
+				summary: 'The official constitution, society bylaws, and governance charter of the Canada-Nepal Friendship & Cultural Society, outlining non-profit mandates, board structure, election bylaws, and membership tiers.',
+				category: 'Governance & Policies',
+				banner_image_url: '/canada-nepal-flags-hero.png',
+				attachments: JSON.stringify([
+					{
+						id: 'att_seed_const_pdf',
+						key: 'att_seed_CANFACS_Constitution_Bylaws_2026.pdf',
+						fileName: 'CANFACS_Constitution_and_Bylaws_Official_2026.pdf',
+						fileSize: '1.4 MB',
+						sizeBytes: 1468006,
+						url: '/api/attachments/att_seed_CANFACS_Constitution_Bylaws_2026.pdf',
+						contentType: 'application/pdf'
+					},
+					{
+						id: 'att_seed_charter_docx',
+						key: 'att_seed_CANFACS_Governance_Charter.docx',
+						fileName: 'CANFACS_Governance_Charter_Summary.docx',
+						fileSize: '340 KB',
+						sizeBytes: 348160,
+						url: '/api/attachments/att_seed_CANFACS_Governance_Charter.docx',
+						contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+					}
+				]),
+				content_html: `<h2>1. Preamble & Foundational Purpose</h2>
+<p>The <strong>Canada-Nepal Friendship &amp; Cultural Society (CANFACS)</strong> is a registered non-profit society in British Columbia, Canada, committed to fostering lasting bonds of friendship, mutual understanding, cultural appreciation, and humanitarian cooperation between the peoples of Canada and Nepal.</p>
+<p>Since our inception, CANFACS has functioned as a nationwide community bridge, celebrating bilateral diplomatic milestones dating back to 1965, empowering the diaspora, and mobilizing emergency relief during times of natural adversity.</p>
+
+<div style="margin: 24px 0; max-width: 580px;"><table cellpadding="0" cellspacing="0" border="0" style="width: 100%; background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"><tr><td style="padding: 16px 20px;"><table cellpadding="0" cellspacing="0" border="0" style="width: 100%;"><tr><td style="width: 44px; vertical-align: middle;"><div style="width: 40px; height: 40px; background-color: #0f172a; border: 1px solid #475569; border-radius: 10px; text-align: center; line-height: 40px; font-size: 20px;">📄</div></td><td style="padding-left: 14px; vertical-align: middle;"><div style="font-size: 14px; font-weight: bold; color: #ffffff; line-height: 1.3;">CANFACS_Constitution_and_Bylaws_Official_2026.pdf</div><div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Official Document • 1.4 MB</div></td><td style="text-align: right; vertical-align: middle; width: 140px;"><a href="/api/attachments/att_seed_CANFACS_Constitution_Bylaws_2026.pdf" target="_blank" style="display: inline-block; background-color: #dc2626; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: bold;">Download &darr;</a></td></tr></table></td></tr></table></div>
+
+<h2>2. Society Objectives</h2>
+<ul>
+  <li><strong>Cultural Diplomacy:</strong> Promote Nepali arts, heritage, traditions, language, and indigenous knowledge across Canadian multicultural landscapes.</li>
+  <li><strong>Bilateral Understanding:</strong> Facilitate educational exchanges, historical seminars, and civic dialogues strengthening Canada-Nepal bilateral relations.</li>
+  <li><strong>Disaster Relief &amp; Humanitarian Solidarity:</strong> Provide transparent, timely mobilization of emergency relief and rehabilitation assistance for communities in Nepal and Canada facing catastrophic disasters.</li>
+  <li><strong>Youth &amp; Mentorship:</strong> Encourage Canadian-Nepali youth leadership, community volunteering, and academic enrichment.</li>
+</ul>
+
+<h2>3. Membership Governance &amp; Categories</h2>
+<p>Membership in CANFACS is open to all individuals residing in Canada who subscribe to the purposes of the Society regardless of ancestry, ethnicity, religion, or background:</p>
+<ul>
+  <li><strong>General Members:</strong> Registered participants in society programs, community activities, and cultural festivals.</li>
+  <li><strong>Life Members:</strong> Honored patrons and committed long-term contributors designated by the Board of Directors.</li>
+  <li><strong>Board of Directors (BOD):</strong> Elected governance trustees responsible for operational oversight, financial stewardship, and legal compliance.</li>
+  <li><strong>Advisory Board:</strong> Eminent diplomatic, cultural, and community leaders offering strategic counsel.</li>
+</ul>
+
+<h2>4. Annual General Meeting (AGM) Guidelines</h2>
+<p>An Annual General Meeting shall be convened once every calendar year at a designated time and place announced at least twenty-one (21) days prior. Members in good standing shall receive financial statements, committee progress reports, and participate in executive elections as prescribed by the Society Act.</p>`,
+				status: 'published',
+				visibility: 'public',
+				author_id: 'admin-001',
+				author_name: 'CANFACS Executive Admin',
+				published_at: '2026-01-15T12:00:00Z',
+				created_at: '2026-01-15T12:00:00Z',
+				updated_at: '2026-09-20T10:00:00Z'
+			},
+			{
+				id: 'doc_canfacs_flood_audit',
+				title: 'Nepal Flood Relief 2026: Official Transparency & Disbursement Audit',
+				slug: 'nepal-flood-emergency-relief-audit',
+				summary: 'Official transparent financial accounting and audit documentation of diaspora contributions collected for the 2026 Trishuli River and Rasuwa Flood Emergency Relief Campaign, verified banking conduits, and Prime Minister Disaster Relief Fund disbursements.',
+				category: 'Financials & Audits',
+				banner_image_url: '/canada-nepal-flags-hero.png',
+				attachments: JSON.stringify([
+					{
+						id: 'att_seed_flood_audit_pdf',
+						key: 'att_seed_Nepal_Flood_Relief_2026_Audit_Report.pdf',
+						fileName: 'CANFACS_Nepal_Flood_Relief_Audit_Report_2026.pdf',
+						fileSize: '890 KB',
+						sizeBytes: 911360,
+						url: '/api/attachments/att_seed_Nepal_Flood_Relief_2026_Audit_Report.pdf',
+						contentType: 'application/pdf'
+					},
+					{
+						id: 'att_seed_banking_receipt',
+						key: 'att_seed_PM_Disaster_Relief_Bank_Wire_Receipt.pdf',
+						fileName: 'PM_Disaster_Relief_Bank_Wire_Receipt.pdf',
+						fileSize: '512 KB',
+						sizeBytes: 524288,
+						url: '/api/attachments/att_seed_PM_Disaster_Relief_Bank_Wire_Receipt.pdf',
+						contentType: 'application/pdf'
+					}
+				]),
+				content_html: `<h2>1. Executive Summary &amp; Scope of Audit</h2>
+<p>Following catastrophic seasonal flooding and landslides along the Trishuli River basin affecting communities in Nuwakot, Rasuwa, and downstream districts, CANFACS launched the <em>2026 Nepal Flood Emergency Relief &amp; Rehabilitation Fund</em>.</p>
+<p>In accordance with our strict governance principles of 100% financial transparency, this audit report details all funds collected from Canadian community donors, board pledges, digital payment conduits, and official government-authorized disbursements.</p>
+
+<div style="margin: 24px 0; max-width: 580px;"><table cellpadding="0" cellspacing="0" border="0" style="width: 100%; background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"><tr><td style="padding: 16px 20px;"><table cellpadding="0" cellspacing="0" border="0" style="width: 100%;"><tr><td style="width: 44px; vertical-align: middle;"><div style="width: 40px; height: 40px; background-color: #0f172a; border: 1px solid #475569; border-radius: 10px; text-align: center; line-height: 40px; font-size: 20px;">📊</div></td><td style="padding-left: 14px; vertical-align: middle;"><div style="font-size: 14px; font-weight: bold; color: #ffffff; line-height: 1.3;">CANFACS_Nepal_Flood_Relief_Audit_Report_2026.pdf</div><div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Official Audit Document • 890 KB</div></td><td style="text-align: right; vertical-align: middle; width: 140px;"><a href="/api/attachments/att_seed_Nepal_Flood_Relief_2026_Audit_Report.pdf" target="_blank" style="display: inline-block; background-color: #dc2626; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: bold;">Download &darr;</a></td></tr></table></td></tr></table></div>
+
+<h2>2. Key Financial Indicators</h2>
+<ul>
+  <li><strong>Target Campaign Goal:</strong> $10,000.00 CAD</li>
+  <li><strong>Total Diaspora Contributions (Online &amp; Pledged):</strong> $2,250.00 CAD</li>
+  <li><strong>Total Disbursed to Date:</strong> $2,000.00 CAD</li>
+  <li><strong>Primary Official Recipient:</strong> Government of Nepal — Prime Minister's Disaster Relief Fund (PMDRF)</li>
+  <li><strong>Administrative Deductions:</strong> $0.00 (100% of donor proceeds allocated directly to verified relief)</li>
+</ul>
+
+<h2>3. Banking Wire Verification &amp; Official Receipts</h2>
+<p>Official banking transfers were processed via authorized Canadian financial institutional wires directly into the official Central Bank of Nepal (Nepal Rastra Bank) disaster account. Scanned copies of wire transmission confirmation, currency exchange slips, and official diplomatic acknowledgment are attached to this document for public audit.</p>`,
+				status: 'published',
+				visibility: 'public',
+				author_id: 'admin-001',
+				author_name: 'CANFACS Board of Directors',
+				published_at: '2026-09-08T15:30:00Z',
+				created_at: '2026-09-08T15:30:00Z',
+				updated_at: '2026-09-12T18:00:00Z'
+			},
+			{
+				id: 'doc_canfacs_agm_minutes',
+				title: 'CANFACS Annual General Meeting (AGM) Minutes & Committee Resolutions',
+				slug: 'agm-report-and-resolutions-2025-2026',
+				summary: 'Official record of assembly proceedings, board elections, constitutional amendments, and cultural program roadmaps approved during the Annual General Meeting. (Access restricted to registered CANFACS members)',
+				category: 'Meeting Minutes',
+				banner_image_url: null,
+				attachments: JSON.stringify([
+					{
+						id: 'att_seed_agm_doc',
+						key: 'att_seed_AGM_Minutes_2025_2026_Signed.docx',
+						fileName: 'CANFACS_AGM_Minutes_2025_2026_Signed.docx',
+						fileSize: '420 KB',
+						sizeBytes: 430080,
+						url: '/api/attachments/att_seed_AGM_Minutes_2025_2026_Signed.docx',
+						contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+					}
+				]),
+				content_html: `<h2>1. Meeting Call to Order &amp; Quorum</h2>
+<p>The Annual General Meeting of the Canada-Nepal Friendship &amp; Cultural Society was called to order with quorum established by active sitting members, executive committee trustees, and advisory participants present in person and via virtual teleconference.</p>
+
+<h2>2. Agenda &amp; Proceedings</h2>
+<ol>
+  <li>Approval of Previous Assembly Minutes</li>
+  <li>Presidential Address &amp; Society Year-in-Review</li>
+  <li>Audited Financial Presentation by Society Treasurer</li>
+  <li>Report on Mount Everest Day (May 29) &amp; Bilateral Cultural Evenings</li>
+  <li>New Executive Committee Appointments &amp; Committee Mandates</li>
+</ol>
+
+<h2>3. Passed Resolutions</h2>
+<p><strong>Resolution 2026-01:</strong> Be it resolved that CANFACS will expand digital access to official society publications, bylaws, and financial disclosures through an open-access public documents portal.</p>
+<p><strong>Resolution 2026-02:</strong> Be it resolved that the executive board will institute an educational scholarship fund supporting underprivileged youth in Nepal pursuing environmental and STEM studies.</p>`,
+				status: 'published',
+				visibility: 'members',
+				author_id: 'admin-001',
+				author_name: 'General Secretary',
+				published_at: '2026-02-10T10:00:00Z',
+				created_at: '2026-02-10T10:00:00Z',
+				updated_at: '2026-02-10T10:00:00Z'
+			},
+			{
+				id: 'doc_canfacs_bod_minutes',
+				title: 'CANFACS Board of Directors (BOD) Meeting Minutes & Executive Resolutions',
+				slug: 'bod-executive-meeting-minutes-2026',
+				summary: 'Confidential proceedings, financial appropriations, and strategic resolutions of the CANFACS Board of Directors. Restricted strictly to sitting Board Members and Executive Trustees.',
+				category: 'Meeting Minutes',
+				banner_image_url: null,
+				attachments: JSON.stringify([
+					{
+						id: 'att_seed_bod_minutes_pdf',
+						key: 'att_seed_BOD_Minutes_Executive_Q3_2026.pdf',
+						fileName: 'CANFACS_BOD_Executive_Minutes_Q3_2026.pdf',
+						fileSize: '540 KB',
+						sizeBytes: 552960,
+						url: '/api/attachments/att_seed_BOD_Minutes_Executive_Q3_2026.pdf',
+						contentType: 'application/pdf'
+					}
+				]),
+				content_html: `<h2>1. Executive Session Call to Order</h2>
+<p>The executive meeting of the CANFACS Board of Directors was convened in closed session. Presiding officers reviewed executive society roadmaps, bilateral diplomatic invitations, and community relief disbursements.</p>
+
+<h2>2. Board Committee Resolutions</h2>
+<ul>
+  <li><strong>Disaster Relief Governance:</strong> Formal ratification of 100% pass-through funding for verified Nepal flood relief.</li>
+  <li><strong>Digital Platform Upgrades:</strong> Approval of the new public documents CMS, member governance portal, and Cloudflare R2 secure storage infrastructure.</li>
+  <li><strong>Provincial Chapter Expansion:</strong> Coordination of Calgary, Toronto, and Halifax regional chapter liaison roles.</li>
+</ul>
+
+<h2>3. Confidential Adjournment &amp; Sign-off</h2>
+<p>The Board of Directors concluded proceedings with next quarterly executive review scheduled for December 2026.</p>`,
+				status: 'published',
+				visibility: 'bod',
+				author_id: 'admin-001',
+				author_name: 'Board of Directors (BOD)',
+				published_at: '2026-08-25T14:00:00Z',
+				created_at: '2026-08-25T14:00:00Z',
+				updated_at: '2026-08-25T14:00:00Z'
+			}
+		);
+	}
 }
 
 export function getDb(platform?: App.Platform, locals?: App.Locals) {
@@ -2586,6 +2814,476 @@ export async function getTeamLeadership(db: any): Promise<{
 
 	return cachedLeadership;
 }
+
+// ==========================================
+// DOCUMENT CMS & ATTACHMENT QUERIES
+// ==========================================
+
+export function canUserViewDocument(doc: DocumentRow, user?: { role: string } | null): boolean {
+	if (doc.status !== 'published') {
+		return user?.role === 'admin';
+	}
+	const visibility = doc.visibility || 'public';
+	if (visibility === 'public') return true;
+	if (!user) return false;
+	if (user.role === 'admin') return true;
+	if (visibility === 'members') return ['member', 'bod', 'admin'].includes(user.role);
+	if (visibility === 'bod') return ['bod', 'admin'].includes(user.role);
+	if (visibility === 'admin') return user.role === 'admin';
+	return false;
+}
+
+export async function ensureDocumentsTable(db: any) {
+	if (!db) return;
+	try {
+		await db
+			.prepare(
+				`
+			CREATE TABLE IF NOT EXISTS documents (
+				id TEXT PRIMARY KEY,
+				title TEXT NOT NULL,
+				slug TEXT UNIQUE NOT NULL,
+				summary TEXT,
+				category TEXT NOT NULL DEFAULT 'General',
+				content_html TEXT NOT NULL,
+				banner_image_url TEXT,
+				attachments TEXT,
+				status TEXT NOT NULL DEFAULT 'published',
+				visibility TEXT NOT NULL DEFAULT 'public',
+				author_id TEXT,
+				author_name TEXT,
+				published_at TEXT,
+				created_at TEXT NOT NULL,
+				updated_at TEXT NOT NULL,
+				FOREIGN KEY (author_id) REFERENCES members(id) ON DELETE SET NULL
+			);
+		`
+			)
+			.run();
+
+		// Safe column addition if migrating from earlier schema
+		try {
+			await db.prepare(`ALTER TABLE documents ADD COLUMN visibility TEXT NOT NULL DEFAULT 'public'`).run();
+		} catch (_) {}
+
+		await db.prepare(`CREATE INDEX IF NOT EXISTS idx_documents_slug ON documents(slug);`).run();
+		await db.prepare(`CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);`).run();
+		await db.prepare(`CREATE INDEX IF NOT EXISTS idx_documents_category ON documents(category);`).run();
+		await db.prepare(`CREATE INDEX IF NOT EXISTS idx_documents_visibility ON documents(visibility);`).run();
+
+		// Seed initial documents into D1 if table is empty
+		const countRes = await db.prepare(`SELECT COUNT(*) as count FROM documents`).first();
+		if (countRes && Number(countRes.count) === 0) {
+			await ensureLocalDefaultAdmin();
+			for (const doc of memoryDocuments) {
+				await db
+					.prepare(
+						`
+					INSERT INTO documents (
+						id, title, slug, summary, category, content_html,
+						banner_image_url, attachments, status, visibility, author_id,
+						author_name, published_at, created_at, updated_at
+					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				`
+					)
+					.bind(
+						doc.id,
+						doc.title,
+						doc.slug,
+						doc.summary,
+						doc.category,
+						doc.content_html,
+						doc.banner_image_url,
+						doc.attachments,
+						doc.status,
+						doc.visibility || 'public',
+						doc.author_id,
+						doc.author_name,
+						doc.published_at,
+						doc.created_at,
+						doc.updated_at
+					)
+					.run();
+			}
+		}
+	} catch (e) {
+		console.warn('Failed to ensure documents table in D1:', e);
+	}
+}
+
+export async function getAllDocuments(
+	db: any,
+	statusFilter: 'all' | 'published' | 'draft' = 'all'
+): Promise<DocumentRow[]> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureDocumentsTable(db);
+		let query = `SELECT * FROM documents`;
+		const params: any[] = [];
+		if (statusFilter !== 'all') {
+			query += ` WHERE status = ?`;
+			params.push(statusFilter);
+		}
+		query += ` ORDER BY COALESCE(published_at, created_at) DESC`;
+		const res = await db.prepare(query).bind(...params).all();
+		return (res.results || []) as DocumentRow[];
+	}
+
+	return [...memoryDocuments]
+		.filter((d) => statusFilter === 'all' || d.status === statusFilter)
+		.sort((a, b) => {
+			const dateA = new Date(a.published_at || a.created_at).getTime();
+			const dateB = new Date(b.published_at || b.created_at).getTime();
+			return dateB - dateA;
+		});
+}
+
+// ==========================================
+// Document In-Memory Cache (Workers isolate)
+// ==========================================
+const documentSlugCache = new Map<string, { doc: DocumentRow | null; timestamp: number }>();
+let documentsVersion = Date.now();
+
+export function invalidateDocumentsCache() {
+	documentSlugCache.clear();
+	documentsVersion = Date.now();
+}
+
+export function getDocumentsVersion(): number {
+	return documentsVersion;
+}
+
+export async function getPublishedDocuments(
+	db: any,
+	category?: string | null,
+	searchQuery?: string | null,
+	userRole?: string | null
+): Promise<DocumentRow[]> {
+	await ensureLocalDefaultAdmin();
+
+	// Determine allowed visibility tiers based on user's role
+	let allowedVisibilities: string[] = ['public'];
+	if (userRole === 'admin') {
+		allowedVisibilities = ['public', 'members', 'bod', 'admin'];
+	} else if (userRole === 'bod') {
+		allowedVisibilities = ['public', 'members', 'bod'];
+	} else if (userRole === 'member') {
+		allowedVisibilities = ['public', 'members'];
+	}
+
+	if (db) {
+		await ensureDocumentsTable(db);
+		const placeholders = allowedVisibilities.map(() => '?').join(', ');
+		let query = `SELECT * FROM documents WHERE status = 'published' AND visibility IN (${placeholders})`;
+		const params: any[] = [...allowedVisibilities];
+
+		if (category && category !== 'all' && category.trim()) {
+			query += ` AND LOWER(category) = ?`;
+			params.push(category.trim().toLowerCase());
+		}
+
+		if (searchQuery && searchQuery.trim()) {
+			const q = `%${searchQuery.trim().toLowerCase()}%`;
+			query += ` AND (LOWER(title) LIKE ? OR LOWER(summary) LIKE ? OR LOWER(category) LIKE ?)`;
+			params.push(q, q, q);
+		}
+
+		query += ` ORDER BY COALESCE(published_at, created_at) DESC`;
+		const res = await db.prepare(query).bind(...params).all();
+		return (res.results || []) as DocumentRow[];
+	}
+
+	const q = searchQuery ? searchQuery.trim().toLowerCase() : '';
+	const cat = category && category !== 'all' ? category.trim().toLowerCase() : null;
+
+	return [...memoryDocuments]
+		.filter((d) => d.status === 'published')
+		.filter((d) => allowedVisibilities.includes(d.visibility || 'public'))
+		.filter((d) => (cat ? d.category.toLowerCase() === cat : true))
+		.filter((d) => {
+			if (!q) return true;
+			return (
+				d.title.toLowerCase().includes(q) ||
+				(d.summary && d.summary.toLowerCase().includes(q)) ||
+				d.category.toLowerCase().includes(q)
+			);
+		})
+		.sort((a, b) => {
+			const dateA = new Date(a.published_at || a.created_at).getTime();
+			const dateB = new Date(b.published_at || b.created_at).getTime();
+			return dateB - dateA;
+		});
+}
+
+export async function getDocumentBySlug(db: any, slug: string): Promise<DocumentRow | null> {
+	await ensureLocalDefaultAdmin();
+	const cleanSlug = slug.trim().toLowerCase();
+	const cached = documentSlugCache.get(cleanSlug);
+	if (cached && Date.now() - cached.timestamp < 120_000) {
+		return cached.doc;
+	}
+
+	let doc: DocumentRow | null = null;
+	if (db) {
+		await ensureDocumentsTable(db);
+		const res = await db.prepare(`SELECT * FROM documents WHERE LOWER(slug) = ?`).bind(cleanSlug).first();
+		doc = (res as DocumentRow) || null;
+	} else {
+		doc = memoryDocuments.find((d) => d.slug.toLowerCase() === cleanSlug) || null;
+	}
+
+	documentSlugCache.set(cleanSlug, { doc, timestamp: Date.now() });
+	return doc;
+}
+
+export async function getDocumentById(db: any, id: string): Promise<DocumentRow | null> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureDocumentsTable(db);
+		const res = await db.prepare(`SELECT * FROM documents WHERE id = ?`).bind(id).first();
+		return (res as DocumentRow) || null;
+	}
+
+	return memoryDocuments.find((d) => d.id === id) || null;
+}
+
+export async function createDocument(
+	db: any,
+	data: {
+		title: string;
+		slug?: string;
+		summary?: string | null;
+		category?: string;
+		content_html: string;
+		banner_image_url?: string | null;
+		attachments?: string | null; // JSON string of DocumentAttachment[]
+		status?: 'published' | 'draft';
+		visibility?: DocumentVisibility;
+		author_id?: string | null;
+		author_name?: string | null;
+		published_at?: string | null;
+	}
+): Promise<DocumentRow> {
+	await ensureLocalDefaultAdmin();
+	const id = 'doc_' + crypto.randomUUID().slice(0, 10);
+	const now = new Date().toISOString();
+
+	// Generate safe slug if not provided
+	let slug = data.slug
+		? data.slug
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, '-')
+				.replace(/(^-|-$)/g, '')
+		: data.title
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, '-')
+				.replace(/(^-|-$)/g, '');
+
+	if (!slug) {
+		slug = `document-${id.slice(4)}`;
+	}
+
+	const status = data.status || 'published';
+	const visibility = data.visibility || 'public';
+	const published_at = status === 'published' ? (data.published_at || now) : null;
+
+	const newDoc: DocumentRow = {
+		id,
+		title: data.title.trim(),
+		slug,
+		summary: data.summary ? data.summary.trim() : null,
+		category: data.category ? data.category.trim() : 'General',
+		content_html: data.content_html.trim(),
+		banner_image_url: data.banner_image_url ? data.banner_image_url.trim() : null,
+		attachments: data.attachments || '[]',
+		status,
+		visibility,
+		author_id: data.author_id || null,
+		author_name: data.author_name ? data.author_name.trim() : 'CANFACS Executive',
+		published_at,
+		created_at: now,
+		updated_at: now
+	};
+
+	if (db) {
+		await ensureDocumentsTable(db);
+		await db
+			.prepare(
+				`
+			INSERT INTO documents (
+				id, title, slug, summary, category, content_html,
+				banner_image_url, attachments, status, visibility, author_id,
+				author_name, published_at, created_at, updated_at
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`
+			)
+			.bind(
+				newDoc.id,
+				newDoc.title,
+				newDoc.slug,
+				newDoc.summary,
+				newDoc.category,
+				newDoc.content_html,
+				newDoc.banner_image_url,
+				newDoc.attachments,
+				newDoc.status,
+				newDoc.visibility,
+				newDoc.author_id,
+				newDoc.author_name,
+				newDoc.published_at,
+				newDoc.created_at,
+				newDoc.updated_at
+			)
+			.run();
+	} else {
+		memoryDocuments.unshift(newDoc);
+	}
+
+	invalidateDocumentsCache();
+	return newDoc;
+}
+
+export async function updateDocument(
+	db: any,
+	id: string,
+	data: {
+		title?: string;
+		slug?: string;
+		summary?: string | null;
+		category?: string;
+		content_html?: string;
+		banner_image_url?: string | null;
+		attachments?: string | null;
+		status?: 'published' | 'draft';
+		visibility?: DocumentVisibility;
+		author_name?: string | null;
+		published_at?: string | null;
+	}
+): Promise<DocumentRow | null> {
+	await ensureLocalDefaultAdmin();
+	const now = new Date().toISOString();
+
+	if (db) {
+		await ensureDocumentsTable(db);
+		const existing = await getDocumentById(db, id);
+		if (!existing) return null;
+
+		const fields: string[] = ['updated_at = ?'];
+		const values: any[] = [now];
+
+		if (data.title !== undefined) {
+			fields.push('title = ?');
+			values.push(data.title.trim());
+		}
+		if (data.slug !== undefined) {
+			const cleanSlug = data.slug
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, '-')
+				.replace(/(^-|-$)/g, '');
+			fields.push('slug = ?');
+			values.push(cleanSlug);
+		}
+		if (data.summary !== undefined) {
+			fields.push('summary = ?');
+			values.push(data.summary ? data.summary.trim() : null);
+		}
+		if (data.category !== undefined) {
+			fields.push('category = ?');
+			values.push(data.category.trim());
+		}
+		if (data.content_html !== undefined) {
+			fields.push('content_html = ?');
+			values.push(data.content_html.trim());
+		}
+		if (data.banner_image_url !== undefined) {
+			fields.push('banner_image_url = ?');
+			values.push(data.banner_image_url ? data.banner_image_url.trim() : null);
+		}
+		if (data.attachments !== undefined) {
+			fields.push('attachments = ?');
+			values.push(data.attachments);
+		}
+		if (data.status !== undefined) {
+			fields.push('status = ?');
+			values.push(data.status);
+			if (data.status === 'published' && !existing.published_at) {
+				fields.push('published_at = ?');
+				values.push(now);
+			}
+		}
+		if (data.visibility !== undefined) {
+			fields.push('visibility = ?');
+			values.push(data.visibility);
+		}
+		if (data.published_at !== undefined) {
+			fields.push('published_at = ?');
+			values.push(data.published_at);
+		}
+		if (data.author_name !== undefined) {
+			fields.push('author_name = ?');
+			values.push(data.author_name ? data.author_name.trim() : null);
+		}
+
+		values.push(id);
+		await db.prepare(`UPDATE documents SET ${fields.join(', ')} WHERE id = ?`).bind(...values).run();
+		invalidateDocumentsCache();
+		return getDocumentById(db, id);
+	}
+
+	const idx = memoryDocuments.findIndex((d) => d.id === id);
+	if (idx === -1) return null;
+
+	const existing = memoryDocuments[idx];
+	const isNowPublished = data.status === 'published' && !existing.published_at;
+
+	memoryDocuments[idx] = {
+		...existing,
+		...data,
+		slug:
+			data.slug !== undefined
+				? data.slug
+						.toLowerCase()
+						.replace(/[^a-z0-9]+/g, '-')
+						.replace(/(^-|-$)/g, '')
+				: existing.slug,
+		visibility: data.visibility !== undefined ? data.visibility : (existing.visibility || 'public'),
+		published_at: isNowPublished ? now : (data.published_at !== undefined ? data.published_at : existing.published_at),
+		updated_at: now
+	};
+
+	invalidateDocumentsCache();
+	return memoryDocuments[idx];
+}
+
+export async function deleteDocument(db: any, id: string): Promise<void> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureDocumentsTable(db);
+		await db.prepare(`DELETE FROM documents WHERE id = ?`).bind(id).run();
+	} else {
+		memoryDocuments = memoryDocuments.filter((d) => d.id !== id);
+	}
+	invalidateDocumentsCache();
+}
+
+export async function getDocumentCategories(db: any): Promise<string[]> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureDocumentsTable(db);
+		const res = await db
+			.prepare(`SELECT DISTINCT category FROM documents WHERE category IS NOT NULL AND status = 'published' ORDER BY category ASC`)
+			.all();
+		const cats = (res.results || []).map((r: any) => r.category).filter(Boolean);
+		return cats.length > 0 ? cats : ['Governance & Policies', 'Financials & Audits', 'Meeting Minutes', 'Publications & Articles', 'General'];
+	}
+
+	const set = new Set(memoryDocuments.filter((d) => d.status === 'published').map((d) => d.category));
+	if (set.size === 0) {
+		return ['Governance & Policies', 'Financials & Audits', 'Meeting Minutes', 'Publications & Articles', 'General'];
+	}
+	return Array.from(set).sort();
+}
+
 
 
 

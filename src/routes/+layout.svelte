@@ -22,6 +22,7 @@
 		{ label: 'Impact', href: '/impact' },
 		{ label: 'Team', href: '/team' },
 		{ label: 'Events', href: '/events' },
+		{ label: 'Documents', href: '/documents' },
 		{ label: 'Newsletters', href: '/newsletters' }
 	];
 </script>
@@ -111,6 +112,16 @@
 								<span class="ml-0.5 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase">Admin</span>
 							{/if}
 						</span>
+						{#if data.user.role === 'admin'}
+							<a
+								href="/admin/documents"
+								class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+								title="Open Documents CMS"
+							>
+								<span>📄</span>
+								<span>Documents CMS</span>
+							</a>
+						{/if}
 						<a
 							href="/logout"
 							class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-red-600/80 hover:text-white transition-all"
@@ -206,6 +217,13 @@
 							>
 								✉️ Email Dispatcher
 							</a>
+							<a
+								href="/admin/documents"
+								onclick={() => (isMobileMenuOpen = false)}
+								class="block px-4 py-2 rounded-lg text-sm font-semibold text-emerald-400 hover:bg-slate-800"
+							>
+								📄 Documents CMS
+							</a>
 						{/if}
 					</div>
 
@@ -273,7 +291,7 @@
 
 				<!-- Executive Admin Controls -->
 				{#if data.user.role === 'admin'}
-					<div class="flex items-center gap-2 pl-3 sm:border-l sm:border-slate-800">
+					<div class="flex items-center gap-2 pl-3 sm:border-l sm:border-slate-800 flex-wrap">
 						<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold border border-amber-500/30 uppercase tracking-wider text-[10px] hidden sm:inline-flex items-center gap-1">
 							<span>🛡️</span>
 							<span>Admin Panel</span>
@@ -304,6 +322,15 @@
 						>
 							<span>✉️</span>
 							<span>Email Dispatch</span>
+						</a>
+						<a
+							href="/admin/documents"
+							class="px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 {data.pathname.startsWith('/admin/documents')
+								? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
+								: 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'}"
+						>
+							<span>📄</span>
+							<span>Documents CMS</span>
 						</a>
 					</div>
 				{/if}
@@ -424,6 +451,7 @@
 					<li><a href="/impact" class="hover:text-red-400 transition-colors">Impact & Initiatives</a></li>
 					<li><a href="/team" class="hover:text-red-400 transition-colors">Executive Team</a></li>
 					<li><a href="/events" class="hover:text-red-400 transition-colors">Events & Everest Day</a></li>
+					<li><a href="/documents" class="hover:text-red-400 transition-colors">Official Documents & Bylaws</a></li>
 					<li><a href="/join-canfacs" class="hover:text-red-400 transition-colors">Membership Form</a></li>
 					<li><a href="/login" class="hover:text-red-400 font-semibold transition-colors">🔑 Member Login</a></li>
 					<li><a href="/privacy-policy" class="hover:text-red-400 text-xs text-slate-400 transition-colors">Privacy Policy</a></li>
