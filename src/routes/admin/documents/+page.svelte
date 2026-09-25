@@ -464,9 +464,9 @@
 		}
 
 		if (position === 'above') {
-			currentRow.before(newRow);
+			currentRow.parentNode?.insertBefore(newRow, currentRow);
 		} else {
-			currentRow.after(newRow);
+			currentRow.parentNode?.insertBefore(newRow, currentRow.nextSibling);
 		}
 
 		docContentHtml = visualEditorElement.innerHTML;
@@ -519,9 +519,9 @@
 
 			if (targetCell) {
 				if (position === 'left') {
-					targetCell.before(newCell);
+					targetCell.parentNode?.insertBefore(newCell, targetCell);
 				} else {
-					targetCell.after(newCell);
+					targetCell.parentNode?.insertBefore(newCell, targetCell.nextSibling);
 				}
 			} else {
 				row.appendChild(newCell);
