@@ -30,6 +30,22 @@
 	let editorMode = $state<'visual' | 'code'>('visual');
 	let visualEditorElement = $state<HTMLDivElement | null>(null);
 
+	// Active Formatting States (for Caret feedback)
+	let isBold = $state(false);
+	let isItalic = $state(false);
+	let isUnderline = $state(false);
+	let isStrikeThrough = $state(false);
+	let isJustifyLeft = $state(false);
+	let isJustifyCenter = $state(false);
+	let isJustifyRight = $state(false);
+	let isJustifyFull = $state(false);
+	let isBulletList = $state(false);
+	let isOrderedList = $state(false);
+
+	// Table Context State (for row/column insertion & deletion)
+	let isInsideTable = $state(false);
+	let activeTableCell = $state<HTMLTableCellElement | null>(null);
+
 	// Attachments State
 	interface AttachmentItem {
 		id: string;
@@ -87,6 +103,83 @@
 			}
 		}
 	});
+
+	// Selection and Caret state listener for toolbar button feedback
+	$effect(() => {
+		if (typeof document === 'undefined') return;
+		const handleSelection = () => {
+			if (editorMode === 'visual' && isStudioOpen) {
+				updateFormattingState();
+			}
+		};
+		document.addEventListener('selectionchange', handleSelection);
+		return () => {
+			document.removeEventListener('selectionchange', handleSelection);
+		};
+	});
+
+	function updateFormattingState() {
+		if (typeof window === 'undefined' || typeof document === 'undefined') return;
+		if (editorMode !== 'visual' || !visualEditorElement) return;
+
+		const sel = window.getSelection();
+		if (!sel || sel.rangeCount === 0) {
+			isBold = false;
+			isItalic = false;
+			isUnderline = false;
+			isStrikeThrough = false;
+			isJustifyLeft = false;
+			isJustifyCenter = false;
+			isJustifyRight = false;
+			isJustifyFull = false;
+			isBulletList = false;
+			isOrderedList = false;
+			isInsideTable = false;
+			activeTableCell = null;
+			return;
+		}
+
+		const anchorNode = sel.anchorNode;
+		if (!anchorNode || !visualEditorElement.contains(anchorNode)) {
+			return;
+		}
+
+		// Detect if caret is currently inside a table cell
+		const cell = findParentCell(anchorNode);
+		if (cell) {
+			isInsideTable = true;
+			activeTableCell = cell;
+		} else {
+			isInsideTable = false;
+			activeTableCell = null;
+		}
+
+		try {
+			isBold = document.queryCommandState('bold');
+			isItalic = document.queryCommandState('italic');
+			isUnderline = document.queryCommandState('underline');
+			isStrikeThrough = document.queryCommandState('strikeThrough');
+			isJustifyLeft = document.queryCommandState('justifyLeft');
+			isJustifyCenter = document.queryCommandState('justifyCenter');
+			isJustifyRight = document.queryCommandState('justifyRight');
+			isJustifyFull = document.queryCommandState('justifyFull');
+			isBulletList = document.queryCommandState('insertUnorderedList');
+			isOrderedList = document.queryCommandState('insertOrderedList');
+		} catch {
+			// QueryCommandState may throw in certain edge DOM contexts
+		}
+	}
+
+	function findParentCell(node: Node | null): HTMLTableCellElement | null {
+		let current: Node | null = node;
+		while (current && current !== visualEditorElement) {
+			if (current.nodeName === 'TD' || current.nodeName === 'TH') {
+				return current as HTMLTableCellElement;
+			}
+			current = current.parentNode;
+		}
+		return null;
+	}
 
 	function openNewDocumentStudio() {
 		docId = 'new';
@@ -172,6 +265,41 @@
 		if (visualEditorElement) {
 			docContentHtml = visualEditorElement.innerHTML;
 		}
+		updateFormattingState();
+	}
+
+	function formatStrikeThrough() {
+		if (editorMode === 'visual') execVisualCommand('strikeThrough');
+		else applyCodeFormatting('<s>', '</s>');
+	}
+
+	function formatAlignLeft() {
+		if (editorMode === 'visual') execVisualCommand('justifyLeft');
+		else applyCodeFormatting('<div style="text-align: left;">', '</div>');
+	}
+
+	function formatAlignCenter() {
+		if (editorMode === 'visual') execVisualCommand('justifyCenter');
+		else applyCodeFormatting('<div style="text-align: center;">', '</div>');
+	}
+
+	function formatAlignRight() {
+		if (editorMode === 'visual') execVisualCommand('justifyRight');
+		else applyCodeFormatting('<div style="text-align: right;">', '</div>');
+	}
+
+	function formatAlignJustify() {
+		if (editorMode === 'visual') execVisualCommand('justifyFull');
+		else applyCodeFormatting('<div style="text-align: justify;">', '</div>');
+	}
+
+	function formatIndent() {
+		if (editorMode === 'visual') execVisualCommand('indent');
+		else applyCodeFormatting('<div style="margin-left: 2rem;">', '</div>');
+	}
+
+	function formatOutdent() {
+		if (editorMode === 'visual') execVisualCommand('outdent');
 	}
 
 	function insertHtmlAtCursor(html: string) {
@@ -306,6 +434,204 @@
 			insertHtmlAtCursor(tableHtml);
 		} else {
 			applyCodeFormatting(`\n${tableHtml}\n`);
+		}
+	}
+
+	function addTableRow(position: 'above' | 'below' = 'below') {
+		if (!visualEditorElement) return;
+		let cell = activeTableCell;
+		if (!cell) {
+			const sel = window.getSelection();
+			cell = findParentCell(sel?.anchorNode || null);
+		}
+		if (!cell) {
+			insertTable();
+			return;
+		}
+
+		const currentRow = cell.closest('tr');
+		if (!currentRow) return;
+
+		const colsCount = currentRow.children.length;
+		const newRow = document.createElement('tr');
+
+		for (let i = 0; i < colsCount; i++) {
+			const newCell = document.createElement('td');
+			newCell.style.padding = '10px';
+			newCell.style.border = '1px solid #334155';
+			newCell.innerHTML = '<br />';
+			newRow.appendChild(newCell);
+		}
+
+		if (position === 'above') {
+			currentRow.before(newRow);
+		} else {
+			currentRow.after(newRow);
+		}
+
+		docContentHtml = visualEditorElement.innerHTML;
+
+		// Move caret to first cell of new row
+		const firstCell = newRow.children[0] as HTMLTableCellElement;
+		if (firstCell && typeof window !== 'undefined') {
+			const range = document.createRange();
+			range.selectNodeContents(firstCell);
+			range.collapse(true);
+			const sel = window.getSelection();
+			sel?.removeAllRanges();
+			sel?.addRange(range);
+			activeTableCell = firstCell;
+			isInsideTable = true;
+		}
+		updateFormattingState();
+	}
+
+	function addTableColumn(position: 'left' | 'right' = 'right') {
+		if (!visualEditorElement) return;
+		let cell = activeTableCell;
+		if (!cell) {
+			const sel = window.getSelection();
+			cell = findParentCell(sel?.anchorNode || null);
+		}
+		if (!cell) return;
+
+		const currentRow = cell.closest('tr');
+		const table = cell.closest('table');
+		if (!currentRow || !table) return;
+
+		const colIndex = Array.from(currentRow.children).indexOf(cell);
+		if (colIndex === -1) return;
+
+		const allRows = table.querySelectorAll('tr');
+		allRows.forEach((row) => {
+			const targetCell = row.children[colIndex];
+			const isHeader = targetCell && targetCell.nodeName === 'TH';
+			const newCell = document.createElement(isHeader ? 'th' : 'td');
+			newCell.style.padding = '10px';
+			newCell.style.border = '1px solid #334155';
+			if (isHeader) {
+				newCell.style.background = '#1e293b';
+				newCell.style.color = '#fff';
+				newCell.textContent = 'Header';
+			} else {
+				newCell.innerHTML = '<br />';
+			}
+
+			if (targetCell) {
+				if (position === 'left') {
+					targetCell.before(newCell);
+				} else {
+					targetCell.after(newCell);
+				}
+			} else {
+				row.appendChild(newCell);
+			}
+		});
+
+		docContentHtml = visualEditorElement.innerHTML;
+		updateFormattingState();
+	}
+
+	function deleteTableRow() {
+		if (!visualEditorElement) return;
+		let cell = activeTableCell;
+		if (!cell) {
+			const sel = window.getSelection();
+			cell = findParentCell(sel?.anchorNode || null);
+		}
+		if (!cell) return;
+
+		const row = cell.closest('tr');
+		const table = cell.closest('table');
+		if (!row || !table) return;
+
+		const allRows = table.querySelectorAll('tr');
+		if (allRows.length <= 1) {
+			table.remove();
+			activeTableCell = null;
+			isInsideTable = false;
+		} else {
+			row.remove();
+		}
+
+		docContentHtml = visualEditorElement.innerHTML;
+		updateFormattingState();
+	}
+
+	function deleteTableColumn() {
+		if (!visualEditorElement) return;
+		let cell = activeTableCell;
+		if (!cell) {
+			const sel = window.getSelection();
+			cell = findParentCell(sel?.anchorNode || null);
+		}
+		if (!cell) return;
+
+		const currentRow = cell.closest('tr');
+		const table = cell.closest('table');
+		if (!currentRow || !table) return;
+
+		const colIndex = Array.from(currentRow.children).indexOf(cell);
+		if (colIndex === -1) return;
+
+		const allRows = table.querySelectorAll('tr');
+		const colCount = currentRow.children.length;
+
+		if (colCount <= 1) {
+			table.remove();
+			activeTableCell = null;
+			isInsideTable = false;
+		} else {
+			allRows.forEach((row) => {
+				if (row.children[colIndex]) {
+					row.children[colIndex].remove();
+				}
+			});
+		}
+
+		docContentHtml = visualEditorElement.innerHTML;
+		updateFormattingState();
+	}
+
+	function deleteEntireTable() {
+		if (!visualEditorElement) return;
+		let cell = activeTableCell;
+		if (!cell) {
+			const sel = window.getSelection();
+			cell = findParentCell(sel?.anchorNode || null);
+		}
+		if (!cell) return;
+
+		const table = cell.closest('table');
+		if (table) {
+			table.remove();
+			activeTableCell = null;
+			isInsideTable = false;
+			docContentHtml = visualEditorElement.innerHTML;
+			updateFormattingState();
+		}
+	}
+
+	function handleEditorKeyDown(e: KeyboardEvent) {
+		if (e.key === 'Tab') {
+			const sel = window.getSelection();
+			const cell = findParentCell(sel?.anchorNode || null);
+			if (cell) {
+				const row = cell.closest('tr');
+				const table = cell.closest('table');
+				if (row && table) {
+					const isLastCellInRow = cell === row.children[row.children.length - 1];
+					const allRows = table.querySelectorAll('tr');
+					const isLastRowInTable = row === allRows[allRows.length - 1];
+
+					if (isLastCellInRow && isLastRowInTable && !e.shiftKey) {
+						// Pressing Tab in the last cell of the table creates a new row below
+						e.preventDefault();
+						addTableRow('below');
+						return;
+					}
+				}
+			}
 		}
 	}
 
@@ -1156,10 +1482,13 @@
 
 						<!-- Floating Sticky Formatting Toolbar (remains docked when scrolling long documents) -->
 						<div class="sticky top-[58px] sm:top-[61px] z-30 flex items-center gap-1.5 p-2 bg-slate-950/95 backdrop-blur-md rounded-2xl border border-slate-700/80 shadow-2xl shadow-black/80 flex-wrap text-xs transition-all">
+							<!-- Font Style Toggles with Active Caret State -->
 							<button
 								type="button"
 								onclick={formatBold}
-								class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold border border-slate-800 transition-colors"
+								class="px-2.5 py-1 rounded-lg border text-xs font-bold transition-all {isBold
+									? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-600/30'
+									: 'bg-slate-900 text-slate-200 border-slate-800 hover:bg-slate-800 hover:text-white'}"
 								title="Bold (Ctrl+B)"
 							>
 								B
@@ -1167,7 +1496,9 @@
 							<button
 								type="button"
 								onclick={formatItalic}
-								class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 italic font-serif border border-slate-800 transition-colors"
+								class="px-2.5 py-1 rounded-lg border text-xs italic font-serif transition-all {isItalic
+									? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-600/30'
+									: 'bg-slate-900 text-slate-200 border-slate-800 hover:bg-slate-800 hover:text-white'}"
 								title="Italic (Ctrl+I)"
 							>
 								I
@@ -1175,14 +1506,91 @@
 							<button
 								type="button"
 								onclick={formatUnderline}
-								class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 underline border border-slate-800 transition-colors"
+								class="px-2.5 py-1 rounded-lg border text-xs underline transition-all {isUnderline
+									? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-600/30'
+									: 'bg-slate-900 text-slate-200 border-slate-800 hover:bg-slate-800 hover:text-white'}"
 								title="Underline (Ctrl+U)"
 							>
 								U
 							</button>
+							<button
+								type="button"
+								onclick={formatStrikeThrough}
+								class="px-2.5 py-1 rounded-lg border text-xs line-through transition-all {isStrikeThrough
+									? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-600/30'
+									: 'bg-slate-900 text-slate-200 border-slate-800 hover:bg-slate-800 hover:text-white'}"
+								title="Strikethrough"
+							>
+								S
+							</button>
 
 							<div class="h-4 w-px bg-slate-800 mx-1"></div>
 
+							<!-- Text Alignment & Justification -->
+							<button
+								type="button"
+								onclick={formatAlignLeft}
+								class="p-1.5 rounded-lg border text-xs transition-all {isJustifyLeft
+									? 'bg-red-600 text-white border-red-500 shadow-md'
+									: 'bg-slate-900 text-slate-200 border-slate-800 hover:bg-slate-800 hover:text-white'}"
+								title="Align Left"
+							>
+								<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+							</button>
+							<button
+								type="button"
+								onclick={formatAlignCenter}
+								class="p-1.5 rounded-lg border text-xs transition-all {isJustifyCenter
+									? 'bg-red-600 text-white border-red-500 shadow-md'
+									: 'bg-slate-900 text-slate-200 border-slate-800 hover:bg-slate-800 hover:text-white'}"
+								title="Align Center"
+							>
+								<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg>
+							</button>
+							<button
+								type="button"
+								onclick={formatAlignRight}
+								class="p-1.5 rounded-lg border text-xs transition-all {isJustifyRight
+									? 'bg-red-600 text-white border-red-500 shadow-md'
+									: 'bg-slate-900 text-slate-200 border-slate-800 hover:bg-slate-800 hover:text-white'}"
+								title="Align Right"
+							>
+								<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
+							</button>
+							<button
+								type="button"
+								onclick={formatAlignJustify}
+								class="p-1.5 rounded-lg border text-xs transition-all {isJustifyFull
+									? 'bg-red-600 text-white border-red-500 shadow-md'
+									: 'bg-slate-900 text-slate-200 border-slate-800 hover:bg-slate-800 hover:text-white'}"
+								title="Justify Full (Even Margins)"
+							>
+								<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
+							</button>
+
+							<div class="h-4 w-px bg-slate-800 mx-1"></div>
+
+							<!-- Line / Paragraph Indentation -->
+							<button
+								type="button"
+								onclick={formatOutdent}
+								class="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition-colors"
+								title="Decrease Indent / Outdent"
+							>
+								<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="21" y1="6" x2="11" y2="6"/><line x1="21" y1="12" x2="11" y2="12"/><line x1="21" y1="18" x2="11" y2="18"/><polyline points="7 8 3 12 7 16"/></svg>
+							</button>
+							<button
+								type="button"
+								onclick={formatIndent}
+								class="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition-colors"
+								title="Increase Indent"
+							>
+								<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="21" y1="6" x2="11" y2="6"/><line x1="21" y1="12" x2="11" y2="12"/><line x1="21" y1="18" x2="11" y2="18"/><polyline points="3 8 7 12 3 16"/></svg>
+							</button>
+
+							<div class="h-4 w-px bg-slate-800 mx-1"></div>
+
+							<!-- Headings & Paragraph -->
 							<button
 								type="button"
 								onclick={formatH2}
@@ -1210,10 +1618,13 @@
 
 							<div class="h-4 w-px bg-slate-800 mx-1"></div>
 
+							<!-- Lists & Inserts -->
 							<button
 								type="button"
 								onclick={formatBulletList}
-								class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition-colors"
+								class="px-2 py-1 rounded-lg border text-xs transition-all {isBulletList
+									? 'bg-red-600 text-white border-red-500 shadow-md'
+									: 'bg-slate-900 text-slate-200 border-slate-800 hover:bg-slate-800 hover:text-white'}"
 								title="Bullet list"
 							>
 								• List
@@ -1221,7 +1632,9 @@
 							<button
 								type="button"
 								onclick={formatOrderedList}
-								class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition-colors"
+								class="px-2 py-1 rounded-lg border text-xs transition-all {isOrderedList
+									? 'bg-red-600 text-white border-red-500 shadow-md'
+									: 'bg-slate-900 text-slate-200 border-slate-800 hover:bg-slate-800 hover:text-white'}"
 								title="Numbered list"
 							>
 								1. List
@@ -1237,11 +1650,80 @@
 							<button
 								type="button"
 								onclick={insertTable}
-								class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition-colors"
-								title="Insert Table"
+								class="px-2.5 py-1 rounded-lg border text-xs transition-all {isInsideTable
+									? 'bg-cyan-900 text-cyan-200 border-cyan-700 shadow-md'
+									: 'bg-slate-900 text-slate-200 border-slate-800 hover:bg-slate-800 hover:text-white'}"
+								title="Insert 2x2 Table"
 							>
 								📊 Table
 							</button>
+
+							<!-- Contextual Table Operations Strip (appears whenever caret is inside a table) -->
+							{#if isInsideTable}
+								<div class="flex items-center gap-1 px-2.5 py-0.5 bg-cyan-950/90 border border-cyan-700/70 rounded-xl text-cyan-200 text-xs shadow-md">
+									<span class="text-[10px] font-bold text-cyan-300 uppercase tracking-wider mr-1">Table:</span>
+									<button
+										type="button"
+										onclick={() => addTableRow('above')}
+										class="px-2 py-0.5 rounded-md bg-cyan-900/70 hover:bg-cyan-800 text-cyan-100 hover:text-white font-medium text-[11px] transition-colors"
+										title="Insert Row Above"
+									>
+										+ Row Above
+									</button>
+									<button
+										type="button"
+										onclick={() => addTableRow('below')}
+										class="px-2 py-0.5 rounded-md bg-cyan-900/70 hover:bg-cyan-800 text-cyan-100 hover:text-white font-bold text-[11px] transition-colors flex items-center gap-1"
+										title="Insert Row Below (or press Tab in last cell)"
+									>
+										<span>+ Row Below</span>
+										<span class="text-[9px] px-1 rounded bg-cyan-800/80 text-cyan-200 font-mono">Tab</span>
+									</button>
+									<div class="h-3 w-px bg-cyan-800 mx-0.5"></div>
+									<button
+										type="button"
+										onclick={() => addTableColumn('left')}
+										class="px-2 py-0.5 rounded-md bg-cyan-900/70 hover:bg-cyan-800 text-cyan-100 hover:text-white font-medium text-[11px] transition-colors"
+										title="Insert Column to Left"
+									>
+										+ Col Left
+									</button>
+									<button
+										type="button"
+										onclick={() => addTableColumn('right')}
+										class="px-2 py-0.5 rounded-md bg-cyan-900/70 hover:bg-cyan-800 text-cyan-100 hover:text-white font-medium text-[11px] transition-colors"
+										title="Insert Column to Right"
+									>
+										+ Col Right
+									</button>
+									<div class="h-3 w-px bg-cyan-800 mx-0.5"></div>
+									<button
+										type="button"
+										onclick={deleteTableRow}
+										class="px-2 py-0.5 rounded-md bg-rose-950/70 hover:bg-rose-900 text-rose-300 hover:text-white font-medium text-[11px] transition-colors"
+										title="Delete Current Row"
+									>
+										- Row
+									</button>
+									<button
+										type="button"
+										onclick={deleteTableColumn}
+										class="px-2 py-0.5 rounded-md bg-rose-950/70 hover:bg-rose-900 text-rose-300 hover:text-white font-medium text-[11px] transition-colors"
+										title="Delete Current Column"
+									>
+										- Col
+									</button>
+									<button
+										type="button"
+										onclick={deleteEntireTable}
+										class="p-1 rounded-md bg-rose-950/80 hover:bg-rose-900 text-rose-300 hover:text-white transition-colors"
+										title="Delete Entire Table"
+									>
+										🗑️
+									</button>
+								</div>
+							{/if}
+
 							<button
 								type="button"
 								onclick={insertLink}
@@ -1290,7 +1772,15 @@
 							<div
 								bind:this={visualEditorElement}
 								contenteditable="true"
-								oninput={handleVisualInput}
+								oninput={(e) => {
+									handleVisualInput(e);
+									updateFormattingState();
+								}}
+								onkeydown={handleEditorKeyDown}
+								onkeyup={updateFormattingState}
+								onmouseup={updateFormattingState}
+								onpointerup={updateFormattingState}
+								onfocus={updateFormattingState}
 								role="textbox"
 								tabindex="0"
 								class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-6 text-sm text-slate-100 min-h-[420px] focus:outline-none focus:border-red-500/70 transition-all font-sans leading-relaxed shadow-inner overflow-y-auto prose-document"
