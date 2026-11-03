@@ -1,4 +1,5 @@
 import { getEmailTemplates, upsertEmailTemplate, type EmailTemplateRow } from './db';
+import { escapeHtml } from './email';
 
 /**
  * Standard CANFACS Branded Master Templates
@@ -9,7 +10,8 @@ export const DEFAULT_TEMPLATES = [
 	{
 		id: 'tmpl_formal_announcement',
 		name: '🏛️ Official CANFACS Society Notice',
-		description: 'Formal announcement layout with gold & crimson emblem header, verified NGO footer, and executive signature block.',
+		description:
+			'Formal announcement layout with gold & crimson emblem header, verified NGO footer, and executive signature block.',
 		subject_default: 'Official Notice from CANFACS Executive Committee',
 		html_content: `<!DOCTYPE html>
 <html>
@@ -58,7 +60,8 @@ export const DEFAULT_TEMPLATES = [
 	{
 		id: 'tmpl_newsletter_community',
 		name: '🎉 Community Events & Newsletter',
-		description: 'Dynamic layout with crimson banner, social links, event cards, and friendly diaspora focus.',
+		description:
+			'Dynamic layout with crimson banner, social links, event cards, and friendly diaspora focus.',
 		subject_default: 'CANFACS Community News & Upcoming Events',
 		html_content: `<!DOCTYPE html>
 <html>
@@ -99,7 +102,8 @@ export const DEFAULT_TEMPLATES = [
 	{
 		id: 'tmpl_donor_impact',
 		name: '🤝 Relief & Donor Gratitude Report',
-		description: 'Emphasizes transparency, disaster relief disbursement tracking, and official donation gratitude.',
+		description:
+			'Emphasizes transparency, disaster relief disbursement tracking, and official donation gratitude.',
 		subject_default: 'Update & Appreciation from CANFACS Relief Team',
 		html_content: `<!DOCTYPE html>
 <html>
@@ -169,15 +173,20 @@ export async function ensureDefaultTemplates(db: any, r2Bucket?: any): Promise<v
  */
 export function interpolatePlaceholders(
 	templateText: string,
-	data: Record<string, string | number | null | undefined>
+	data: Record<string, string | number | null | undefined>,
+	options: { escapeHtml?: boolean } = {}
 ): string {
-	return templateText.replace(/\{\{\s*([a-zA-Z0-9_]+)(\s*\|\s*([^}]+))?\s*\}\}/g, (_, key, __, fallback) => {
-		const val = data[key];
-		if (val !== undefined && val !== null && String(val).trim() !== '') {
-			return String(val);
+	return templateText.replace(
+		/\{\{\s*([a-zA-Z0-9_]+)(\s*\|\s*([^}]+))?\s*\}\}/g,
+		(_, key, __, fallback) => {
+			const val = data[key];
+			if (val !== undefined && val !== null && String(val).trim() !== '') {
+				const str = String(val);
+				return options.escapeHtml ? escapeHtml(str) : str;
+			}
+			return fallback !== undefined ? fallback.trim() : '';
 		}
-		return fallback !== undefined ? fallback.trim() : '';
-	});
+	);
 }
 
 /**
@@ -213,9 +222,9 @@ export function wrapInTemplate(
 	data: Record<string, any> = {}
 ): string {
 	const formattedInner = formatBodyContent(innerContent);
-	let combined = templateHtml.includes('{{content}}')
+	const combined = templateHtml.includes('{{content}}')
 		? templateHtml.replace('{{content}}', formattedInner)
 		: `${formattedInner}\n<br>\n${templateHtml}`;
-	
-	return interpolatePlaceholders(combined, data);
+
+	return interpolatePlaceholders(combined, data, { escapeHtml: true });
 }

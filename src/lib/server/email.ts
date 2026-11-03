@@ -3,6 +3,31 @@
  * Sends transactional donation confirmations and receipts
  */
 
+/**
+ * Safely escapes all special HTML characters (&, <, >, ", ') into HTML entities.
+ * Prevents HTML injection, script execution, phishing overlays, and markup rendering in email clients like Gmail.
+ */
+export function escapeHtml(str: unknown): string {
+	if (str === null || str === undefined) return '';
+	return String(str)
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
+}
+
+/**
+ * Sanitizes header and subject strings to prevent email header / CRLF injection.
+ */
+export function sanitizeHeader(str: unknown): string {
+	if (str === null || str === undefined) return '';
+	// eslint-disable-next-line no-control-regex
+	return String(str)
+		.replace(/[\r\n\x00-\x1F\x7F]+/g, ' ')
+		.trim();
+}
+
 export interface DonationEmailData {
 	to: string;
 	donorName: string;
@@ -48,7 +73,15 @@ export async function sendDonationConfirmationEmail(
 		timeZone: 'America/Toronto'
 	});
 
-	const subject = `Thank You for Your Donation to Nepal Flood Relief – CANFACS (Receipt #${data.transactionId || 'PLEDGE'})`;
+	const safeDonorName = escapeHtml(data.donorName);
+	const safeCampaignName = escapeHtml(data.campaignName);
+	const safeDateFormatted = escapeHtml(dateFormatted);
+	const safeTransactionId = escapeHtml(data.transactionId || '');
+	const safeMessage = escapeHtml(data.message || '');
+	const cleanTransactionId = sanitizeHeader(data.transactionId || 'PLEDGE');
+	const safePaymentSummaryText = escapeHtml(paymentSummaryText);
+
+	const subject = `Thank You for Your Donation to Nepal Flood Relief – CANFACS (Receipt #${cleanTransactionId})`;
 
 	const paymentSummaryText =
 		data.paymentMethod === 'card'
@@ -85,7 +118,7 @@ export async function sendDonationConfirmationEmail(
       <p class="subtitle">CANFACS • Federal Non-Profit Society • Established 2016</p>
     </div>
 
-    <p style="font-size: 16px; color: #ffffff;">Dear <strong>${data.donorName}</strong>,</p>
+    <p style="font-size: 16px; color: #ffffff;">Dear <strong>${safeDonorName}</strong>,</p>
 
     <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">
       On behalf of the Canada-Nepal Friendship & Cultural Society (CANFACS) and all communities affected by the recent catastrophic floods and landslides in Nepal, <strong>thank you deeply for your generous contribution.</strong>
@@ -99,28 +132,28 @@ export async function sendDonationConfirmationEmail(
     <table class="details-table">
       <tr>
         <td class="label">Campaign</td>
-        <td><strong>${data.campaignName}</strong></td>
+        <td><strong>${safeCampaignName}</strong></td>
       </tr>
       <tr>
         <td class="label">Donor Name</td>
-        <td>${data.donorName}</td>
+        <td>${safeDonorName}</td>
       </tr>
       <tr>
         <td class="label">Date</td>
-        <td>${dateFormatted}</td>
+        <td>${safeDateFormatted}</td>
       </tr>
       <tr>
         <td class="label">Payment Status</td>
-        <td>${paymentSummaryText}</td>
+        <td>${safePaymentSummaryText}</td>
       </tr>
       ${
 				data.transactionId
-					? `<tr><td class="label">Transaction Reference</td><td style="font-family: monospace; color: #38bdf8;">${data.transactionId}</td></tr>`
+					? `<tr><td class="label">Transaction Reference</td><td style="font-family: monospace; color: #38bdf8;">${safeTransactionId}</td></tr>`
 					: ''
 			}
       ${
 				data.message
-					? `<tr><td class="label">Message of Hope</td><td style="font-style: italic;">"${data.message}"</td></tr>`
+					? `<tr><td class="label">Message of Hope</td><td style="font-style: italic;">"${safeMessage}"</td></tr>`
 					: ''
 			}
     </table>
@@ -185,7 +218,10 @@ Email: info@canfacs.org
 	// Priority 1: Native Cloudflare Worker Email Binding (env.EMAIL)
 	if (env?.EMAIL && typeof env.EMAIL.send === 'function') {
 		try {
-			console.log('[CANFACS Email] Dispatching donation receipt via native Cloudflare EMAIL binding to:', data.to);
+			console.log(
+				'[CANFACS Email] Dispatching donation receipt via native Cloudflare EMAIL binding to:',
+				data.to
+			);
 			await env.EMAIL.send({
 				to: data.to.trim(),
 				from: fromAddress.trim(),
@@ -199,7 +235,9 @@ Email: info@canfacs.org
 			console.error('[CANFACS Email Binding Error]', bindingErr);
 			return {
 				success: false,
-				error: bindingErr.message || 'Error dispatching donation receipt through native Cloudflare binding'
+				error:
+					bindingErr.message ||
+					'Error dispatching donation receipt through native Cloudflare binding'
 			};
 		}
 	}
@@ -227,7 +265,11 @@ Email: info@canfacs.org
 		if (!res.ok || result.success === false) {
 			console.error('[CANFACS Email Error]', JSON.stringify(result, null, 2));
 			const firstError = result.errors?.[0];
-			const errorMsg = firstError?.message || (typeof firstError === 'string' ? firstError : null) || result.messages?.[0]?.message || `Cloudflare HTTP ${res.status}: Failed to send email`;
+			const errorMsg =
+				firstError?.message ||
+				(typeof firstError === 'string' ? firstError : null) ||
+				result.messages?.[0]?.message ||
+				`Cloudflare HTTP ${res.status}: Failed to send email`;
 			return {
 				success: false,
 				error: errorMsg
@@ -273,6 +315,9 @@ export async function sendCustomEmail(
 			.replace(/\s{2,}/g, ' ')
 			.trim();
 
+	// Clean subject to prevent CRLF header injection
+	const cleanSubject = sanitizeHeader(data.subject);
+
 	// Priority 1: Native Cloudflare Worker Email Binding (env.EMAIL)
 	if (env?.EMAIL && typeof env.EMAIL.send === 'function') {
 		try {
@@ -280,7 +325,7 @@ export async function sendCustomEmail(
 			const response = await env.EMAIL.send({
 				to: data.to.trim(),
 				from: fromAddress.trim(),
-				subject: data.subject.trim(),
+				subject: cleanSubject,
 				html: data.html,
 				text: textContent
 			});
@@ -326,7 +371,7 @@ export async function sendCustomEmail(
 	const payload = {
 		from: fromAddress.trim(),
 		to: data.to.trim(),
-		subject: data.subject.trim(),
+		subject: cleanSubject,
 		html: data.html,
 		text: textContent
 	};
@@ -355,9 +400,23 @@ export async function sendCustomEmail(
 
 		const result: any = await res.json();
 		if (!res.ok || result.success === false) {
-			console.error('[CANFACS Email Error]', JSON.stringify({ result, sentPayloadMeta: { from: payload.from, to: payload.to, subject: payload.subject } }, null, 2));
+			console.error(
+				'[CANFACS Email Error]',
+				JSON.stringify(
+					{
+						result,
+						sentPayloadMeta: { from: payload.from, to: payload.to, subject: payload.subject }
+					},
+					null,
+					2
+				)
+			);
 			const firstError = result.errors?.[0];
-			const errorMsg = firstError?.message || (typeof firstError === 'string' ? firstError : null) || result.messages?.[0]?.message || `Cloudflare HTTP ${res.status}: Failed to send email`;
+			const errorMsg =
+				firstError?.message ||
+				(typeof firstError === 'string' ? firstError : null) ||
+				result.messages?.[0]?.message ||
+				`Cloudflare HTTP ${res.status}: Failed to send email`;
 			return {
 				success: false,
 				error: errorMsg
@@ -384,6 +443,11 @@ export async function sendPasswordResetEmail(
 ): Promise<{ success: boolean; error?: string; delivered?: boolean }> {
 	const loginUrl = data.loginUrl || 'https://canfacs.org/login';
 	const recipientName = data.recipientName || 'Member';
+
+	const safeRecipientName = escapeHtml(recipientName);
+	const safeUsername = escapeHtml(data.to);
+	const safeTempPassword = escapeHtml(data.tempPassword);
+	const safeLoginUrl = escapeHtml(loginUrl);
 
 	const html = `
 <!DOCTYPE html>
@@ -417,7 +481,7 @@ export async function sendPasswordResetEmail(
       <p class="subtitle">CANFACS • Federal Non-Profit Society • Established 2016</p>
     </div>
 
-    <p style="font-size: 15px; color: #ffffff; margin-bottom: 12px;">Dear <strong>${recipientName}</strong>,</p>
+    <p style="font-size: 15px; color: #ffffff; margin-bottom: 12px;">Dear <strong>${safeRecipientName}</strong>,</p>
 
     <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6; margin: 0 0 16px;">
       An administrator has set or reset your account login credentials for the CANFACS Member Portal. You can use the credentials below to log into your account:
@@ -427,24 +491,24 @@ export async function sendPasswordResetEmail(
       <table class="creds-table">
         <tr>
           <td class="label">Username / Email:</td>
-          <td class="value">${data.to}</td>
+          <td class="value">${safeUsername}</td>
         </tr>
         <tr>
           <td class="label">Temporary Password:</td>
-          <td><span class="pass-highlight">${data.tempPassword}</span></td>
+          <td><span class="pass-highlight">${safeTempPassword}</span></td>
         </tr>
       </table>
     </div>
 
     <div class="btn-container">
-      <a href="${loginUrl}" class="btn">Log In to CANFACS Member Portal &rarr;</a>
+      <a href="${safeLoginUrl}" class="btn">Log In to CANFACS Member Portal &rarr;</a>
     </div>
 
     <div class="note">
       <p style="margin: 0 0 8px;"><strong>Important Security Notes:</strong></p>
       <ul style="margin: 0; padding-left: 18px;">
         <li>After logging in, please change your password or verify your profile in the Member Dashboard.</li>
-        <li>If you also use Google Sign-In with <strong>${data.to}</strong>, you can optionally log in with Google at any time.</li>
+        <li>If you also use Google Sign-In with <strong>${safeUsername}</strong>, you can optionally log in with Google at any time.</li>
         <li>If you did not request this or believe this was done in error, please contact CANFACS Executive Committee at <a href="mailto:info@canfacs.org" style="color: #38bdf8;">info@canfacs.org</a>.</li>
       </ul>
     </div>
@@ -513,10 +577,12 @@ export interface NewMemberAdminNotificationData {
 	reviewUrl?: string;
 }
 
-export async function sendNewMemberAdminNotificationEmail(
-	data: NewMemberAdminNotificationData,
-	env?: Record<string, any>
-): Promise<{ success: boolean; sentCount: number; errors?: string[] }> {
+export function buildNewMemberAdminNotificationEmail(data: NewMemberAdminNotificationData): {
+	recipientEmails: string[];
+	subject: string;
+	html: string;
+	text: string;
+} {
 	const reviewUrl = data.reviewUrl || 'https://canfacs.org/admin/members?tab=pending';
 	const recipientEmails = Array.from(
 		new Set(
@@ -539,9 +605,24 @@ export async function sendNewMemberAdminNotificationEmail(
 		timeZone: 'America/Toronto'
 	});
 
-	const locationText = [data.applicant.city, data.applicant.province, data.applicant.country || 'Canada']
+	const locationText = [
+		data.applicant.city,
+		data.applicant.province,
+		data.applicant.country || 'Canada'
+	]
 		.filter(Boolean)
 		.join(', ');
+
+	const safeFullName = escapeHtml(data.applicant.full_name);
+	const safeEmail = escapeHtml(data.applicant.email);
+	const safeMailto = encodeURI(data.applicant.email.trim());
+	const safePhone = escapeHtml(data.applicant.phone || '—');
+	const safeLocation = escapeHtml(locationText || '—');
+	const safeProfession = escapeHtml(data.applicant.profession || '—');
+	const safeBio = escapeHtml(data.applicant.bio || '');
+	const safeDateFormatted = escapeHtml(dateFormatted);
+	const safeReviewUrl = escapeHtml(reviewUrl);
+	const cleanSubjectName = sanitizeHeader(data.applicant.full_name);
 
 	const html = `
 <!DOCTYPE html>
@@ -584,38 +665,38 @@ export async function sendNewMemberAdminNotificationEmail(
       <table class="details-table">
         <tr>
           <td class="label">Full Name</td>
-          <td class="value"><strong>${data.applicant.full_name}</strong></td>
+          <td class="value"><strong>${safeFullName}</strong></td>
         </tr>
         <tr>
           <td class="label">Email Address</td>
-          <td class="value"><a href="mailto:${data.applicant.email}" style="color: #38bdf8;">${data.applicant.email}</a></td>
+          <td class="value"><a href="mailto:${safeMailto}" style="color: #38bdf8;">${safeEmail}</a></td>
         </tr>
         <tr>
           <td class="label">Phone</td>
-          <td class="value">${data.applicant.phone || '—'}</td>
+          <td class="value">${safePhone}</td>
         </tr>
         <tr>
           <td class="label">Location</td>
-          <td class="value">${locationText || '—'}</td>
+          <td class="value">${safeLocation}</td>
         </tr>
         <tr>
           <td class="label">Profession</td>
-          <td class="value">${data.applicant.profession || '—'}</td>
+          <td class="value">${safeProfession}</td>
         </tr>
         ${
 					data.applicant.bio
-						? `<tr><td class="label">Biodata / Notes</td><td class="value" style="font-style: italic; color: #cbd5e1;">"${data.applicant.bio}"</td></tr>`
+						? `<tr><td class="label">Biodata / Notes</td><td class="value" style="font-style: italic; color: #cbd5e1;">"${safeBio}"</td></tr>`
 						: ''
 				}
         <tr>
           <td class="label">Submitted</td>
-          <td class="value font-mono" style="font-size: 12px; color: #94a3b8;">${dateFormatted}</td>
+          <td class="value font-mono" style="font-size: 12px; color: #94a3b8;">${safeDateFormatted}</td>
         </tr>
       </table>
     </div>
 
     <div class="btn-container">
-      <a href="${reviewUrl}" class="btn">Open Admin Control Center & Review &rarr;</a>
+      <a href="${safeReviewUrl}" class="btn">Open Admin Control Center & Review &rarr;</a>
     </div>
 
     <p style="font-size: 12px; color: #94a3b8; line-height: 1.6; text-align: center; margin-top: 16px;">
@@ -641,21 +722,35 @@ Hello Administrators,
 A new membership application has been submitted and is pending review:
 
 APPLICANT DETAILS:
-- Full Name: ${data.applicant.full_name}
-- Email: ${data.applicant.email}
-- Phone: ${data.applicant.phone || 'Not provided'}
-- Location: ${locationText || 'Not specified'}
-- Profession: ${data.applicant.profession || 'Not provided'}
-${data.applicant.bio ? `- Biodata: "${data.applicant.bio}"\n` : ''}- Submitted: ${dateFormatted}
+- Full Name: ${cleanSubjectName}
+- Email: ${sanitizeHeader(data.applicant.email)}
+- Phone: ${sanitizeHeader(data.applicant.phone || 'Not provided')}
+- Location: ${sanitizeHeader(locationText || 'Not specified')}
+- Profession: ${sanitizeHeader(data.applicant.profession || 'Not provided')}
+${data.applicant.bio ? `- Biodata: "${sanitizeHeader(data.applicant.bio)}"\n` : ''}- Submitted: ${safeDateFormatted}
 
 REVIEW IN ADMIN CONTROL CENTER:
-Please log in to review and approve this member: ${reviewUrl}
+Please log in to review and approve this member: ${safeReviewUrl}
 
 Canada-Nepal Friendship & Cultural Society (CANFACS)
 https://canfacs.org | info@canfacs.org
 `;
 
-	const subject = `[CANFACS Admin] New Member Application: ${data.applicant.full_name}`;
+	const subject = `[CANFACS Admin] New Member Application: ${cleanSubjectName}`;
+
+	return {
+		recipientEmails,
+		subject,
+		html,
+		text
+	};
+}
+
+export async function sendNewMemberAdminNotificationEmail(
+	data: NewMemberAdminNotificationData,
+	env?: Record<string, any>
+): Promise<{ success: boolean; sentCount: number; errors?: string[] }> {
+	const { recipientEmails, subject, html, text } = buildNewMemberAdminNotificationEmail(data);
 	const errors: string[] = [];
 	let sentCount = 0;
 
@@ -691,16 +786,14 @@ export interface PendingMemberConfirmationData {
 	applicant: NewMemberApplicantData;
 }
 
-export async function sendPendingMemberConfirmationEmail(
-	data: PendingMemberConfirmationData,
-	env?: Record<string, any>
-): Promise<{ success: boolean; error?: string; delivered?: boolean }> {
+export function buildPendingMemberConfirmationEmail(data: PendingMemberConfirmationData): {
+	recipientEmail: string;
+	subject: string;
+	html: string;
+	text: string;
+} {
 	const recipientName = data.applicant.full_name || 'Valued Member';
 	const recipientEmail = data.applicant.email;
-
-	if (!recipientEmail || !recipientEmail.includes('@')) {
-		return { success: false, error: 'Applicant email address missing or invalid' };
-	}
 
 	const dateFormatted = new Date().toLocaleDateString('en-CA', {
 		year: 'numeric',
@@ -709,9 +802,19 @@ export async function sendPendingMemberConfirmationEmail(
 		timeZone: 'America/Toronto'
 	});
 
-	const locationText = [data.applicant.city, data.applicant.province, data.applicant.country || 'Canada']
+	const locationText = [
+		data.applicant.city,
+		data.applicant.province,
+		data.applicant.country || 'Canada'
+	]
 		.filter(Boolean)
 		.join(', ');
+
+	const safeRecipientName = escapeHtml(recipientName);
+	const safeRecipientEmail = escapeHtml(recipientEmail);
+	const safeLocation = escapeHtml(locationText || '');
+	const safeProfession = escapeHtml(data.applicant.profession || '');
+	const safeDateFormatted = escapeHtml(dateFormatted);
 
 	const html = `
 <!DOCTYPE html>
@@ -746,7 +849,7 @@ export async function sendPendingMemberConfirmationEmail(
       <p class="subtitle">CANFACS • Federal Non-Profit Society • Established 2016</p>
     </div>
 
-    <p style="font-size: 15px; color: #ffffff; margin-bottom: 12px;">Dear <strong>${recipientName}</strong>,</p>
+    <p style="font-size: 15px; color: #ffffff; margin-bottom: 12px;">Dear <strong>${safeRecipientName}</strong>,</p>
 
     <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6; margin: 0 0 16px;">
       Thank you for your interest in joining the <strong>Canada-Nepal Friendship & Cultural Society (CANFACS)</strong>! We are pleased to confirm that your membership registration has been received successfully.
@@ -765,17 +868,17 @@ export async function sendPendingMemberConfirmationEmail(
       <table class="details-table">
         <tr>
           <td class="label">Applicant Name</td>
-          <td class="value"><strong>${recipientName}</strong></td>
+          <td class="value"><strong>${safeRecipientName}</strong></td>
         </tr>
         <tr>
           <td class="label">Registered Email</td>
-          <td class="value">${recipientEmail}</td>
+          <td class="value">${safeRecipientEmail}</td>
         </tr>
-        ${locationText ? `<tr><td class="label">Location</td><td class="value">${locationText}</td></tr>` : ''}
-        ${data.applicant.profession ? `<tr><td class="label">Profession</td><td class="value">${data.applicant.profession}</td></tr>` : ''}
+        ${safeLocation ? `<tr><td class="label">Location</td><td class="value">${safeLocation}</td></tr>` : ''}
+        ${safeProfession ? `<tr><td class="label">Profession</td><td class="value">${safeProfession}</td></tr>` : ''}
         <tr>
           <td class="label">Application Date</td>
-          <td class="value">${dateFormatted}</td>
+          <td class="value">${safeDateFormatted}</td>
         </tr>
         <tr>
           <td class="label">Current Status</td>
@@ -806,7 +909,7 @@ export async function sendPendingMemberConfirmationEmail(
 CANADA-NEPAL FRIENDSHIP & CULTURAL SOCIETY (CANFACS)
 Membership Application Received
 
-Dear ${recipientName},
+Dear ${sanitizeHeader(recipientName)},
 
 Thank you for your interest in joining the Canada-Nepal Friendship & Cultural Society (CANFACS)! We have successfully received your membership application.
 
@@ -816,9 +919,9 @@ WHAT HAPPENS NEXT:
 3. You will be able to connect with fellow members, participate in cultural and bilateral initiatives, and join general society meetings.
 
 APPLICATION SUMMARY:
-- Name: ${recipientName}
-- Email: ${recipientEmail}
-${locationText ? `- Location: ${locationText}\n` : ''}${data.applicant.profession ? `- Profession: ${data.applicant.profession}\n` : ''}- Date: ${dateFormatted}
+- Name: ${sanitizeHeader(recipientName)}
+- Email: ${sanitizeHeader(recipientEmail)}
+${locationText ? `- Location: ${sanitizeHeader(locationText)}\n` : ''}${data.applicant.profession ? `- Profession: ${sanitizeHeader(data.applicant.profession)}\n` : ''}- Date: ${safeDateFormatted}
 - Status: Pending Approval
 
 If you have any questions, feel free to contact us at info@canfacs.org.
@@ -829,16 +932,35 @@ Website: https://canfacs.org
 Email: info@canfacs.org
 `;
 
+	const subject = 'Your CANFACS Membership Application Has Been Received';
+
+	return {
+		recipientEmail,
+		subject,
+		html,
+		text
+	};
+}
+
+export async function sendPendingMemberConfirmationEmail(
+	data: PendingMemberConfirmationData,
+	env?: Record<string, any>
+): Promise<{ success: boolean; error?: string; delivered?: boolean }> {
+	const recipientEmail = data.applicant.email;
+
+	if (!recipientEmail || !recipientEmail.includes('@')) {
+		return { success: false, error: 'Applicant email address missing or invalid' };
+	}
+
+	const { subject, html, text } = buildPendingMemberConfirmationEmail(data);
+
 	return await sendCustomEmail(
 		{
 			to: recipientEmail,
-			subject: 'Your CANFACS Membership Application Has Been Received',
+			subject,
 			html,
 			text
 		},
 		env
 	);
 }
-
-
-
