@@ -18,6 +18,9 @@ declare global {
 				DB?: any;
 				IMAGES_BUCKET?: any;
 				EMAIL?: any;
+				REGISTRATION_RATE_LIMITER?: {
+					limit(options: { key: string }): Promise<{ success: boolean }>;
+				};
 				SQUARE_APPLICATION_ID?: string;
 				SQUARE_ACCESS_TOKEN?: string;
 				SQUARE_LOCATION_ID?: string;

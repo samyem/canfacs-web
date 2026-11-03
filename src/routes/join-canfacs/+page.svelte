@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { SITE_INFO } from '$lib/data/siteData';
 
-	let { form } = $props();
+	let { data, form } = $props();
 	let isSubmitting = $state(false);
 </script>
 
@@ -9,55 +9,76 @@
 	<title>Join CANFACS Membership - {SITE_INFO.name}</title>
 </svelte:head>
 
-<section class="py-16 bg-slate-950 min-h-[85vh] flex items-center justify-center">
-	<div class="max-w-2xl w-full mx-auto px-4 sm:px-6">
-		<div class="glass-card p-8 sm:p-10 rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden">
+<section class="flex min-h-[85vh] items-center justify-center bg-slate-950 py-16">
+	<div class="mx-auto w-full max-w-2xl px-4 sm:px-6">
+		<div
+			class="glass-card relative overflow-hidden rounded-3xl border border-slate-800 p-8 shadow-2xl sm:p-10"
+		>
 			<!-- Glow Accent -->
-			<div class="absolute -top-24 -right-24 w-48 h-48 bg-red-600/20 rounded-full blur-3xl pointer-events-none"></div>
+			<div
+				class="pointer-events-none absolute -top-24 -right-24 h-48 w-48 rounded-full bg-red-600/20 blur-3xl"
+			></div>
 
-			<div class="text-center mb-8">
-				<span class="inline-block px-3 py-1 text-xs uppercase tracking-wider font-bold text-red-500 bg-red-500/10 rounded-full border border-red-500/20 mb-3">
+			<div class="mb-8 text-center">
+				<span
+					class="mb-3 inline-block rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs font-bold tracking-wider text-red-500 uppercase"
+				>
 					Official Membership
 				</span>
-				<h1 class="text-3xl sm:text-4xl font-extrabold text-white">Join {SITE_INFO.name}</h1>
-				<p class="text-slate-400 text-sm mt-2 max-w-md mx-auto">
-					Become a registered member of Canada-Nepal Friendship & Cultural Society to connect with members, participate in community discussions, and access member benefits nationwide.
+				<h1 class="text-3xl font-extrabold text-white sm:text-4xl">Join {SITE_INFO.name}</h1>
+				<p class="mx-auto mt-2 max-w-md text-sm text-slate-400">
+					Become a registered member of Canada-Nepal Friendship & Cultural Society to connect with
+					members, participate in community discussions, and access member benefits nationwide.
 				</p>
 			</div>
 
 			{#if form?.success}
-				<div class="bg-emerald-950/80 border border-emerald-500/50 p-6 rounded-2xl text-center space-y-4 animate-fade-in">
-					<div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+				<div
+					class="animate-fade-in space-y-4 rounded-2xl border border-emerald-500/50 bg-emerald-950/80 p-6 text-center"
+				>
+					<div
+						class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20 text-2xl font-bold text-emerald-400"
+					>
 						✓
 					</div>
 					<h3 class="text-xl font-bold text-emerald-300">Application Submitted!</h3>
-					<p class="text-sm text-slate-300 leading-relaxed">
+					<p class="text-sm leading-relaxed text-slate-300">
 						{form.message}
 					</p>
-					<div class="pt-4 border-t border-emerald-900/60 flex justify-center gap-4 text-xs font-semibold">
-						<a href="/login" class="px-5 py-2.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 transition-colors">
+					<div
+						class="flex justify-center gap-4 border-t border-emerald-900/60 pt-4 text-xs font-semibold"
+					>
+						<a
+							href="/login"
+							class="rounded-xl bg-emerald-600 px-5 py-2.5 text-white transition-colors hover:bg-emerald-500"
+						>
 							Go to Member Login
 						</a>
-						<a href="/" class="px-5 py-2.5 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 hover:text-white transition-colors">
+						<a
+							href="/"
+							class="rounded-xl border border-slate-800 bg-slate-900 px-5 py-2.5 text-slate-300 transition-colors hover:text-white"
+						>
 							Return Home
 						</a>
 					</div>
 				</div>
 			{:else}
 				{#if form?.error}
-					<div class="mb-6 p-4 rounded-xl bg-red-950/80 border border-red-500/50 text-red-300 text-sm flex items-center gap-3">
+					<div
+						class="mb-6 flex items-center gap-3 rounded-xl border border-red-500/50 bg-red-950/80 p-4 text-sm text-red-300"
+					>
 						<span class="text-lg">⚠️</span>
 						<span>{form.error}</span>
 					</div>
 				{/if}
 
 				<!-- Quick Google Join -->
-				<div class="space-y-4 mb-6">
+				<div class="mb-6 space-y-4">
 					<a
 						href="/api/auth/google"
-						class="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition-all shadow-lg hover:border-slate-600 group"
+						class="group flex w-full items-center justify-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:border-slate-600 hover:bg-slate-800"
 					>
-						<svg class="w-5 h-5 transition-transform group-hover:scale-110" viewBox="0 0 24 24">
+						<svg class="h-5 w-5 transition-transform group-hover:scale-110" viewBox="0 0 24 24">
 							<path
 								fill="#4285F4"
 								d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
@@ -79,17 +100,42 @@
 					</a>
 
 					<div class="relative flex items-center justify-center">
-						<div class="border-t border-slate-800 w-full"></div>
-						<span class="bg-slate-950 px-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider relative">
+						<div class="w-full border-t border-slate-800"></div>
+						<span
+							class="relative bg-slate-950 px-3 text-[11px] font-semibold tracking-wider text-slate-500 uppercase"
+						>
 							or register with full details
 						</span>
 					</div>
 				</div>
 
 				<form method="POST" onsubmit={() => (isSubmitting = true)} class="space-y-5">
-					<div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+					<!-- Invisible Honeypot anti-bot trap (bots auto-fill, human users cannot see) -->
+					<div
+						class="sr-only"
+						aria-hidden="true"
+						style="position: absolute; left: -9999px; opacity: 0; pointer-events: none; width: 0; height: 0; overflow: hidden;"
+					>
+						<label for="contact_preferred_website">Leave this field blank</label>
+						<input
+							type="text"
+							id="contact_preferred_website"
+							name="contact_preferred_website"
+							tabindex="-1"
+							autocomplete="off"
+							value=""
+						/>
+					</div>
+
+					<!-- Form rendering timestamp token for anti-bot timing verification -->
+					<input type="hidden" name="_submission_start" value={data?.submissionToken || ''} />
+
+					<div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
 						<div>
-							<label for="fullName" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+							<label
+								for="fullName"
+								class="mb-2 block text-xs font-semibold tracking-wider text-slate-300 uppercase"
+							>
 								Full Name <span class="text-red-400">*</span>
 							</label>
 							<input
@@ -98,12 +144,15 @@
 								type="text"
 								required
 								placeholder="e.g. Mankajee Shrestha"
-								class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+								class="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white transition-colors focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
 							/>
 						</div>
 
 						<div>
-							<label for="email" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+							<label
+								for="email"
+								class="mb-2 block text-xs font-semibold tracking-wider text-slate-300 uppercase"
+							>
 								Email Address <span class="text-red-400">*</span>
 							</label>
 							<input
@@ -112,14 +161,17 @@
 								type="email"
 								required
 								placeholder="name@example.com"
-								class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+								class="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white transition-colors focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
 							/>
 						</div>
 					</div>
 
-					<div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+					<div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
 						<div>
-							<label for="phone" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+							<label
+								for="phone"
+								class="mb-2 block text-xs font-semibold tracking-wider text-slate-300 uppercase"
+							>
 								Phone Number
 							</label>
 							<input
@@ -127,12 +179,15 @@
 								name="phone"
 								type="tel"
 								placeholder="(604) 555-0199"
-								class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+								class="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white transition-colors focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
 							/>
 						</div>
 
 						<div>
-							<label for="profession" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+							<label
+								for="profession"
+								class="mb-2 block text-xs font-semibold tracking-wider text-slate-300 uppercase"
+							>
 								Profession / Occupation
 							</label>
 							<input
@@ -140,14 +195,17 @@
 								name="profession"
 								type="text"
 								placeholder="e.g. Engineer, Educator, Doctor"
-								class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+								class="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white transition-colors focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
 							/>
 						</div>
 					</div>
 
-					<div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+					<div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
 						<div>
-							<label for="city" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+							<label
+								for="city"
+								class="mb-2 block text-xs font-semibold tracking-wider text-slate-300 uppercase"
+							>
 								City
 							</label>
 							<input
@@ -155,18 +213,21 @@
 								name="city"
 								type="text"
 								placeholder="e.g. Vancouver / Toronto"
-								class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+								class="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white transition-colors focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
 							/>
 						</div>
 
 						<div>
-							<label for="province" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+							<label
+								for="province"
+								class="mb-2 block text-xs font-semibold tracking-wider text-slate-300 uppercase"
+							>
 								Province / Region
 							</label>
 							<select
 								id="province"
 								name="province"
-								class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+								class="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white transition-colors focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
 							>
 								<option value="BC">British Columbia (BC)</option>
 								<option value="ON">Ontario (ON)</option>
@@ -186,7 +247,10 @@
 					</div>
 
 					<div>
-						<label for="bio" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+						<label
+							for="bio"
+							class="mb-2 block text-xs font-semibold tracking-wider text-slate-300 uppercase"
+						>
 							Brief Bio / Interest in CANFACS
 						</label>
 						<textarea
@@ -194,23 +258,23 @@
 							name="bio"
 							rows="3"
 							placeholder="Share a short background about yourself or why you would like to join CANFACS..."
-							class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+							class="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white transition-colors focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
 						></textarea>
 					</div>
 
 					<button
 						type="submit"
 						disabled={isSubmitting}
-						class="w-full py-4 rounded-xl font-extrabold text-white bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-500 shadow-xl shadow-red-600/30 transition-all duration-200 text-base disabled:opacity-50"
+						class="w-full rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 py-4 text-base font-extrabold text-white shadow-xl shadow-red-600/30 transition-all duration-200 hover:from-red-500 hover:to-rose-500 disabled:opacity-50"
 					>
 						{isSubmitting ? 'Submitting Application...' : 'Submit Application'}
 					</button>
 				</form>
 			{/if}
 
-			<div class="mt-8 pt-6 border-t border-slate-800/80 text-center text-xs text-slate-400">
+			<div class="mt-8 border-t border-slate-800/80 pt-6 text-center text-xs text-slate-400">
 				Already have an approved account?
-				<a href="/login" class="text-red-400 font-semibold hover:underline ml-1">Log in here</a>
+				<a href="/login" class="ml-1 font-semibold text-red-400 hover:underline">Log in here</a>
 			</div>
 		</div>
 	</div>
