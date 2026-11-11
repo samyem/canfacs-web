@@ -49,14 +49,14 @@
 			<span class="text-slate-300">ESTD 2016</span>
 		</div>
 
-		<!-- Urgent Relief Campaign Top Alert Headline -->
+		<!-- Upcoming Event Top Alert Headline -->
 		<div class="mb-8">
 			<a
-				href="/impact/nepal-flood-relief"
+				href="/events/canada-nepal-friendship-day-2027"
 				class="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-red-950/90 hover:bg-red-900 border border-red-600/70 text-xs sm:text-sm font-bold text-red-200 hover:text-white shadow-lg shadow-red-900/40 transition-all transform hover:scale-105 group"
 			>
 				<span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
-				<span>🚨 Urgent Appeal: <strong>Nepal Flood Emergency Relief Fund ($10k Goal)</strong></span>
+				<span>🍁 Upcoming Landmark Celebration: <strong>Canada–Nepal Friendship Day 2027 (Jan 23)</strong></span>
 				<span class="text-red-400 group-hover:translate-x-1 transition-transform">&rarr;</span>
 			</a>
 		</div>
@@ -72,10 +72,10 @@
 
 		<div class="flex flex-col sm:flex-row items-center justify-center gap-4">
 			<a
-				href="/impact/nepal-flood-relief"
+				href="/events/canada-nepal-friendship-day-2027"
 				class="w-full sm:w-auto px-8 py-4 rounded-xl font-bold bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white shadow-xl shadow-red-600/30 transition-all duration-300 transform hover:-translate-y-1 text-center flex items-center justify-center gap-2"
 			>
-				<span>🌊 Donate to Nepal Flood Relief ($10k Goal)</span>
+				<span>🍁 Canada–Nepal Friendship Day 2027</span>
 			</a>
 			<a
 				href="/join-canfacs"
@@ -93,53 +93,102 @@
 	</div>
 </section>
 
-<!-- Headline Spotlight Banner on Nepal Flood Relief -->
+<!-- Headline Spotlight Banner on Canada–Nepal Friendship Day 2027 -->
 <section class="py-12 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-y border-red-950/80 relative z-20">
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-		<div class="rounded-3xl glass-panel border border-red-800/70 p-8 sm:p-10 shadow-2xl relative overflow-hidden flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+		<div class="rounded-3xl glass-panel border border-red-800/70 p-8 sm:p-10 shadow-2xl relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-8">
 			<div class="absolute -right-20 -top-20 w-80 h-80 bg-red-600/15 rounded-full blur-3xl pointer-events-none"></div>
 			<div class="absolute -left-20 -bottom-20 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
 
-			<div class="relative z-10 space-y-4 max-w-3xl">
-				<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950/90 border border-red-800 text-xs font-bold text-red-400 uppercase tracking-wider">
+			<div class="relative z-10 space-y-4 max-w-2xl">
+				<div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-red-950/90 border border-red-800 text-xs font-bold text-red-400 uppercase tracking-wider">
 					<span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
-					Urgent Disaster Relief • Active Appeal
+					Upcoming Landmark Celebration • January 23, 2027
 				</div>
 
-				<h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-					2026 Nepal Flood & Landslide Emergency Appeal
+				<h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
+					Canada–Nepal Friendship Day 2027
 				</h2>
 
-				<p class="text-slate-300 text-sm sm:text-base leading-relaxed">
-					On 26 August 2026, a catastrophic glacier collapse on Langtang Lirung generated an Ms 5.2 seismic tremor and severe flash floods surging down the Trishuli River basin across Rasuwa and Nuwakot districts. CANFACS has launched an emergency fund with a <strong>target goal of $10,000 CAD</strong>. <strong>All collected funds will be disbursed directly to the Government of Nepal Prime Minister's Disaster Relief Fund (PMO Fund)</strong> on behalf of CANFACS and its members, with public tracking on our website.
+				<p class="text-lg sm:text-xl font-bold text-gradient-nepal">
+					Unity in Diversity — Celebrating 61 Years of Diplomatic Relations
 				</p>
 
-				<div class="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300 pt-1">
+				<p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+					Commemorating 61 illustrious years of bilateral friendship between Canada and Nepal. Hosted at the prestigious Centre Stage at Surrey City Hall, this landmark community celebration unites Indigenous First Nations leaders, the Nepalese diaspora, youth changemakers, civic dignitaries, and diverse cultural communities.
+				</p>
+
+				<!-- Event Meta & Highlight Badges -->
+				<div class="flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-300 pt-1">
 					<span class="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-						🎯 Target Goal: <strong class="text-red-400">$10,000 CAD</strong>
+						📍 <strong class="text-white">Centre Stage, City Hall, Surrey BC</strong>
 					</span>
 					<span class="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-						🏛️ Recipient: <strong class="text-amber-400">Nepal PMO Fund</strong>
+						📅 <strong class="text-amber-400">Saturday, Jan 23, 2027</strong>
 					</span>
 					<span class="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-						💳 Interac e-Transfer: <strong class="text-white font-mono">info@canfacs.org</strong>
+						🕒 <strong class="text-slate-200">4:00 PM – 8:00 PM</strong>
 					</span>
 					<span class="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-emerald-400">
-						🔒 Online Card Payments
+						🍽️ Cultural Dinner Reception Included
 					</span>
+				</div>
+
+				<!-- Event Highlights Quick Grid -->
+				<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-300 pt-2 font-medium">
+					<div class="flex items-center gap-2">
+						<span class="text-red-400 font-bold">•</span>
+						<span>First Nations Welcome Dance & Land Acknowledgement</span>
+					</div>
+					<div class="flex items-center gap-2">
+						<span class="text-red-400 font-bold">•</span>
+						<span>Vibrant Nepali Folk Performances & Music</span>
+					</div>
+					<div class="flex items-center gap-2">
+						<span class="text-red-400 font-bold">•</span>
+						<span>Youth Keynotes: Climate Resilience & Ethical AI</span>
+					</div>
+					<div class="flex items-center gap-2">
+						<span class="text-red-400 font-bold">•</span>
+						<span>Multicultural Showcase & Civic Partnerships</span>
+					</div>
+				</div>
+
+				<div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 text-xs text-slate-300 italic">
+					&ldquo;Our diversity is our greatest collective strength. All are welcome!&rdquo;
 				</div>
 			</div>
 
-			<div class="flex-shrink-0 w-full lg:w-auto relative z-10 flex flex-col sm:flex-row lg:flex-col gap-3">
+			<!-- Poster Graphic Showcase & CTA Buttons -->
+			<div class="flex-shrink-0 w-full lg:w-80 relative z-10 flex flex-col gap-4">
 				<a
-					href="/impact/nepal-flood-relief"
-					class="px-8 py-4 rounded-xl font-bold bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white text-center shadow-lg shadow-red-600/40 transition-all transform hover:-translate-y-0.5"
+					href="/events/canada-nepal-friendship-day-2027"
+					class="block rounded-2xl overflow-hidden border border-slate-800 shadow-2xl relative group bg-slate-900"
 				>
-					Donate & View Campaign &rarr;
+					<img
+						src="/events/canada-nepal-friendship-day-2027.jpg"
+						alt="Canada-Nepal Friendship Day 2027 Poster"
+						class="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
+					/>
+					<div class="p-2.5 bg-slate-900/95 text-[11px] text-slate-400 text-center border-t border-slate-800 font-medium">
+						Surrey City Hall Centre Stage • Click for Full Details
+					</div>
 				</a>
-				<span class="text-[11px] text-center text-slate-400">
-					100% of proceeds support verified on-the-ground relief
-				</span>
+
+				<div class="flex flex-col gap-2.5">
+					<a
+						href="/events/canada-nepal-friendship-day-2027"
+						class="px-6 py-3.5 rounded-xl font-bold bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white text-center shadow-lg shadow-red-600/40 transition-all transform hover:-translate-y-0.5 text-sm"
+					>
+						View Event Program &rarr;
+					</a>
+					<a
+						href="/events"
+						class="px-6 py-3 rounded-xl font-semibold glass-panel hover:bg-slate-800 text-slate-200 border border-slate-700 transition-colors text-center text-xs"
+					>
+						View All Events & Photo Gallery
+					</a>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -191,49 +240,25 @@
 	</div>
 </section>
 
-<!-- Featured Upcoming Event -->
+<!-- Featured Annual Commemoration -->
 <section class="py-20 bg-slate-900/40 relative">
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-		<div class="glass-panel rounded-3xl p-8 sm:p-12 border border-red-900/60 flex flex-col lg:flex-row items-center justify-between gap-10 shadow-2xl relative overflow-hidden bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950">
-			<!-- Subtle glow -->
-			<div class="absolute -right-20 -bottom-20 w-80 h-80 bg-red-600/15 rounded-full blur-3xl pointer-events-none"></div>
-
-			<div class="space-y-4 max-w-2xl relative z-10">
-				<div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-red-950/90 border border-red-800 text-xs font-bold text-red-400">
-					<span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-					Upcoming Landmark Celebration • January 23, 2027
+		<div class="glass-panel rounded-3xl p-8 sm:p-12 border border-slate-800 flex flex-col lg:flex-row items-center justify-between gap-10">
+			<div class="space-y-4 max-w-2xl">
+				<div class="inline-block px-3 py-1 rounded-full bg-red-950/80 border border-red-800/60 text-xs font-semibold text-red-400">
+					Featured Annual Event • May 29
 				</div>
-				<h3 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-					Canada–Nepal Friendship Day 2027
-				</h3>
-				<p class="text-lg font-bold text-gradient-nepal">
-					Unity in Diversity — Celebrating 61 Years of Diplomatic Relations
-				</p>
+				<h3 class="text-2xl sm:text-3xl font-bold text-white">International Mount Everest Day</h3>
 				<p class="text-slate-300 text-sm sm:text-base leading-relaxed">
-					Join CANFACS at Surrey City Hall Centre Stage for a landmark community celebration featuring First Nations cultural exchange, vibrant Nepali folk arts, youth keynotes on climate resilience & ethical AI, and multicultural solidarity.
+					Commemorating the historic first summit of Mount Everest by Sir Edmund Hillary and Tenzing Norgay Sherpa on May 29, 1953. CANFACS hosts annual celebrations featuring mountaineering slideshows, documentary screenings, cultural exchanges, and environmental conservation discussions.
 				</p>
-				<div class="flex flex-wrap items-center gap-4 text-xs text-slate-300 font-semibold pt-1">
-					<span class="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-						📍 Centre Stage, City Hall, Surrey BC
-					</span>
-					<span class="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-						🕒 4:00 PM – 8:00 PM
-					</span>
-				</div>
 			</div>
-
-			<div class="flex-shrink-0 w-full lg:w-auto flex flex-col sm:flex-row lg:flex-col gap-3 relative z-10">
-				<a
-					href="/events/canada-nepal-friendship-day-2027"
-					class="px-8 py-4 rounded-xl font-bold bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-center shadow-lg shadow-red-600/30 transition-all transform hover:-translate-y-0.5"
-				>
-					View Event Details &rarr;
-				</a>
+			<div class="flex-shrink-0 flex flex-col sm:flex-row gap-3">
 				<a
 					href="/events"
-					class="px-8 py-4 rounded-xl font-bold glass-panel hover:bg-slate-800 text-slate-200 border border-slate-700 transition-colors text-center"
+					class="px-8 py-4 rounded-xl font-bold bg-white text-slate-950 hover:bg-slate-200 transition-colors shadow-lg shadow-white/10 text-center"
 				>
-					All Events & Gallery
+					View All Events & Gallery
 				</a>
 			</div>
 		</div>
