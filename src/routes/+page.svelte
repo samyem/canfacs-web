@@ -194,22 +194,46 @@
 <!-- Featured Upcoming Event -->
 <section class="py-20 bg-slate-900/40 relative">
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-		<div class="glass-panel rounded-3xl p-8 sm:p-12 border border-slate-800 flex flex-col lg:flex-row items-center justify-between gap-10">
-			<div class="space-y-4 max-w-2xl">
-				<div class="inline-block px-3 py-1 rounded-full bg-red-950/80 border border-red-800/60 text-xs font-semibold text-red-400">
-					Featured Annual Event
+		<div class="glass-panel rounded-3xl p-8 sm:p-12 border border-red-900/60 flex flex-col lg:flex-row items-center justify-between gap-10 shadow-2xl relative overflow-hidden bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950">
+			<!-- Subtle glow -->
+			<div class="absolute -right-20 -bottom-20 w-80 h-80 bg-red-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+			<div class="space-y-4 max-w-2xl relative z-10">
+				<div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-red-950/90 border border-red-800 text-xs font-bold text-red-400">
+					<span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+					Upcoming Landmark Celebration • January 23, 2027
 				</div>
-				<h3 class="text-2xl sm:text-3xl font-bold text-white">International Mount Everest Day</h3>
-				<p class="text-slate-300 text-sm sm:text-base leading-relaxed">
-					Commemorating the historical first climb of Mt. Everest by Sir Edmund Hillary and Tenzing Norgay Sherpa on May 29. Celebrating mountaineering excellence, Nepalese heritage, and environmental conservation.
+				<h3 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+					Canada–Nepal Friendship Day 2027
+				</h3>
+				<p class="text-lg font-bold text-gradient-nepal">
+					Unity in Diversity — Celebrating 61 Years of Diplomatic Relations
 				</p>
+				<p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+					Join CANFACS at Surrey City Hall Centre Stage for a landmark community celebration featuring First Nations cultural exchange, vibrant Nepali folk arts, youth keynotes on climate resilience & ethical AI, and multicultural solidarity.
+				</p>
+				<div class="flex flex-wrap items-center gap-4 text-xs text-slate-300 font-semibold pt-1">
+					<span class="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+						📍 Centre Stage, City Hall, Surrey BC
+					</span>
+					<span class="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+						🕒 4:00 PM – 8:00 PM
+					</span>
+				</div>
 			</div>
-			<div class="flex-shrink-0">
+
+			<div class="flex-shrink-0 w-full lg:w-auto flex flex-col sm:flex-row lg:flex-col gap-3 relative z-10">
+				<a
+					href="/events/canada-nepal-friendship-day-2027"
+					class="px-8 py-4 rounded-xl font-bold bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-center shadow-lg shadow-red-600/30 transition-all transform hover:-translate-y-0.5"
+				>
+					View Event Details &rarr;
+				</a>
 				<a
 					href="/events"
-					class="px-8 py-4 rounded-xl font-bold bg-white text-slate-950 hover:bg-slate-200 transition-colors shadow-lg shadow-white/10"
+					class="px-8 py-4 rounded-xl font-bold glass-panel hover:bg-slate-800 text-slate-200 border border-slate-700 transition-colors text-center"
 				>
-					View All Events
+					All Events & Gallery
 				</a>
 			</div>
 		</div>

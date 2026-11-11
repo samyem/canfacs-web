@@ -13,7 +13,10 @@ import {
 	softDeleteMember,
 	permanentlyDeleteMember,
 	restoreMember,
-	unapproveMember
+	unapproveMember,
+	getEvents,
+	getEventBySlug,
+	getFeaturedEvent
 } from './db';
 
 describe('In-Memory & Local Database Operations Unit Tests', () => {
@@ -183,5 +186,20 @@ describe('In-Memory & Local Database Operations Unit Tests', () => {
 
 		const allWithDeleted = await getAllMembers(null, undefined, true);
 		expect(allWithDeleted.some((m) => m.id === spamMember.id)).toBe(false);
+	});
+
+	it('loads events including Canada-Nepal Friendship Day 2027', async () => {
+		const events = await getEvents(null);
+		expect(events.length).toBeGreaterThanOrEqual(1);
+
+		const friendshipDay = await getEventBySlug(null, 'canada-nepal-friendship-day-2027');
+		expect(friendshipDay).not.toBeNull();
+		expect(friendshipDay?.title).toContain('Canada–Nepal Friendship Day 2027');
+		expect(friendshipDay?.venue).toContain('Surrey BC');
+		expect(friendshipDay?.banner_image_url).toBe('/events/canada-nepal-friendship-day-2027.jpg');
+
+		const featured = await getFeaturedEvent(null);
+		expect(featured).not.toBeNull();
+		expect(featured?.id).toBe('canada-nepal-friendship-day-2027');
 	});
 });

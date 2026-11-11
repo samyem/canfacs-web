@@ -191,6 +191,27 @@ export interface DocumentRow {
 	updated_at: string;
 }
 
+export interface EventRow {
+	id: string;
+	title: string;
+	slug: string;
+	subtitle: string | null;
+	tagline: string | null;
+	date_display: string;
+	event_date: string | null;
+	event_time: string | null;
+	venue: string;
+	location: string;
+	summary: string | null;
+	description: string;
+	highlights: string | null; // JSON string of string[]
+	banner_image_url: string | null;
+	is_featured: number; // 1 or 0
+	status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+	created_at: string;
+	updated_at: string;
+}
+
 // In-memory fallback store for local development when D1 binding is unattached
 let localStoreInitialized = false;
 let memoryMembers: MemberRow[] = [];
@@ -207,6 +228,7 @@ let memoryEmailTemplates: EmailTemplateRow[] = [];
 let memoryOrgRoles: OrganizationalRoleRow[] = [];
 let memoryMemberOrgRoles: MemberOrganizationalRoleRow[] = [];
 let memoryDocuments: DocumentRow[] = [];
+let memoryEvents: EventRow[] = [];
 
 async function ensureDbDefaultAdmin(db: any) {
 	if (!dev) return;
@@ -960,6 +982,90 @@ async function ensureLocalDefaultAdmin() {
 				published_at: '2026-08-25T14:00:00Z',
 				created_at: '2026-08-25T14:00:00Z',
 				updated_at: '2026-08-25T14:00:00Z'
+			}
+		);
+	}
+
+	// Seed Sample Official Events
+	if (memoryEvents.length === 0) {
+		memoryEvents.push(
+			{
+				id: 'canada-nepal-friendship-day-2027',
+				title: 'Canada–Nepal Friendship Day 2027',
+				slug: 'canada-nepal-friendship-day-2027',
+				subtitle: 'Unity in Diversity',
+				tagline: 'Celebrating 61 Years of Diplomatic Relations',
+				date_display: 'Saturday, January 23, 2027 | 4:00 PM – 8:00 PM',
+				event_date: '2027-01-23',
+				event_time: '4:00 PM – 8:00 PM',
+				venue: 'Centre Stage, City Hall, Surrey BC',
+				location: 'Centre Stage, City Hall, Surrey BC',
+				summary:
+					'Join CANFACS for Canada–Nepal Friendship Day 2027 at Surrey City Hall Centre Stage, celebrating 61 years of diplomatic relations with First Nations cultural exchange, vibrant Nepali folk performances, youth keynotes, and multicultural showcases.',
+				description:
+					'The Canada-Nepal Friendship & Cultural Society (CANFACS) proudly presents Canada–Nepal Friendship Day 2027 under the theme "Unity in Diversity", commemorating 61 illustrious years of official diplomatic relations between Canada and Nepal. Hosted at the prestigious Centre Stage at Surrey City Hall, this landmark community celebration unites Indigenous First Nations leaders, the Nepalese diaspora, youth changemakers, civic dignitaries, and diverse cultural communities across British Columbia and Canada. Our diversity is our greatest collective strength. All are welcome!',
+				highlights: JSON.stringify([
+					'First Nations Welcome Dance & Land Acknowledgement',
+					'Vibrant Nepali Folk Performances & Cross-Cultural Arts',
+					'Youth Keynotes: Climate Resilience & Ethical AI',
+					'Multicultural Showcase & Civic Partnerships'
+				]),
+				banner_image_url: '/events/canada-nepal-friendship-day-2027.jpg',
+				is_featured: 1,
+				status: 'upcoming',
+				created_at: '2026-11-11T13:30:00.000Z',
+				updated_at: '2026-11-11T13:30:00.000Z'
+			},
+			{
+				id: 'everest-day-2025',
+				title: 'International Mount Everest Day Celebration',
+				slug: 'everest-day-2025',
+				subtitle: 'Mountaineering Heritage & Environmental Conservation',
+				tagline: 'Honoring Sir Edmund Hillary and Tenzing Norgay Sherpa',
+				date_display: 'May 29, 2025',
+				event_date: '2025-05-29',
+				event_time: 'All Day',
+				venue: 'Greater Vancouver & Online',
+				location: 'Greater Vancouver & Online',
+				summary: 'Commemorating the historical first ascent of Mt. Everest by Sir Edmund Hillary and Tenzing Norgay Sherpa.',
+				description:
+					'Commemorating the historical first ascent of Mt. Everest by Sir Edmund Hillary and Tenzing Norgay Sherpa on May 29, 1953, honoring mountaineering achievements and Nepalese heritage.',
+				highlights: JSON.stringify([
+					'Mountaineering slideshows & documentary screenings',
+					'Environmental conservation forum',
+					'Cultural exchange assembly'
+				]),
+				banner_image_url: '/pptx-gallery/image28.jpg',
+				is_featured: 0,
+				status: 'completed',
+				created_at: '2025-05-01T00:00:00.000Z',
+				updated_at: '2025-05-01T00:00:00.000Z'
+			},
+			{
+				id: 'bhetghat-2025',
+				title: 'Annual Bhetghat & Cultural Festival',
+				slug: 'bhetghat-2025',
+				subtitle: 'Community Gathering & Cultural Heritage',
+				tagline: 'Celebrating Nepali Traditions Across Canada',
+				date_display: 'Autumn 2025',
+				event_date: '2025-10-15',
+				event_time: '5:00 PM – 9:00 PM',
+				venue: 'Surrey, BC',
+				location: 'Surrey, BC',
+				summary:
+					'A vibrant community gathering featuring traditional Nepali cuisine, folk music, authentic dance performances, and community networking.',
+				description:
+					'A vibrant community gathering featuring traditional Nepali cuisine, folk music, authentic dance performances, and community networking.',
+				highlights: JSON.stringify([
+					'Traditional Nepali cuisine & tea',
+					'Authentic folk music and dance',
+					'Community networking and honors'
+				]),
+				banner_image_url: '/bhetghat-festival.png',
+				is_featured: 0,
+				status: 'completed',
+				created_at: '2025-09-01T00:00:00.000Z',
+				updated_at: '2025-09-01T00:00:00.000Z'
 			}
 		);
 	}
@@ -3283,6 +3389,146 @@ export async function getDocumentCategories(db: any): Promise<string[]> {
 	}
 	return Array.from(set).sort();
 }
+
+// ==========================================
+// EVENTS MANAGEMENT
+// ==========================================
+
+export async function ensureEventsTable(db: any) {
+	if (!db) return;
+	try {
+		await db
+			.prepare(
+				`CREATE TABLE IF NOT EXISTS events (
+					id TEXT PRIMARY KEY,
+					title TEXT NOT NULL,
+					slug TEXT UNIQUE NOT NULL,
+					subtitle TEXT,
+					tagline TEXT,
+					date_display TEXT NOT NULL,
+					event_date TEXT,
+					event_time TEXT,
+					venue TEXT NOT NULL,
+					location TEXT NOT NULL,
+					summary TEXT,
+					description TEXT NOT NULL,
+					highlights TEXT,
+					banner_image_url TEXT,
+					is_featured INTEGER NOT NULL DEFAULT 0,
+					status TEXT NOT NULL DEFAULT 'upcoming',
+					created_at TEXT NOT NULL,
+					updated_at TEXT NOT NULL
+				);`
+			)
+			.run();
+
+		await db.prepare(`CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug);`).run();
+		await db.prepare(`CREATE INDEX IF NOT EXISTS idx_events_status ON events(status);`).run();
+		await db.prepare(`CREATE INDEX IF NOT EXISTS idx_events_is_featured ON events(is_featured);`).run();
+
+		// Seed initial events into D1 if table is empty
+		const countRes = await db.prepare(`SELECT COUNT(*) as count FROM events`).first();
+		if (!countRes || countRes.count === 0) {
+			for (const evt of memoryEvents) {
+				await db
+					.prepare(
+						`INSERT INTO events (
+							id, title, slug, subtitle, tagline, date_display, event_date, event_time,
+							venue, location, summary, description, highlights, banner_image_url,
+							is_featured, status, created_at, updated_at
+						) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+					)
+					.bind(
+						evt.id,
+						evt.title,
+						evt.slug,
+						evt.subtitle,
+						evt.tagline,
+						evt.date_display,
+						evt.event_date,
+						evt.event_time,
+						evt.venue,
+						evt.location,
+						evt.summary,
+						evt.description,
+						evt.highlights,
+						evt.banner_image_url,
+						evt.is_featured,
+						evt.status,
+						evt.created_at,
+						evt.updated_at
+					)
+					.run();
+			}
+		}
+	} catch (e) {
+		console.warn('Failed to ensure events table in D1:', e);
+	}
+}
+
+const eventSlugCache = new Map<string, { evt: EventRow | null; timestamp: number }>();
+
+export function invalidateEventsCache() {
+	eventSlugCache.clear();
+}
+
+export async function getEvents(db: any, status?: string): Promise<EventRow[]> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureEventsTable(db);
+		let query = `SELECT * FROM events`;
+		const params: any[] = [];
+		if (status) {
+			query += ` WHERE status = ?`;
+			params.push(status);
+		}
+		query += ` ORDER BY is_featured DESC, event_date DESC, created_at DESC`;
+
+		const stmt = db.prepare(query);
+		const res = await (params.length > 0 ? stmt.bind(...params) : stmt).all();
+		return (res.results || []) as EventRow[];
+	}
+
+	return [...memoryEvents]
+		.filter((e) => !status || e.status === status)
+		.sort((a, b) => {
+			if (b.is_featured !== a.is_featured) return b.is_featured - a.is_featured;
+			return (b.event_date || '').localeCompare(a.event_date || '');
+		});
+}
+
+export async function getEventBySlug(db: any, slug: string): Promise<EventRow | null> {
+	await ensureLocalDefaultAdmin();
+	const cleanSlug = slug.toLowerCase().trim();
+
+	const cached = eventSlugCache.get(cleanSlug);
+	if (cached && Date.now() - cached.timestamp < 30000) {
+		return cached.evt;
+	}
+
+	let evt: EventRow | null = null;
+	if (db) {
+		await ensureEventsTable(db);
+		const res = await db.prepare(`SELECT * FROM events WHERE LOWER(slug) = ?`).bind(cleanSlug).first();
+		evt = (res as EventRow) || null;
+	} else {
+		evt = memoryEvents.find((e) => e.slug.toLowerCase() === cleanSlug) || null;
+	}
+
+	eventSlugCache.set(cleanSlug, { evt, timestamp: Date.now() });
+	return evt;
+}
+
+export async function getFeaturedEvent(db: any): Promise<EventRow | null> {
+	await ensureLocalDefaultAdmin();
+	if (db) {
+		await ensureEventsTable(db);
+		const res = await db.prepare(`SELECT * FROM events WHERE is_featured = 1 AND status = 'upcoming' LIMIT 1`).first();
+		if (res) return res as EventRow;
+	}
+	return memoryEvents.find((e) => e.is_featured === 1 && e.status === 'upcoming') || memoryEvents[0] || null;
+}
+
 
 
 

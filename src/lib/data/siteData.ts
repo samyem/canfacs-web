@@ -23,6 +23,16 @@ export interface EventItem {
 	date: string;
 	location: string;
 	description: string;
+	summary?: string;
+	slug?: string;
+	subtitle?: string;
+	tagline?: string;
+	time?: string;
+	venue?: string;
+	highlights?: string[];
+	image?: string;
+	isFeatured?: boolean;
+	status?: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
 }
 
 export interface ImpactActivity {
@@ -217,7 +227,30 @@ export const PURPOSES = [
 
 export const EVENTS: EventItem[] = [
 	{
+		id: 'canada-nepal-friendship-day-2027',
+		slug: 'canada-nepal-friendship-day-2027',
+		title: 'Canada–Nepal Friendship Day 2027',
+		subtitle: 'Unity in Diversity',
+		tagline: 'Celebrating 61 Years of Diplomatic Relations',
+		date: 'Saturday, January 23, 2027',
+		time: '4:00 PM – 8:00 PM',
+		venue: 'Centre Stage, City Hall, Surrey BC',
+		location: 'Centre Stage, City Hall, Surrey BC',
+		description:
+			'Commemorating 61 illustrious years of diplomatic relations between Canada and Nepal. This landmark community celebration brings together First Nations leaders, the Nepalese diaspora, youth keynotes, and multicultural showcases at Surrey City Hall Centre Stage.',
+		highlights: [
+			'First Nations Welcome Dance & Land Acknowledgement',
+			'Vibrant Nepali Folk Performances & Cross-Cultural Arts',
+			'Youth Keynotes: Climate Resilience & Ethical AI',
+			'Multicultural Showcase & Civic Partnerships'
+		],
+		image: '/events/canada-nepal-friendship-day-2027.jpg',
+		isFeatured: true,
+		status: 'upcoming'
+	},
+	{
 		id: 'everest-day-2025',
+		slug: 'everest-day-2025',
 		title: 'International Mount Everest Day Celebration',
 		date: 'May 29, 2025',
 		location: 'Greater Vancouver & Online',
